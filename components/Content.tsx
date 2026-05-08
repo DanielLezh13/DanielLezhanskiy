@@ -9,12 +9,15 @@ type ContentProps = {
   topics: NavTopic[];
 };
 
+const articleClassName =
+  "content-view-enter mx-auto w-full max-w-[780px] px-6 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20";
+
 export function Content({ activeView, frameworkSections, topics }: ContentProps) {
   const [overviewSection, ...remainingFrameworkSections] = frameworkSections;
 
   if (activeView === "start") {
     return (
-      <article className="mx-auto w-full max-w-[780px] px-6 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20">
+      <article className={articleClassName}>
         <StartContent />
       </article>
     );
@@ -22,7 +25,7 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
 
   if (activeView === "politics") {
     return (
-      <article className="mx-auto w-full max-w-[780px] px-6 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20">
+      <article className={articleClassName}>
         <CategorySections
           eyebrow="Politics"
           intro="This test category applies the project framework to government, ideology, and media influence. The point is to test how future main categories can contain their own internal sections."
@@ -35,14 +38,14 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
 
   if (activeView !== "religion") {
     return (
-      <article className="mx-auto w-full max-w-[780px] px-6 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20">
+      <article className={articleClassName}>
         <CategoryPlaceholder activeView={activeView} />
       </article>
     );
   }
 
   return (
-    <article className="mx-auto w-full max-w-[780px] px-6 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20">
+    <article className={articleClassName}>
       <div className="space-y-20">
         {overviewSection ? (
           <ReadingSubsection key={overviewSection.id} section={overviewSection} />
@@ -394,6 +397,25 @@ const keyTensionBySection: Record<string, string> = {
   "personal-framework": "Identity Strength vs. Truth Relationship",
 };
 
+const coreLineBySection: Record<string, string> = {
+  "religion-overviews":
+    "Interpretation is not an outside detail. It is part of how religious systems actually function.",
+  religion:
+    "Different religions often use different language for the same underlying argument structures.",
+  "probability-convergence-certainty":
+    "Strong convergence can increase plausibility without automatically closing uncertainty.",
+  "belief-mechanics":
+    "A belief can feel proven because it stabilizes life, even when usefulness is not the same as truth.",
+  "from-belief-to-positions":
+    "Once belief becomes a side, discussion often shifts from understanding to defense.",
+  "my-stance":
+    "Understanding why a belief works for people is different from accepting that it is objectively proven.",
+  "modern-context":
+    "Modern systems reward visible certainty more than careful restraint.",
+  "personal-framework":
+    "Certainty should scale with the strength and uniqueness of the evidence.",
+};
+
 function FlowDiagram({ steps }: { steps: string[] }) {
   return (
     <section className="mt-8 rounded-xl border border-white/10 bg-white/[0.025] px-4 py-4">
@@ -418,6 +440,27 @@ function FlowDiagram({ steps }: { steps: string[] }) {
   );
 }
 
+function CoreLine({ children }: { children: string }) {
+  return (
+    <section className="mt-5 rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.025] px-5 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+      <div className="flex gap-4">
+        <span
+          className="mt-1 h-10 w-1 shrink-0 rounded-full bg-amber-200/70"
+          aria-hidden="true"
+        />
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
+            Load-Bearing Line
+          </p>
+          <p className="mt-2 text-lg font-medium leading-8 text-stone-100">
+            {children}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function KeyTension({ children }: { children: string }) {
   return (
     <section className="mt-8 rounded-xl border border-amber-200/15 bg-amber-200/[0.045] px-4 py-4">
@@ -425,6 +468,25 @@ function KeyTension({ children }: { children: string }) {
         Key Tension
       </p>
       <p className="mt-2 text-base font-medium text-stone-100">{children}</p>
+    </section>
+  );
+}
+
+function IdeaStrip({ ideas }: { ideas: string[] }) {
+  if (!ideas.length) {
+    return null;
+  }
+
+  return (
+    <section className="mt-5 flex flex-wrap gap-2">
+      {ideas.slice(0, 4).map((idea) => (
+        <span
+          className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs leading-5 text-stone-300"
+          key={idea}
+        >
+          {idea}
+        </span>
+      ))}
     </section>
   );
 }
@@ -487,6 +549,12 @@ function TopicSection({ topic }: { topic: NavTopic }) {
       {keyTensionBySection[topic.id] ? (
         <KeyTension>{keyTensionBySection[topic.id]}</KeyTension>
       ) : null}
+
+      {coreLineBySection[topic.id] ? (
+        <CoreLine>{coreLineBySection[topic.id]}</CoreLine>
+      ) : null}
+
+      <IdeaStrip ideas={topic.keyIdeas} />
 
       {topic.layers?.length ? (
         <section className="mt-10">
@@ -815,6 +883,12 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
         <KeyTension>{keyTensionBySection[section.id]}</KeyTension>
       ) : null}
 
+      {coreLineBySection[section.id] ? (
+        <CoreLine>{coreLineBySection[section.id]}</CoreLine>
+      ) : null}
+
+      <IdeaStrip ideas={section.keyIdeas} />
+
       {section.id === "religion-overviews" ? <ReligionComparisonTable /> : null}
 
       {flowStepsBySection[section.id] ? (
@@ -826,35 +900,99 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
       {section.notes?.length ? (
         <div className="mt-10 space-y-4">
           {section.notes.map((note) => (
-            <section
-              className="rounded-lg border border-white/10 bg-white/[0.025] px-5 py-5"
-              key={note.title}
-            >
-              <h4 className="text-base font-semibold text-stone-100">{note.title}</h4>
-              {note.body ? (
-                <p className="mt-3 whitespace-pre-line text-base leading-8 text-stone-300">
-                  {note.body}
-                </p>
-              ) : null}
-              {section.id === "probability-convergence-certainty" &&
-              note.title === "The Benoit Blanc Example" ? (
-                <TrailerEmbed />
-              ) : null}
-              {note.items?.length ? (
-                <ul className="mt-4 space-y-2">
-                  {note.items.map((item) => (
-                    <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
+            <NoteCard key={note.title} note={note} sectionId={section.id} />
           ))}
         </div>
       ) : null}
     </section>
+  );
+}
+
+function NoteCard({
+  note,
+  sectionId,
+}: {
+  note: NonNullable<ReadingSection["notes"]>[number];
+  sectionId: string;
+}) {
+  const emphasized = isEmphasisNote(note.title);
+
+  return (
+    <section
+      className={[
+        "rounded-lg border px-5 py-5 transition duration-200",
+        emphasized
+          ? "border-amber-200/20 bg-amber-200/[0.04] shadow-[0_18px_55px_rgba(0,0,0,0.14)]"
+          : "border-white/10 bg-white/[0.025]",
+      ].join(" ")}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={[
+            "mt-1 h-5 w-1 shrink-0 rounded-full",
+            emphasized ? "bg-amber-200/70" : "bg-white/10",
+          ].join(" ")}
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          {emphasized ? (
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+              Key Point
+            </p>
+          ) : null}
+          <h4 className="text-base font-semibold text-stone-100">{note.title}</h4>
+          {note.body ? <NoteBody body={note.body} /> : null}
+          {sectionId === "probability-convergence-certainty" &&
+          note.title === "The Benoit Blanc Example" ? (
+            <TrailerEmbed />
+          ) : null}
+          {note.items?.length ? (
+            <ul className="mt-4 space-y-2">
+              {note.items.map((item) => (
+                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NoteBody({ body }: { body: string }) {
+  return (
+    <div className="mt-3 space-y-4">
+      {body.split("\n\n").map((paragraph) => {
+        const highlighted = isHighlightParagraph(paragraph);
+
+        return (
+          <p
+            className={[
+              "whitespace-pre-line text-base leading-8 text-stone-300",
+              highlighted
+                ? "rounded-lg border border-amber-200/15 bg-black/15 px-4 py-3 text-stone-100"
+                : "",
+            ].join(" ")}
+            key={paragraph}
+          >
+            {paragraph}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function isEmphasisNote(title: string) {
+  return /core|key|final|stance|tension|why|certainty|framework/i.test(title);
+}
+
+function isHighlightParagraph(paragraph: string) {
+  return /the key distinction|the disagreement|the issue is|this does not|this distinction matters|the central issue|as a result|the goal is not/i.test(
+    paragraph,
   );
 }
 

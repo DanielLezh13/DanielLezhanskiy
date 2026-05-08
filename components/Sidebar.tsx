@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ContentView } from "@/app/page";
 import { politicsSections, startSection } from "@/lib/content";
 import type { NavTopic, ReadingSection } from "@/lib/content";
@@ -21,8 +22,11 @@ export function Sidebar({
   onSelectSection,
   topics,
 }: SidebarProps) {
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [openView, setOpenView] = useState<ContentView | null>(null);
+
   const religion = topics[0];
-  const sectionGroups = [
+  const sectionGroups = useMemo(() => [
     {
       id: "religion-group",
       label: "Religion",
@@ -69,7 +73,39 @@ export function Sidebar({
       firstSectionId: undefined,
       children: [],
     },
-  ];
+  ], [frameworkSections, religion]);
+
+  useEffect(() => {
+    if (switchTimer.current) {
+      clearTimeout(switchTimer.current);
+      switchTimer.current = null;
+    }
+
+    const activeGroup = sectionGroups.find((group) => group.view === activeView);
+    if (!activeGroup?.children.length) {
+      setOpenView(null);
+      return;
+    }
+
+    setOpenView((current) => {
+      if (!current || current === activeView) {
+        return activeView;
+      }
+
+      switchTimer.current = setTimeout(() => {
+        setOpenView(activeView);
+      }, 190);
+
+      return null;
+    });
+
+    return () => {
+      if (switchTimer.current) {
+        clearTimeout(switchTimer.current);
+        switchTimer.current = null;
+      }
+    };
+  }, [activeView, sectionGroups]);
 
   return (
     <aside className="border-b border-white/10 px-5 py-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
@@ -93,15 +129,28 @@ export function Sidebar({
 
               {sectionGroups.map((group) => {
                 const groupActive = activeView === group.view;
-                const groupExpanded = groupActive && group.children.length > 0;
+                const groupExpanded = openView === group.view && group.children.length > 0;
 
                 return (
                   <div key={group.id}>
                     <SidebarButton
                       active={groupActive}
-                      expandable={group.children.length > 0}
                       expanded={groupExpanded}
                       label={group.label}
+                      onArrowClick={
+                        group.children.length
+                          ? () => {
+                              if (activeView !== group.view) {
+                                onSelectView(group.view, group.firstSectionId);
+                                return;
+                              }
+
+                              setOpenView((current) =>
+                                current === group.view ? null : group.view,
+                              );
+                            }
+                          : undefined
+                      }
                       onClick={() => {
                         if (activeView === group.view) {
                           return;
@@ -113,12 +162,19 @@ export function Sidebar({
 
                     <div
                       className={[
-                        "grid transition-[grid-template-rows] duration-300 ease-out",
+                        "grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                         groupExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
                       ].join(" ")}
                     >
                       <div className="overflow-hidden">
-                        <div className="ml-2 mt-1 space-y-1 border-l border-white/10 pl-2">
+                        <div
+                          className={[
+                            "ml-2 mt-1 space-y-1 border-l border-white/10 pl-2 transition duration-300 ease-out",
+                            groupExpanded
+                              ? "translate-y-0 opacity-100"
+                              : "-translate-y-1 opacity-0",
+                          ].join(" ")}
+                        >
                           {group.children.map((section) => (
                             <SidebarButton
                               active={activeSectionId === section.id}
@@ -153,18 +209,18 @@ function NavHeading({ label }: { label: string }) {
 function SidebarButton({
   active,
   disabled = false,
-  expandable = false,
   expanded = false,
   label,
   nested = false,
+  onArrowClick,
   onClick,
 }: {
   active: boolean;
   disabled?: boolean;
-  expandable?: boolean;
   expanded?: boolean;
   label: string;
   nested?: boolean;
+  onArrowClick?: () => void;
   onClick: () => void;
 }) {
   return (
@@ -183,12 +239,18 @@ function SidebarButton({
       type="button"
     >
       <span>{label}</span>
-      {expandable ? (
+      {onArrowClick ? (
         <span
           aria-hidden="true"
+          onClick={(event) => {
+            event.stopPropagation();
+            onArrowClick();
+          }}
           className={[
-            "grid h-5 w-5 shrink-0 place-items-center rounded-full border text-sm leading-none transition duration-200",
-            active ? "border-stone-300 text-stone-950" : "border-white/10 text-stone-500",
+            "grid h-5 w-5 shrink-0 place-items-center rounded-full border text-sm leading-none transition duration-300 hover:scale-110",
+            active
+              ? "border-stone-300 text-stone-950 hover:border-stone-500 hover:bg-stone-200"
+              : "border-white/10 text-stone-500 hover:border-stone-500 hover:bg-white/10 hover:text-stone-100",
             expanded ? "rotate-180" : "rotate-0",
           ].join(" ")}
         >

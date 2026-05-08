@@ -47,6 +47,25 @@ const viewKeyIdeas: Record<ContentView, string[]> = {
   ],
 };
 
+const viewLabels: Record<ContentView, string> = {
+  start: startSection.label,
+  religion: frameworkSections[0].label,
+  politics: politicsSections[0].label,
+  society: "Society",
+  psychology: "Human Psychology",
+  technology: "Technology",
+  philosophy: "My Philosophy",
+};
+
+const sectionLabelById = new Map(
+  [
+    startSection,
+    ...frameworkSections,
+    ...topics,
+    ...politicsSections,
+  ].map((section) => [section.id, section.label]),
+);
+
 export default function Home() {
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const [activeView, setActiveView] = useState<ContentView>("start");
@@ -62,26 +81,27 @@ export default function Home() {
   }, []);
 
   const handleSelectView = useCallback((view: ContentView, sectionId?: string) => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
     setActiveView(view);
 
     if ((view === "religion" || view === "politics") && sectionId) {
       setActiveSectionId(sectionId);
-      scrollToSection(sectionId);
       return;
     }
 
     const nextSectionId = view === "start" ? startSection.id : view;
     setActiveSectionId(nextSectionId);
-    requestAnimationFrame(() => {
-      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    });
   }, [scrollToSection]);
 
   const handleSelectSection = useCallback((view: ContentView, sectionId: string) => {
+    const sameView = activeView === view;
+
     setActiveView(view);
-    setActiveSectionId(sectionId);
+    if (!sameView) {
+      setActiveSectionId(sectionId);
+    }
     scrollToSection(sectionId);
-  }, [scrollToSection]);
+  }, [activeView, scrollToSection]);
 
   useEffect(() => {
     if (activeView !== "religion" && activeView !== "politics") {
@@ -136,10 +156,16 @@ export default function Home() {
         <Content
           activeView={activeView}
           frameworkSections={frameworkSections}
+          key={activeView}
           topics={topics}
         />
 
         <RightPanel
+          contextLabel={
+            activeView === "religion" || activeView === "politics"
+              ? sectionLabelById.get(activeSectionId) ?? viewLabels[activeView]
+              : viewLabels[activeView]
+          }
           ideas={
             activeView === "religion"
             || activeView === "politics"
