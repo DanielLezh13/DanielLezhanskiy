@@ -1,4 +1,5 @@
 import {
+  economicsSections,
   frameworkSections,
   politicsSections,
   startSection,
@@ -301,6 +302,7 @@ function getFrameworkChunks(): FrameworkChunk[] {
   frameworkSections.forEach((section) => pushSection(chunks, section, section.label));
   topics.forEach((topic) => pushTopic(chunks, topic));
   politicsSections.forEach((section) => pushSection(chunks, section, `Politics / ${section.label}`));
+  economicsSections.forEach((section) => pushSection(chunks, section, `Economics / ${section.label}`));
 
   return chunks;
 }
@@ -366,15 +368,29 @@ function pushSection(
     chunks.push(argumentToChunk(section, source, argument));
   });
 
-  section.notes?.forEach((note) => {
-    chunks.push({
-      id: `${section.id}:note:${slug(note.title)}`,
-      source,
-      title: note.title,
-      text: [note.body, note.items?.join("\n")].filter(Boolean).join("\n\n"),
+  if (!essayOnlySectionIds.has(section.id)) {
+    section.notes?.forEach((note) => {
+      chunks.push({
+        id: `${section.id}:note:${slug(note.title)}`,
+        source,
+        title: note.title,
+        text: [note.body, note.items?.join("\n")].filter(Boolean).join("\n\n"),
+      });
     });
-  });
+  }
 }
+
+const essayOnlySectionIds = new Set([
+  "philosophy-metaphysics",
+  "philosophy-epistemology",
+  "philosophy-ethics",
+  "philosophy-political-philosophy",
+  "philosophy-existentialism",
+  "philosophy-nihilism",
+  "philosophy-stoicism",
+  "philosophy-utilitarianism",
+  "philosophy-postmodernism",
+]);
 
 function argumentToChunk(
   section: ReadingSection,

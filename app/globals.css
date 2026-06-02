@@ -55,8 +55,103 @@ button {
   }
 }
 
+.mind-pet {
+  animation: mind-pet-float 5.8s ease-in-out infinite;
+}
+
+.mind-pet-stage {
+  background: radial-gradient(circle at center, rgba(253, 230, 138, 0.09), transparent 68%);
+}
+
+.mind-pet-idle-frame,
+.mind-pet-bubble-layer {
+  image-rendering: pixelated;
+}
+
+.mind-pet-spark {
+  animation: mind-pet-fragment 5.4s ease-in-out infinite;
+}
+
+.daniel-scroll-flow {
+  --daniel-panel-bg: rgba(255, 255, 255, 0.03);
+}
+
+.scroll-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.daniel-gradient-panel {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(253, 230, 138, 0.2), transparent 26rem),
+    radial-gradient(circle at 88% 18%, rgba(148, 163, 184, 0.12), transparent 30rem),
+    linear-gradient(135deg, rgba(23, 20, 14, 0.98), rgba(7, 7, 6, 0.98) 58%, rgba(30, 25, 14, 0.98));
+}
+
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation: scroll-reveal both ease-out;
+    animation-range: entry 8% cover 32%;
+    animation-timeline: view();
+  }
+}
+
+.mind-pet-delay-1 {
+  animation-delay: 0.7s;
+}
+
+.mind-pet-delay-2 {
+  animation-delay: 1.4s;
+}
+
+.mind-pet-delay-3 {
+  animation-delay: 2.1s;
+}
+
+@keyframes mind-pet-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes mind-pet-fragment {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    opacity: 0.88;
+    transform: translateY(-5px) scale(1.08);
+  }
+}
+
+@keyframes scroll-reveal {
+  from {
+    opacity: 0.2;
+    transform: translateY(46px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .content-view-enter {
+    animation: none;
+  }
+
+  .mind-pet,
+  .mind-pet-spark,
+  .scroll-reveal {
     animation: none;
   }
 }

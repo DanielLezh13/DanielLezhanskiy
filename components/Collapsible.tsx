@@ -6,9 +6,14 @@ import type { ArgumentBlock } from "@/lib/content";
 type CollapsibleProps = {
   argument: ArgumentBlock;
   responseLabel?: string;
+  tagClassName?: string;
 };
 
-export function Collapsible({ argument, responseLabel = "Response" }: CollapsibleProps) {
+export function Collapsible({
+  argument,
+  responseLabel = "Response",
+  tagClassName = "border-white/10 bg-white/[0.04] text-stone-400",
+}: CollapsibleProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -21,8 +26,25 @@ export function Collapsible({ argument, responseLabel = "Response" }: Collapsibl
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
-        <span className="text-base font-medium text-stone-100 transition duration-200 group-hover:text-white">
-          {argument.title}
+        <span className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <span className="text-base font-medium text-stone-100 transition duration-200 group-hover:text-white">
+            {argument.title}
+          </span>
+          {argument.tags?.length ? (
+            <span className="flex flex-wrap gap-2">
+              {argument.tags.map((tag) => (
+                <span
+                  className={[
+                    "rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em]",
+                    tagClassName,
+                  ].join(" ")}
+                  key={tag}
+                >
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : null}
         </span>
         <span
           className={[

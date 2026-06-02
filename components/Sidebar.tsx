@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ContentView } from "@/app/page";
-import { politicsSections, startSection } from "@/lib/content";
-import type { NavTopic, ReadingSection } from "@/lib/content";
+import { economicsSectionGroups, economicsSections, philosophySections, politicsSections, psychologySections, startSection, technologySections } from "@/lib/content";
+import type { NavTopic, ReadingSection, ReadingSectionGroup } from "@/lib/content";
 
 type SidebarProps = {
   activeSectionId: string;
@@ -24,9 +24,17 @@ export function Sidebar({
 }: SidebarProps) {
   const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [openView, setOpenView] = useState<ContentView | null>(null);
+  const [openEconomicsSectionId, setOpenEconomicsSectionId] = useState<string | null>(null);
 
   const religion = topics[0];
   const sectionGroups = useMemo(() => [
+    {
+      id: "philosophy-group",
+      label: "My Philosophy",
+      view: "philosophy" as const,
+      firstSectionId: philosophySections[0].id,
+      children: philosophySections,
+    },
     {
       id: "religion-group",
       label: "Religion",
@@ -46,6 +54,13 @@ export function Sidebar({
       children: politicsSections,
     },
     {
+      id: "economics-group",
+      label: "Economics",
+      view: "economics" as const,
+      firstSectionId: economicsSectionGroups[0]?.firstSectionId,
+      children: economicsSectionGroups,
+    },
+    {
       id: "society-group",
       label: "Society",
       view: "society" as const,
@@ -56,24 +71,23 @@ export function Sidebar({
       id: "psychology-group",
       label: "Human Psychology",
       view: "psychology" as const,
-      firstSectionId: undefined,
-      children: [],
+      firstSectionId: psychologySections[0]?.id,
+      children: psychologySections,
     },
     {
       id: "technology-group",
       label: "Technology",
       view: "technology" as const,
-      firstSectionId: undefined,
-      children: [],
+      firstSectionId: technologySections[0]?.id,
+      children: technologySections,
     },
-    {
-      id: "philosophy-group",
-      label: "My Philosophy",
-      view: "philosophy" as const,
-      firstSectionId: undefined,
-      children: [],
-    },
-  ], [frameworkSections, religion]);
+  ], [frameworkSections, religion, economicsSectionGroups, economicsSections, philosophySections, psychologySections, technologySections]);
+
+  useEffect(() => {
+    if (activeView !== "economics") {
+      setOpenEconomicsSectionId(null);
+    }
+  }, [activeView]);
 
   useEffect(() => {
     if (switchTimer.current) {
@@ -108,7 +122,7 @@ export function Sidebar({
   }, [activeView, sectionGroups]);
 
   return (
-    <aside className="border-b border-white/10 px-5 py-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
+    <aside className="px-5 py-5">
       <div className="w-full">
         <div className="mb-8">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
@@ -141,13 +155,19 @@ export function Sidebar({
                         group.children.length
                           ? () => {
                               if (activeView !== group.view) {
+                                if (group.view === "economics") {
+                                  setOpenEconomicsSectionId(null);
+                                }
                                 onSelectView(group.view, group.firstSectionId);
                                 return;
                               }
 
-                              setOpenView((current) =>
-                                current === group.view ? null : group.view,
-                              );
+                              setOpenView((current) => {
+                                if (group.view === "economics") {
+                                  setOpenEconomicsSectionId(null);
+                                }
+                                return current === group.view ? null : group.view;
+                              });
                             }
                           : undefined
                       }
@@ -156,6 +176,9 @@ export function Sidebar({
                           return;
                         }
 
+                        if (group.view === "economics") {
+                          setOpenEconomicsSectionId(null);
+                        }
                         onSelectView(group.view, group.firstSectionId);
                       }}
                     />
@@ -175,15 +198,72 @@ export function Sidebar({
                               : "-translate-y-1 opacity-0",
                           ].join(" ")}
                         >
-                          {group.children.map((section) => (
-                            <SidebarButton
-                              active={activeSectionId === section.id}
-                              key={section.id}
-                              label={section.label}
-                              nested
-                              onClick={() => onSelectSection(group.view, section.id)}
-                            />
-                          ))}
+                          {group.children.map((item) => {
+                            if (isReadingSectionGroup(item)) {
+                              const itemExpanded = openEconomicsSectionId === item.id;
+                              const itemActive = item.children.some(
+                                (section) => activeSectionId === section.id,
+                              );
+
+                              return (
+                                <div className="pt-2" key={item.id}>
+                                  <SidebarButton
+                                    active={itemActive}
+                                    expanded={itemExpanded}
+                                    label={item.label}
+                                    nested
+                                    onArrowClick={() => {
+                                      setOpenEconomicsSectionId((current) =>
+                                        current === item.id ? null : item.id,
+                                      );
+                                    }}
+                                    onClick={() =>
+                                      onSelectSection(group.view, item.firstSectionId)
+                                    }
+                                  />
+                                  <div
+                                    className={[
+                                      "grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                      itemExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                                    ].join(" ")}
+                                  >
+                                    <div className="overflow-hidden">
+                                      <div
+                                        className={[
+                                          "ml-2 mt-1 space-y-1 border-l border-white/10 pl-2 transition duration-300 ease-out",
+                                          itemExpanded
+                                            ? "translate-y-0 opacity-100"
+                                            : "-translate-y-1 opacity-0",
+                                        ].join(" ")}
+                                      >
+                                        {item.children.map((section) => (
+                                          <SidebarButton
+                                            active={activeSectionId === section.id}
+                                            key={section.id}
+                                            label={section.label}
+                                            nested
+                                            onClick={() =>
+                                              onSelectSection(group.view, section.id)
+                                            }
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <SidebarButton
+                                active={activeSectionId === item.id}
+                                key={item.id}
+                                label={item.label}
+                                nested
+                                onClick={() => onSelectSection(group.view, item.id)}
+                              />
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -196,6 +276,11 @@ export function Sidebar({
       </div>
     </aside>
   );
+}
+
+
+function isReadingSectionGroup(item: object): item is ReadingSectionGroup {
+  return "children" in item && Array.isArray((item as ReadingSectionGroup).children);
 }
 
 function NavHeading({ label }: { label: string }) {

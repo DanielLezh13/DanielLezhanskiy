@@ -159,8 +159,8 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
   }
 
   return (
-    <aside className="overscroll-contain border-t border-white/10 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-l lg:border-t-0">
-      <div className="flex min-h-[720px] flex-col px-6 py-7 lg:min-h-0 lg:flex-1">
+    <aside className="overscroll-contain">
+      <div className="flex min-h-[720px] flex-col px-6 py-7">
         <header className="shrink-0 border-b border-white/10 pb-5">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
             Engage With My Ideas
