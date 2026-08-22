@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ContentView } from "@/app/page";
-import { economicsSectionGroups, economicsSections, philosophySections, politicsSections, psychologySections, startSection, technologySections } from "@/lib/content";
+import { economicsSectionGroups, philosophySectionGroups, politicsSectionGroups, psychologySections, startSection, technologySections } from "@/lib/content";
 import type { NavTopic, ReadingSection, ReadingSectionGroup } from "@/lib/content";
 
 type SidebarProps = {
@@ -10,6 +10,7 @@ type SidebarProps = {
   activeView: ContentView;
   onSelectView: (view: ContentView, sectionId?: string) => void;
   onSelectSection: (view: ContentView, sectionId: string) => void;
+  onSelectSectionGroup: (view: ContentView, sectionId: string) => void;
   topics: NavTopic[];
   frameworkSections: ReadingSection[];
 };
@@ -20,6 +21,7 @@ export function Sidebar({
   frameworkSections,
   onSelectView,
   onSelectSection,
+  onSelectSectionGroup,
   topics,
 }: SidebarProps) {
   const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,28 +32,29 @@ export function Sidebar({
   const sectionGroups = useMemo(() => [
     {
       id: "philosophy-group",
-      label: "My Philosophy",
+      label: "Philosophy",
       view: "philosophy" as const,
-      firstSectionId: philosophySections[0].id,
-      children: philosophySections,
+      firstSectionId: philosophySectionGroups[0]?.firstSectionId,
+      children: philosophySectionGroups,
     },
     {
       id: "religion-group",
       label: "Religion",
       view: "religion" as const,
-      firstSectionId: "religion-overviews",
+      firstSectionId: frameworkSections[0]?.id,
       children: [
         frameworkSections[0],
+        frameworkSections[1],
         religion,
-        ...frameworkSections.slice(1),
+        ...frameworkSections.slice(2),
       ],
     },
     {
       id: "politics-group",
       label: "Politics",
       view: "politics" as const,
-      firstSectionId: politicsSections[0].id,
-      children: politicsSections,
+      firstSectionId: politicsSectionGroups[0]?.firstSectionId,
+      children: politicsSectionGroups,
     },
     {
       id: "economics-group",
@@ -81,10 +84,10 @@ export function Sidebar({
       firstSectionId: technologySections[0]?.id,
       children: technologySections,
     },
-  ], [frameworkSections, religion, economicsSectionGroups, economicsSections, philosophySections, psychologySections, technologySections]);
+  ], [frameworkSections, religion, economicsSectionGroups, philosophySectionGroups, politicsSectionGroups, psychologySections, technologySections]);
 
   useEffect(() => {
-    if (activeView !== "economics") {
+    if (activeView !== "economics" && activeView !== "politics" && activeView !== "religion" && activeView !== "philosophy") {
       setOpenEconomicsSectionId(null);
     }
   }, [activeView]);
@@ -141,6 +144,18 @@ export function Sidebar({
                 onClick={() => onSelectView("start")}
               />
 
+              <SidebarButton
+                active={activeView === "current-views"}
+                label="Current Views"
+                onClick={() => onSelectView("current-views")}
+              />
+
+              <SidebarButton
+                active={activeView === "notes"}
+                label="Notes"
+                onClick={() => onSelectView("notes")}
+              />
+
               {sectionGroups.map((group) => {
                 const groupActive = activeView === group.view;
                 const groupExpanded = openView === group.view && group.children.length > 0;
@@ -155,7 +170,7 @@ export function Sidebar({
                         group.children.length
                           ? () => {
                               if (activeView !== group.view) {
-                                if (group.view === "economics") {
+                                if (group.view === "economics" || group.view === "politics" || group.view === "religion" || group.view === "philosophy") {
                                   setOpenEconomicsSectionId(null);
                                 }
                                 onSelectView(group.view, group.firstSectionId);
@@ -163,20 +178,16 @@ export function Sidebar({
                               }
 
                               setOpenView((current) => {
-                                if (group.view === "economics") {
-                                  setOpenEconomicsSectionId(null);
-                                }
+                                  if (group.view === "economics" || group.view === "politics" || group.view === "religion" || group.view === "philosophy") {
+                                    setOpenEconomicsSectionId(null);
+                                  }
                                 return current === group.view ? null : group.view;
                               });
                             }
                           : undefined
                       }
                       onClick={() => {
-                        if (activeView === group.view) {
-                          return;
-                        }
-
-                        if (group.view === "economics") {
+                        if (group.view === "economics" || group.view === "politics" || group.view === "religion" || group.view === "philosophy") {
                           setOpenEconomicsSectionId(null);
                         }
                         onSelectView(group.view, group.firstSectionId);
@@ -201,9 +212,10 @@ export function Sidebar({
                           {group.children.map((item) => {
                             if (isReadingSectionGroup(item)) {
                               const itemExpanded = openEconomicsSectionId === item.id;
-                              const itemActive = item.children.some(
-                                (section) => activeSectionId === section.id,
-                              );
+                              const itemActive =
+                                activeSectionId === item.id ||
+                                activeSectionId === item.firstSectionId ||
+                                item.children.some((section) => activeSectionId === section.id);
 
                               return (
                                 <div className="pt-2" key={item.id}>
@@ -217,9 +229,60 @@ export function Sidebar({
                                         current === item.id ? null : item.id,
                                       );
                                     }}
-                                    onClick={() =>
-                                      onSelectSection(group.view, item.firstSectionId)
-                                    }
+                                    onClick={() => onSelectSectionGroup(group.view, item.id)}
+                                  />
+                                  <div
+                                    className={[
+                                      "grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                      itemExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                                    ].join(" ")}
+                                  >
+                                    <div className="overflow-hidden">
+                                      <div
+                                        className={[
+                                          "ml-2 mt-1 space-y-1 border-l border-white/10 pl-2 transition duration-300 ease-out",
+                                          itemExpanded
+                                            ? "translate-y-0 opacity-100"
+                                            : "-translate-y-1 opacity-0",
+                                        ].join(" ")}
+                                      >
+                                        {item.children.map((section) => (
+                                          <SidebarButton
+                                            active={activeSectionId === section.id}
+                                            key={section.id}
+                                            label={formatSidebarLabel(section.label)}
+                                            nested
+                                            onClick={() =>
+                                              onSelectSection(group.view, section.id)
+                                            }
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            if (isTopicGroup(item)) {
+                              const itemExpanded = openEconomicsSectionId === item.id;
+                              const itemActive =
+                                activeSectionId === item.id ||
+                                item.children.some((section) => activeSectionId === section.id);
+
+                              return (
+                                <div className="pt-2" key={item.id}>
+                                  <SidebarButton
+                                    active={itemActive}
+                                    expanded={itemExpanded}
+                                    label={item.label}
+                                    nested
+                                    onArrowClick={() => {
+                                      setOpenEconomicsSectionId((current) =>
+                                        current === item.id ? null : item.id,
+                                      );
+                                    }}
+                                    onClick={() => onSelectSection(group.view, item.id)}
                                   />
                                   <div
                                     className={[
@@ -258,7 +321,7 @@ export function Sidebar({
                               <SidebarButton
                                 active={activeSectionId === item.id}
                                 key={item.id}
-                                label={item.label}
+                                label={formatSidebarLabel(item.label)}
                                 nested
                                 onClick={() => onSelectSection(group.view, item.id)}
                               />
@@ -280,7 +343,21 @@ export function Sidebar({
 
 
 function isReadingSectionGroup(item: object): item is ReadingSectionGroup {
-  return "children" in item && Array.isArray((item as ReadingSectionGroup).children);
+  return (
+    "firstSectionId" in item &&
+    "children" in item &&
+    Array.isArray((item as ReadingSectionGroup).children)
+  );
+}
+
+function isTopicGroup(
+  item: object,
+): item is NavTopic & { children: ReadingSection[] } {
+  return (
+    !("firstSectionId" in item) &&
+    "children" in item &&
+    Array.isArray((item as { children?: unknown }).children)
+  );
 }
 
 function NavHeading({ label }: { label: string }) {
@@ -308,6 +385,8 @@ function SidebarButton({
   onArrowClick?: () => void;
   onClick: () => void;
 }) {
+  const displayLabel = formatSidebarLabel(label);
+
   return (
     <button
       className={[
@@ -323,7 +402,7 @@ function SidebarButton({
       onClick={onClick}
       type="button"
     >
-      <span>{label}</span>
+      <span>{displayLabel}</span>
       {onArrowClick ? (
         <span
           aria-hidden="true"
@@ -344,4 +423,10 @@ function SidebarButton({
       ) : null}
     </button>
   );
+}
+
+function formatSidebarLabel(label: string) {
+  return label
+    .replace(/^Section\s+\d+\s*\/\s*Part\s+([\d.]+)\s+[—-]\s+/, "$1. ")
+    .replace(/^Part\s+([\d.]+)\s+[—-]\s+/, "$1. ");
 }

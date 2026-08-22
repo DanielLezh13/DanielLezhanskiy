@@ -1,25 +1,64 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  FormEvent,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 type RightPanelProps = {
+  chatState: RightPanelChatState;
   ideas: string[];
   contextLabel: string;
+  danielDisplayMode: "classic" | "immersive";
+  onDanielDisplayModeChange: (mode: "classic" | "immersive") => void;
+  showDanielDisplayToggle: boolean;
 };
 
-type ChatMessage = {
+export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+  variant?: "error";
   sources?: { source: string; title: string; id?: string }[];
 };
 
-export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [summary, setSummary] = useState("");
-  const [bottomSpacerHeight, setBottomSpacerHeight] = useState(220);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showIdeas, setShowIdeas] = useState(false);
+export type RightPanelChatState = {
+  input: string;
+  isLoading: boolean;
+  messages: ChatMessage[];
+  setInput: Dispatch<SetStateAction<string>>;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setShowIdeas: Dispatch<SetStateAction<boolean>>;
+  setSummary: Dispatch<SetStateAction<string>>;
+  showIdeas: boolean;
+  summary: string;
+};
+
+export function RightPanel({
+  chatState,
+  contextLabel,
+  danielDisplayMode,
+  ideas,
+  onDanielDisplayModeChange,
+  showDanielDisplayToggle,
+}: RightPanelProps) {
+  const {
+    input,
+    isLoading,
+    messages,
+    setInput,
+    setIsLoading,
+    setMessages,
+    setShowIdeas,
+    setSummary,
+    showIdeas,
+    summary,
+  } = chatState;
+  const [bottomSpacerHeight, setBottomSpacerHeight] = useState(0);
   const scrollPanelRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const latestUserMessageRef = useRef<HTMLDivElement | null>(null);
@@ -40,10 +79,8 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
         return;
       }
 
-      const panelTop = panel.getBoundingClientRect().top;
-      const panelHeight = panel.getBoundingClientRect().height;
+      const panelRect = panel.getBoundingClientRect();
       const messageRect = message.getBoundingClientRect();
-      const messageTop = messageRect.top;
       const currentSpacerHeight = spacer?.getBoundingClientRect().height ?? 0;
       const latestContentBottom =
         spacer?.previousElementSibling?.getBoundingClientRect().bottom ??
@@ -52,16 +89,14 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
         messageRect.height,
         latestContentBottom - messageRect.top,
       );
-      const targetTop = panel.scrollTop + messageTop - panelTop - 12;
-      const contentBasedSpacerHeight =
-        panelHeight - latestExchangeHeight - 32;
-      const scrollNeededSpacerHeight =
-        targetTop + panelHeight - (panel.scrollHeight - currentSpacerHeight) + 12;
-      const nextSpacerHeight = clamp(
-        Math.max(contentBasedSpacerHeight, scrollNeededSpacerHeight),
-        72,
-        Math.max(420, panelHeight - 24),
-      );
+      const messageGap = 10;
+      const contentHeightWithoutSpacer = panel.scrollHeight - currentSpacerHeight;
+      const targetTop = panel.scrollTop + messageRect.top - panelRect.top - messageGap;
+      const shouldAnchorLatestMessage =
+        messages.length > 2 || latestExchangeHeight > panelRect.height * 0.62;
+      const nextSpacerHeight = shouldAnchorLatestMessage
+        ? Math.max(0, targetTop + panelRect.height - contentHeightWithoutSpacer + messageGap)
+        : 0;
 
       setBottomSpacerHeight(nextSpacerHeight);
       if (spacer) {
@@ -71,7 +106,7 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
       requestAnimationFrame(() => {
         panel.scrollTo({
           behavior: messages.at(-1)?.role === "user" ? "smooth" : "auto",
-          top: targetTop,
+          top: shouldAnchorLatestMessage ? targetTop : panel.scrollHeight,
         });
       });
     });
@@ -115,12 +150,20 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
         setSummary(data.summary);
       }
 
+      const hasRequestError = !response.ok || typeof data.error === "string";
+      const replyText = formatAssistantReply({
+        answer: data.answer,
+        error: data.error,
+        responseOk: response.ok,
+      });
+
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          text: data.answer ?? data.error ?? "The framework could not answer that yet.",
-          sources: data.sources,
+          text: replyText,
+          sources: hasRequestError ? undefined : data.sources,
+          variant: hasRequestError ? "error" : undefined,
         },
       ]);
     } catch {
@@ -128,7 +171,8 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
         ...current,
         {
           role: "assistant",
-          text: "The framework chat could not connect. Check that the local app server is still running.",
+          text: "The framework chat could not connect. Check that the local app server is still running, then try again.",
+          variant: "error",
         },
       ]);
     } finally {
@@ -159,22 +203,52 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
   }
 
   return (
-    <aside className="overscroll-contain">
-      <div className="flex min-h-[720px] flex-col px-6 py-7">
-        <header className="shrink-0 border-b border-white/10 pb-5">
+    <aside className="flex h-full min-h-0 overscroll-contain">
+      <div className="flex min-h-0 flex-1 flex-col px-6 py-7">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 pb-5">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
             Engage With My Ideas
           </p>
+          {showDanielDisplayToggle ? (
+            <div
+              aria-label="Daniel page display"
+              className="inline-flex shrink-0 rounded border border-amber-200/20 bg-amber-100/[0.045] p-0.5 shadow-[0_0_18px_rgba(253,230,138,0.1)]"
+              role="group"
+            >
+              {(["classic", "immersive"] as const).map((mode) => {
+                const isActive = danielDisplayMode === mode;
+
+                return (
+                  <button
+                    aria-pressed={isActive}
+                    className={[
+                      "rounded-sm px-1.5 py-1 font-mono text-[8px] uppercase tracking-[0.08em] transition",
+                      isActive
+                        ? "bg-amber-100 text-[#11110f] shadow-[0_0_12px_rgba(253,230,138,0.22)]"
+                        : "text-stone-500 hover:bg-white/[0.045] hover:text-stone-200",
+                    ].join(" ")}
+                    key={mode}
+                    onClick={() => onDanielDisplayModeChange(mode)}
+                    title={mode === "classic" ? "Classic view" : "Immersive view"}
+                    type="button"
+                  >
+                    {mode === "classic" ? "C" : "I"}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </header>
 
         <div className="relative min-h-0 flex-1">
           <div
-            className="h-full overflow-y-auto overscroll-contain pb-5 pt-3"
+            className="h-full overflow-y-auto overscroll-contain pb-5 pt-2.5"
             ref={scrollPanelRef}
           >
             <div
               className={[
-                "min-h-full space-y-2.5 transition duration-300 ease-out",
+                "min-h-full transition duration-300 ease-out",
+                hasConversation ? "flex flex-col justify-end gap-2.5" : "",
                 showIdeas && hasConversation
                   ? "pointer-events-none scale-[0.99] opacity-0"
                   : "scale-100 opacity-100",
@@ -187,11 +261,12 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
                     !messages.slice(index + 1).some((item) => item.role === "user");
 
                   return (
-                    <ChatBubble
+                    <div
                       key={`${message.role}-${index}`}
-                      message={message}
                       ref={isLatestUserMessage ? latestUserMessageRef : undefined}
-                    />
+                    >
+                      <ChatBubble message={message} />
+                    </div>
                   );
                 })
               ) : (
@@ -291,6 +366,70 @@ export function RightPanel({ contextLabel, ideas }: RightPanelProps) {
       </div>
     </aside>
   );
+}
+
+function formatAssistantReply({
+  answer,
+  error,
+  responseOk,
+}: {
+  answer?: string;
+  error?: string;
+  responseOk: boolean;
+}) {
+  if (answer && !looksLikeRawError(answer)) {
+    return answer;
+  }
+
+  const parsedError = parseErrorMessage(error ?? answer);
+
+  if (!responseOk || parsedError) {
+    return [
+      "The project found relevant context, but the answer request failed before it could write a response.",
+      "",
+      parsedError ? `Reason: ${parsedError}` : "Try again in a moment. If it keeps happening, the local server or model request may need a restart.",
+    ].join("\n");
+  }
+
+  return "The framework could not answer that yet.";
+}
+
+function looksLikeRawError(text: string) {
+  const trimmed = text.trim();
+  return (
+    trimmed.startsWith("{") ||
+    trimmed.includes("\"error\"") ||
+    trimmed.includes("server_error") ||
+    trimmed.includes("model request failed")
+  );
+}
+
+function parseErrorMessage(text?: string) {
+  if (!text) {
+    return "";
+  }
+
+  const trimmed = text.trim();
+  const jsonStart = trimmed.indexOf("{");
+
+  if (jsonStart >= 0) {
+    try {
+      const parsed = JSON.parse(trimmed.slice(jsonStart)) as {
+        error?: { code?: string | null; message?: string; type?: string };
+      };
+      const message = parsed.error?.message?.trim();
+      const code = parsed.error?.code ?? parsed.error?.type;
+      return [message, code ? `Code: ${code}` : ""].filter(Boolean).join(" ");
+    } catch {
+      // Fall through to plain-text cleanup.
+    }
+  }
+
+  if (trimmed.includes("server_error")) {
+    return "OpenAI returned a temporary server error.";
+  }
+
+  return trimmed.length > 180 ? `${trimmed.slice(0, 180).trim()}...` : trimmed;
 }
 
 function EmptyPanelState({
@@ -481,22 +620,18 @@ function EmptyChatState() {
   );
 }
 
-function ChatBubble({
-  message,
-  ref,
-}: {
-  message: ChatMessage;
-  ref?: React.Ref<HTMLDivElement>;
-}) {
+function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+  const isError = message.variant === "error";
 
   return (
     <div
-      ref={ref}
       className={[
         isUser
           ? "ml-auto w-fit max-w-full rounded-xl border border-amber-200/15 bg-amber-200/[0.06] px-2 py-1.5 text-left text-[13px] leading-6 text-stone-100"
-          : "w-full px-1 py-1.5 text-[13.5px] leading-6 text-stone-300",
+          : isError
+            ? "w-full rounded-xl border border-red-300/15 bg-red-950/10 px-3 py-2 text-[13.5px] leading-6 text-stone-300"
+            : "w-full px-1 py-1.5 text-[13.5px] leading-6 text-stone-300",
       ].join(" ")}
     >
       <ChatMessageContent text={message.text} />
@@ -615,8 +750,4 @@ function renderInlineMarkdown(text: string) {
 
     return part;
   });
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }

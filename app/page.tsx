@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Content } from "@/components/Content";
-import { RightPanel } from "@/components/RightPanel";
+import { RightPanel, type ChatMessage } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
 import {
+  economicsSectionGroups,
   economicsSections,
   frameworkSections,
   getKeyIdeas,
+  philosophySectionGroups,
   philosophySections,
+  politicsSectionGroups,
+  politicsAnalysisSections,
   politicsSections,
   psychologySections,
   startSection,
@@ -18,6 +22,8 @@ import {
 
 export type ContentView =
   | "start"
+  | "current-views"
+  | "notes"
   | "religion"
   | "politics"
   | "economics"
@@ -28,6 +34,16 @@ export type ContentView =
 
 const viewKeyIdeas: Record<ContentView, string[]> = {
   start: startSection.keyIdeas,
+  "current-views": [
+    "Current Views condenses the project into provisional positions rather than replacing the full arguments.",
+    "Confidence should remain proportional to evidence and open to revision.",
+    "The unresolved questions matter alongside the positions themselves.",
+  ],
+  notes: [
+    "Notes holds shorter thoughts, shared media, useful links, and project updates.",
+    "The feed preserves ideas that do not need an entire chapter.",
+    "Long-form frameworks remain separate from momentary observations.",
+  ],
   religion: frameworkSections[0].keyIdeas,
   politics: politicsSections[0].keyIdeas,
   economics: economicsSections[0].keyIdeas,
@@ -43,7 +59,7 @@ const viewKeyIdeas: Record<ContentView, string[]> = {
   ],
   technology: technologySections[0].keyIdeas,
   philosophy: [
-    "My Philosophy will collect the personal framework behind the project.",
+    "Philosophy will collect the personal framework behind the project.",
     "This category will organize the evidence standard, uncertainty standard, and action priorities.",
     "The focus is how to think, not what identity to perform.",
   ],
@@ -51,13 +67,15 @@ const viewKeyIdeas: Record<ContentView, string[]> = {
 
 const viewLabels: Record<ContentView, string> = {
   start: startSection.label,
+  "current-views": "Current Views",
+  notes: "Notes",
   religion: frameworkSections[0].label,
   politics: politicsSections[0].label,
   economics: "Economics",
   society: "Society",
   psychology: "Human Psychology",
   technology: "Technology",
-  philosophy: "My Philosophy",
+  philosophy: "Philosophy",
 };
 
 const sectionLabelById = new Map(
@@ -65,8 +83,13 @@ const sectionLabelById = new Map(
     startSection,
     ...frameworkSections,
     ...topics,
+    ...politicsSectionGroups,
     ...politicsSections,
+    ...politicsAnalysisSections,
+    ...economicsSectionGroups,
     ...economicsSections,
+    ...philosophySectionGroups,
+    ...philosophySections,
     ...technologySections,
   ].map((section) => [section.id, section.label]),
 );
@@ -74,8 +97,32 @@ const sectionLabelById = new Map(
 export default function Home() {
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const [activeView, setActiveView] = useState<ContentView>("start");
+  const [danielDisplayMode, setDanielDisplayMode] = useState<
+    "classic" | "immersive"
+  >("immersive");
   const [activeSectionId, setActiveSectionId] = useState(startSection.id);
   const [openDrawer, setOpenDrawer] = useState<"contents" | "ideas" | null>(null);
+  const [rightPanelInput, setRightPanelInput] = useState("");
+  const [rightPanelMessages, setRightPanelMessages] = useState<ChatMessage[]>([]);
+  const [rightPanelSummary, setRightPanelSummary] = useState("");
+  const [rightPanelIsLoading, setRightPanelIsLoading] = useState(false);
+  const [rightPanelShowIdeas, setRightPanelShowIdeas] = useState(false);
+
+  useEffect(() => {
+    const savedMode = window.localStorage.getItem("daniel-display-mode");
+
+    if (savedMode === "classic" || savedMode === "immersive") {
+      setDanielDisplayMode(savedMode);
+    }
+  }, []);
+
+  const handleDanielDisplayModeChange = useCallback(
+    (mode: "classic" | "immersive") => {
+      setDanielDisplayMode(mode);
+      window.localStorage.setItem("daniel-display-mode", mode);
+    },
+    [],
+  );
 
   const scrollToSection = useCallback((sectionId: string) => {
     requestAnimationFrame(() => {
@@ -101,15 +148,18 @@ export default function Home() {
   }, [scrollToSection]);
 
   const handleSelectSection = useCallback((view: ContentView, sectionId: string) => {
-    const sameView = activeView === view;
-
     setActiveView(view);
     setOpenDrawer(null);
-    if (!sameView) {
-      setActiveSectionId(sectionId);
-    }
+    setActiveSectionId(sectionId);
     scrollToSection(sectionId);
-  }, [activeView, scrollToSection]);
+  }, [scrollToSection]);
+
+  const handleSelectSectionGroup = useCallback((view: ContentView, sectionId: string) => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    setActiveView(view);
+    setOpenDrawer(null);
+    setActiveSectionId(sectionId);
+  }, []);
 
   useEffect(() => {
     if (activeView !== "religion" && activeView !== "politics" && activeView !== "economics" && activeView !== "philosophy" && activeView !== "psychology" && activeView !== "technology") {
@@ -120,15 +170,26 @@ export default function Home() {
       activeView === "religion"
         ? [
             frameworkSections[0],
+            frameworkSections[1],
             topics[0],
-            ...frameworkSections.slice(1),
+            ...frameworkSections.slice(2),
           ].map((section) => section.id)
         : activeView === "politics"
-          ? politicsSections.map((section) => section.id)
+          ? [
+              ...politicsSectionGroups.map((group) => group.id),
+              ...politicsSections.map((section) => section.id),
+              ...politicsAnalysisSections.map((section) => section.id),
+            ]
           : activeView === "economics"
-            ? economicsSections.map((section) => section.id)
+            ? [
+                ...economicsSectionGroups.map((group) => group.id),
+                ...economicsSections.map((section) => section.id),
+              ]
             : activeView === "philosophy"
-              ? philosophySections.map((section) => section.id)
+              ? [
+                  ...philosophySectionGroups.map((group) => group.id),
+                  ...philosophySections.map((section) => section.id),
+                ]
               : activeView === "psychology"
                 ? psychologySections.map((section) => section.id)
                 : technologySections.map((section) => section.id);
@@ -152,7 +213,7 @@ export default function Home() {
     const scrollContainer = scrollContainerRef.current;
     scrollContainer?.addEventListener("scroll", updateActiveSection, { passive: true });
     return () => scrollContainer?.removeEventListener("scroll", updateActiveSection);
-  }, [activeView, economicsSections, philosophySections, psychologySections, technologySections]);
+  }, [activeView]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -168,13 +229,25 @@ export default function Home() {
   }, []);
 
   const usesSectionIdeas =
-    activeView === "religion" || activeView === "politics" || activeView === "economics";
+    activeView === "religion" || activeView === "politics" || activeView === "economics" || activeView === "philosophy";
   const rightPanelContextLabel = usesSectionIdeas
     ? sectionLabelById.get(activeSectionId) ?? viewLabels[activeView]
     : viewLabels[activeView];
   const rightPanelIdeas = usesSectionIdeas
     ? getKeyIdeas(activeSectionId)
     : viewKeyIdeas[activeView];
+  const rightPanelChatState = {
+    input: rightPanelInput,
+    isLoading: rightPanelIsLoading,
+    messages: rightPanelMessages,
+    setInput: setRightPanelInput,
+    setIsLoading: setRightPanelIsLoading,
+    setMessages: setRightPanelMessages,
+    setShowIdeas: setRightPanelShowIdeas,
+    setSummary: setRightPanelSummary,
+    showIdeas: rightPanelShowIdeas,
+    summary: rightPanelSummary,
+  };
 
   return (
     <main
@@ -184,7 +257,7 @@ export default function Home() {
       <div
         aria-hidden="true"
         className={[
-          "fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition duration-300 xl:hidden",
+          "fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition duration-300 2xl:hidden",
           openDrawer ? "opacity-100" : "pointer-events-none opacity-0",
         ].join(" ")}
         onClick={() => setOpenDrawer(null)}
@@ -193,7 +266,7 @@ export default function Home() {
       <button
         aria-label="Open contents"
         className={[
-          "fixed left-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-r-md border border-l-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 xl:hidden",
+          "fixed left-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-r-md border border-l-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 2xl:hidden",
           openDrawer === "contents" ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100",
         ].join(" ")}
         onClick={() => setOpenDrawer("contents")}
@@ -209,7 +282,7 @@ export default function Home() {
       <button
         aria-label="Open ideas panel"
         className={[
-          "fixed right-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-l-md border border-r-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 xl:hidden",
+          "fixed right-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-l-md border border-r-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 2xl:hidden",
           openDrawer === "ideas" ? "translate-x-full opacity-0" : "translate-x-0 opacity-100",
         ].join(" ")}
         onClick={() => setOpenDrawer("ideas")}
@@ -229,14 +302,15 @@ export default function Home() {
         </svg>
       </button>
 
-      <div className="grid w-full grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_340px] 2xl:grid-cols-[330px_minmax(0,1fr)_360px]">
-        <div className="hidden min-w-0 xl:block">
+      <div className="grid w-full grid-cols-1 2xl:grid-cols-[330px_minmax(0,1fr)_360px]">
+        <div className="hidden min-w-0 2xl:block">
           <div className="sticky top-0 h-screen overflow-y-auto border-r border-white/10 bg-[#11110f]/95 shadow-[18px_0_70px_rgba(0,0,0,0.28)]">
             <Sidebar
               activeSectionId={activeSectionId}
               activeView={activeView}
               onSelectView={handleSelectView}
               onSelectSection={handleSelectSection}
+              onSelectSectionGroup={handleSelectSectionGroup}
               topics={topics}
               frameworkSections={frameworkSections}
             />
@@ -245,11 +319,11 @@ export default function Home() {
 
         <div
           className={[
-            "fixed inset-y-0 left-0 z-50 w-[min(86vw,360px)] overflow-y-auto bg-[#11110f]/98 shadow-[28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] xl:hidden",
+            "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(86vw,360px)] flex-col overflow-hidden bg-[#11110f]/98 shadow-[28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] 2xl:hidden",
             openDrawer === "contents" ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
               Contents
             </p>
@@ -262,19 +336,24 @@ export default function Home() {
               ×
             </button>
           </div>
-          <Sidebar
-            activeSectionId={activeSectionId}
-            activeView={activeView}
-            onSelectView={handleSelectView}
-            onSelectSection={handleSelectSection}
-            topics={topics}
-            frameworkSections={frameworkSections}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Sidebar
+              activeSectionId={activeSectionId}
+              activeView={activeView}
+              onSelectView={handleSelectView}
+              onSelectSection={handleSelectSection}
+              onSelectSectionGroup={handleSelectSectionGroup}
+              topics={topics}
+              frameworkSections={frameworkSections}
+            />
+          </div>
         </div>
 
         <div className="min-w-0">
           <Content
+            activeSectionId={activeSectionId}
             activeView={activeView}
+            danielDisplayMode={danielDisplayMode}
             frameworkSections={frameworkSections}
             key={activeView}
             topics={topics}
@@ -283,11 +362,11 @@ export default function Home() {
 
         <div
           className={[
-            "fixed inset-y-0 right-0 z-50 w-[min(90vw,410px)] overflow-y-auto bg-[#11110f]/98 shadow-[-28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] xl:hidden",
+            "fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(92vw,410px)] flex-col overflow-hidden bg-[#11110f]/98 shadow-[-28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] 2xl:hidden",
             openDrawer === "ideas" ? "translate-x-0" : "translate-x-full",
           ].join(" ")}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
               Ideas
             </p>
@@ -300,17 +379,27 @@ export default function Home() {
               ×
             </button>
           </div>
-          <RightPanel
-            contextLabel={rightPanelContextLabel}
-            ideas={rightPanelIdeas}
-          />
+          <div className="min-h-0 flex-1">
+            <RightPanel
+              chatState={rightPanelChatState}
+              contextLabel={rightPanelContextLabel}
+              danielDisplayMode={danielDisplayMode}
+              ideas={rightPanelIdeas}
+              onDanielDisplayModeChange={handleDanielDisplayModeChange}
+              showDanielDisplayToggle={activeView === "start"}
+            />
+          </div>
         </div>
 
-        <div className="hidden min-w-0 xl:block">
+        <div className="hidden min-w-0 2xl:block">
           <div className="sticky top-0 h-screen overflow-y-auto border-l border-white/10 bg-[#11110f]/95 shadow-[-18px_0_70px_rgba(0,0,0,0.28)]">
             <RightPanel
+              chatState={rightPanelChatState}
               contextLabel={rightPanelContextLabel}
+              danielDisplayMode={danielDisplayMode}
               ideas={rightPanelIdeas}
+              onDanielDisplayModeChange={handleDanielDisplayModeChange}
+              showDanielDisplayToggle={activeView === "start"}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Philosophy Reading"
+JOB_LABEL="com.daniel.philosophy-reading"
 PORT="4319"
 STATE_DIR="$HOME/Library/Application Support/PhilosophyReading"
 PID_FILE="$STATE_DIR/server.pid"
@@ -11,6 +12,8 @@ notify() {
 }
 
 STOPPED=0
+
+/bin/launchctl remove "$JOB_LABEL" >/dev/null 2>&1 && STOPPED=1 || true
 
 if [[ -f "$PID_FILE" ]]; then
   PID="$(<"$PID_FILE")"

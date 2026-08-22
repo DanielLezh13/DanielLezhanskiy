@@ -22,14 +22,16 @@ type ChatIntent =
   | "synthesis"
   | "general";
 
-const PROJECT_CONTEXT_BUDGET = 18_000;
-const RECENT_HISTORY_BUDGET = 32_000;
-const SUMMARY_TRIGGER_BUDGET = 45_000;
+const PROJECT_CONTEXT_BUDGET = 10_000;
+const PROJECT_CONTEXT_CHUNK_BUDGET = 2_200;
+const RECENT_HISTORY_BUDGET = 10_000;
+const SUMMARY_TRIGGER_BUDGET = 18_000;
 const SUMMARY_BUDGET = 3_000;
 const MAX_USER_MESSAGE_CHARS = 20_000;
-const MAX_RESPONSE_TOKENS = 1_800;
+const MAX_RESPONSE_TOKENS = 1_400;
 const MIN_FRAMEWORK_SCORE = 8;
 const MIN_VISIBLE_SOURCE_SCORE = 10;
+const OPENAI_RETRY_ATTEMPTS = 2;
 
 const FRAMEWORK_SYSTEM_PROMPT = [
   "You are an assistant for a philosophy reading project.",
@@ -47,6 +49,9 @@ const FRAMEWORK_SYSTEM_PROMPT = [
   "If a user says something like 'Muslims brainwash their kids to hate Jews' or an equivalent broad claim, answer in the project voice: there may be real cases of indoctrination, antisemitism, anti-Muslim hatred, propaganda, or dehumanizing education worth criticizing, but the claim must be narrowed to specific contexts and evidence rather than turned into a total claim about all Muslims, Jews, or any whole group.",
   "Keep the stance clear: criticizing harmful teaching, propaganda, extremism, state policy, or group narratives is valid when supported; turning that into inherited guilt or essence claims about a whole population is exactly the kind of moral simplification the project warns about.",
   "Answer the user directly. Do not default to phrases like 'the project context suggests' or 'according to the project' unless the user asks where an idea comes from.",
+  "If the user asks for a label, classification, or 'what is he/she/it' answer, give the closest label first, then the caveat. Do not make the user ask repeatedly before giving the label.",
+  "If the user asks what Daniel/the project author is religiously, the closest standard label is agnostic. Start with 'Closest label: agnostic.' Then explain briefly that this is uncertainty/evidence-proportional caution, not hard atheism or commitment to a specific religion.",
+  "If the user says 'this person who wrote all this,' 'the one who made this project,' or similar wording, interpret that as Daniel/the project author.",
   "Avoid repeatedly saying 'the framework' when a direct answer would be clearer.",
   "Use plain structural language. Avoid academic padding such as 'epistemic status,' 'responsible evaluation,' 'interlocutors,' or 'distinct evidential structures' unless the user uses that language first.",
   "Also avoid formal filler such as 'epistemically cautious,' 'claim content,' 'empirical events,' and 'standard frameworks' when plain wording works.",
@@ -101,11 +106,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const chunks = retrieveFrameworkChunks(message, 6);
+  const retrievalQuery = buildRetrievalQuery(message, history);
+  const chunks = retrieveFrameworkChunks(retrievalQuery, 4);
   const intent = detectIntent(message, chunks[0]?.score ?? 0);
   const isFrameworkGrounded = intent !== "general";
   const context = isFrameworkGrounded
-    ? trimToBudget(buildContext(chunks), PROJECT_CONTEXT_BUDGET)
+    ? trimToBudget(
+        buildContext(chunks, PROJECT_CONTEXT_CHUNK_BUDGET),
+        PROJECT_CONTEXT_BUDGET,
+      )
     : "";
   const recentHistory = selectRecentHistory(history, RECENT_HISTORY_BUDGET);
   const sources = isFrameworkGrounded
@@ -127,6 +136,7 @@ export async function POST(request: Request) {
     });
   }
 
+  let modelRequestFailed = false;
   const answer = await answerWithOpenAI({
     context,
     history: recentHistory,
@@ -134,19 +144,18 @@ export async function POST(request: Request) {
     message,
     summary,
   }).catch((error: Error) => {
-    return [
-      "The framework found relevant context, but the model request failed.",
-      "",
-      error.message,
-    ].join("\n");
+    modelRequestFailed = true;
+    return formatModelFailureMessage(error);
   });
 
-  const updatedSummary = await maybeUpdateSummary({
-    answer,
-    history,
-    message,
-    summary,
-  });
+  const updatedSummary = modelRequestFailed
+    ? summary
+    : await maybeUpdateSummary({
+        answer,
+        history,
+        message,
+        summary,
+      });
 
   return NextResponse.json({
     answer,
@@ -170,7 +179,7 @@ async function answerWithOpenAI({
   message: string;
   summary: string;
 }) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetchOpenAIWithRetry({
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -203,7 +212,7 @@ async function answerWithOpenAI({
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(detail || "The model request failed.");
+    throw new Error(parseOpenAIError(detail));
   }
 
   const data = (await response.json()) as {
@@ -221,6 +230,57 @@ async function answerWithOpenAI({
       .join("\n") ??
     "I could not generate an answer from the retrieved context."
   );
+}
+
+async function fetchOpenAIWithRetry(
+  init: RequestInit,
+  attempts = OPENAI_RETRY_ATTEMPTS,
+) {
+  let response = await fetch("https://api.openai.com/v1/responses", init);
+
+  for (let attempt = 1; attempt < attempts && shouldRetryOpenAIResponse(response); attempt += 1) {
+    await sleep(450 * attempt);
+    response = await fetch("https://api.openai.com/v1/responses", init);
+  }
+
+  return response;
+}
+
+function shouldRetryOpenAIResponse(response: Response) {
+  return response.status === 429 || response.status >= 500;
+}
+
+function parseOpenAIError(detail: string) {
+  if (!detail) {
+    return "The model request failed.";
+  }
+
+  try {
+    const parsed = JSON.parse(detail) as {
+      error?: { code?: string | null; message?: string; type?: string };
+    };
+    const message = parsed.error?.message?.trim();
+    const code = parsed.error?.code ?? parsed.error?.type;
+    return [message, code ? `Code: ${code}` : ""].filter(Boolean).join("\n");
+  } catch {
+    return detail;
+  }
+}
+
+function formatModelFailureMessage(error: Error) {
+  return [
+    "I found relevant project sections, but the model request failed before it could write an answer.",
+    "",
+    "This is usually temporary. Try again in a moment. I also tightened the chat so future requests send less context and retry once before showing this message.",
+    "",
+    error.message ? `Error: ${error.message}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function maybeUpdateSummary({
@@ -310,6 +370,21 @@ function selectRecentHistory(history: ChatTurn[], budget: number) {
   }
 
   return selected;
+}
+
+function buildRetrievalQuery(message: string, history: ChatTurn[]) {
+  const recentUserContext = history
+    .filter((turn) => turn.role === "user")
+    .slice(-3)
+    .map((turn) => turn.text)
+    .join("\n\n");
+
+  return trimToBudget(
+    [recentUserContext, `Current user message: ${message}`]
+      .filter(Boolean)
+      .join("\n\n"),
+    2_500,
+  );
 }
 
 function formatHistory(history: ChatTurn[]) {

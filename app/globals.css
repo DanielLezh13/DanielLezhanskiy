@@ -88,6 +88,166 @@ button {
     linear-gradient(135deg, rgba(23, 20, 14, 0.98), rgba(7, 7, 6, 0.98) 58%, rgba(30, 25, 14, 0.98));
 }
 
+.daniel-profile-stage {
+  animation: daniel-profile-stage-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center top;
+  transition: scale 80ms linear;
+  will-change: scale;
+}
+
+.daniel-profile-shell {
+  --profile-gloss-x: 50%;
+  --profile-rotate-x: 0deg;
+  --profile-rotate-y: 0deg;
+  transform: perspective(1400px) rotateX(var(--profile-rotate-x))
+    rotateY(var(--profile-rotate-y));
+  transform-style: preserve-3d;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.daniel-profile-photo {
+  animation: daniel-profile-photo-enter 760ms 70ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+  transform-origin: center center;
+  transition: scale 80ms linear;
+  will-change: filter, opacity, scale, transform;
+}
+
+.daniel-profile-topline,
+.daniel-profile-copy,
+.daniel-profile-pet,
+.daniel-profile-location {
+  transition:
+    opacity 80ms linear,
+    translate 80ms linear;
+  will-change: opacity, translate;
+}
+
+.daniel-profile-scroll-line {
+  box-shadow: 0 0 16px rgba(253, 230, 138, 0.46);
+  transition: scale 80ms linear;
+}
+
+.daniel-profile-tone {
+  background:
+    linear-gradient(90deg, transparent 0%, transparent 43%, rgba(7, 7, 6, 0.48) 48%, rgba(7, 7, 6, 0.98) 55%, rgba(7, 7, 6, 1) 100%),
+    linear-gradient(0deg, rgba(6, 6, 5, 1) 0%, rgba(6, 6, 5, 0.96) 36%, rgba(6, 6, 5, 0.08) 66%),
+    linear-gradient(135deg, rgba(245, 211, 118, 0.08), transparent 42%);
+}
+
+@media (min-width: 640px) {
+  .daniel-profile-tone {
+    background:
+      linear-gradient(90deg, transparent 0%, transparent 38%, rgba(7, 7, 6, 0.62) 48%, rgba(7, 7, 6, 0.99) 56%, rgba(7, 7, 6, 1) 100%),
+      linear-gradient(0deg, rgba(6, 6, 5, 0.68) 0%, transparent 52%),
+      linear-gradient(135deg, rgba(245, 211, 118, 0.07), transparent 42%);
+  }
+}
+
+.fortnite-pc-scene {
+  isolation: isolate;
+}
+
+.fortnite-computer {
+  transform-origin: center center;
+}
+
+.fortnite-monitor {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 17%),
+    linear-gradient(160deg, #262827, #111212 56%, #080909);
+}
+
+.fortnite-monitor-screen {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 0 34px rgba(0, 0, 0, 0.74),
+    0 0 46px rgba(253, 230, 138, 0.04);
+}
+
+.fortnite-screen-off {
+  transition: opacity 90ms linear;
+}
+
+.fortnite-screen-flare {
+  background: linear-gradient(180deg, transparent 43%, rgba(253, 230, 138, 0.8) 49%, #fff 50%, rgba(253, 230, 138, 0.48) 51%, transparent 57%);
+  filter: blur(1px);
+}
+
+.fortnite-scanlines {
+  background: repeating-linear-gradient(180deg, transparent 0 3px, rgba(0, 0, 0, 0.14) 4px);
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+
+.fortnite-screen-gloss {
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.11), transparent 17%, transparent 72%, rgba(253, 230, 138, 0.05));
+  pointer-events: none;
+}
+
+.daniel-profile-gloss {
+  background: radial-gradient(
+    circle at var(--profile-gloss-x) 8%,
+    rgba(255, 247, 214, 0.2),
+    transparent 38%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.38;
+  transition: background-position 180ms ease-out;
+}
+
+.daniel-profile-socials {
+  animation: daniel-profile-slide-right 600ms 430ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+}
+
+.daniel-profile-socials > a {
+  animation: daniel-profile-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.daniel-profile-socials > a:nth-child(1) {
+  animation-delay: 460ms;
+}
+
+.daniel-profile-socials > a:nth-child(2) {
+  animation-delay: 520ms;
+}
+
+.daniel-profile-socials > a:nth-child(3) {
+  animation-delay: 580ms;
+}
+
+.daniel-profile-socials > a:nth-child(4) {
+  animation-delay: 640ms;
+}
+
+.daniel-profile-location {
+  animation: daniel-profile-slide-left 620ms 370ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+}
+
+.daniel-profile-name {
+  animation: daniel-profile-slide-right 700ms 410ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+}
+
+.daniel-profile-pet {
+  animation: daniel-profile-rise 680ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.daniel-profile-details {
+  animation: daniel-profile-rise 620ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.daniel-marquee-track {
+  animation: daniel-marquee-left 42s linear infinite;
+}
+
+.daniel-marquee-track-reverse {
+  animation: daniel-marquee-right 48s linear infinite;
+}
+
 @supports (animation-timeline: view()) {
   .scroll-reveal {
     animation: scroll-reveal both ease-out;
@@ -116,6 +276,100 @@ button {
 
   50% {
     transform: translateY(-5px);
+  }
+}
+
+@keyframes daniel-marquee-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+@keyframes daniel-marquee-right {
+  from {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes daniel-profile-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.975);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes daniel-profile-photo-enter {
+  from {
+    filter: brightness(0.56) saturate(0.7);
+    opacity: 0;
+    transform: translateY(54px) scale(1.045);
+  }
+
+  to {
+    filter: brightness(0.84) contrast(1.04) saturate(0.92);
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes daniel-profile-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-72px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes daniel-profile-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(72px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes daniel-profile-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes daniel-profile-pop {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -151,7 +405,54 @@ button {
 
   .mind-pet,
   .mind-pet-spark,
+  .daniel-profile-stage,
+  .daniel-profile-photo,
+  .daniel-profile-socials,
+  .daniel-profile-socials > a,
+  .daniel-profile-location,
+  .daniel-profile-name,
+  .daniel-profile-pet,
+  .daniel-profile-details,
+  .daniel-marquee-track,
+  .daniel-marquee-track-reverse,
   .scroll-reveal {
     animation: none;
+  }
+
+  .daniel-profile-stage,
+  .daniel-profile-photo,
+  .daniel-profile-scroll-line {
+    scale: 1 !important;
+  }
+
+  .daniel-profile-topline,
+  .daniel-profile-copy,
+  .daniel-profile-location,
+  .daniel-profile-pet {
+    opacity: 1 !important;
+    translate: none !important;
+  }
+
+  .daniel-profile-stage,
+  .daniel-profile-photo,
+  .daniel-profile-topline,
+  .daniel-profile-copy,
+  .daniel-profile-location,
+  .daniel-profile-scroll-line,
+  .daniel-profile-pet {
+    transition: none;
+  }
+
+  .daniel-profile-shell {
+    transform: none;
+    transition: none;
+  }
+
+  .fortnite-scroll-sequence {
+    height: 100vh !important;
+  }
+
+  .fortnite-computer {
+    transform: translate3d(0, 0, 0) scale(0.9) !important;
   }
 }

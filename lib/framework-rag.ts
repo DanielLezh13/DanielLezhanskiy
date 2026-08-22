@@ -1,6 +1,7 @@
 import {
   economicsSections,
   frameworkSections,
+  politicsAnalysisSections,
   politicsSections,
   startSection,
   topics,
@@ -242,6 +243,12 @@ const expansions: Record<string, string[]> = {
     "belief",
     "nonbeliever",
   ],
+  daniel: ["profile", "creator", "author", "stance", "agnostic"],
+  "religious stance": ["religion", "agnostic", "atheist", "belief", "label"],
+  "religious beliefs": ["religion", "agnostic", "atheist", "belief", "label"],
+  "one word": ["label", "classification", "stance"],
+  "what is he": ["daniel", "profile", "religion", "agnostic", "label"],
+  "what is his stance": ["daniel", "profile", "religion", "agnostic", "stance"],
 };
 
 export function retrieveFrameworkChunks(
@@ -253,20 +260,28 @@ export function retrieveFrameworkChunks(
   return getFrameworkChunks()
     .map((chunk) => ({
       ...chunk,
-      score: scoreChunk(chunk, queryTokens),
+      score: scoreChunk(chunk, queryTokens, query),
     }))
     .filter((chunk): chunk is RetrievedFrameworkChunk => (chunk.score ?? 0) > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
 
-export function buildContext(chunks: FrameworkChunk[]) {
+export function buildContext(chunks: FrameworkChunk[], perChunkBudget = 2_200) {
   return chunks
     .map(
       (chunk, index) =>
-        `[${index + 1}] ${chunk.source} / ${chunk.title}\n${chunk.text}`,
+        `[${index + 1}] ${chunk.source} / ${chunk.title}\n${trimToApproxTokenBudget(chunk.text, perChunkBudget)}`,
     )
     .join("\n\n---\n\n");
+}
+
+function trimToApproxTokenBudget(text: string, budget: number) {
+  if (Math.ceil(text.length / 4) <= budget) {
+    return text;
+  }
+
+  return `${text.slice(0, budget * 4).trim()}\n\n[Context trimmed for length.]`;
 }
 
 export function buildLocalFallback(query: string, chunks: FrameworkChunk[]) {
@@ -298,13 +313,30 @@ export function buildLocalFallback(query: string, chunks: FrameworkChunk[]) {
 function getFrameworkChunks(): FrameworkChunk[] {
   const chunks: FrameworkChunk[] = [];
 
+  pushDanielProfile(chunks);
   pushSection(chunks, startSection, "Start Here");
   frameworkSections.forEach((section) => pushSection(chunks, section, section.label));
   topics.forEach((topic) => pushTopic(chunks, topic));
   politicsSections.forEach((section) => pushSection(chunks, section, `Politics / ${section.label}`));
+  politicsAnalysisSections.forEach((section) => pushSection(chunks, section, `Politics / Political Analysis / ${section.label}`));
   economicsSections.forEach((section) => pushSection(chunks, section, `Economics / ${section.label}`));
 
   return chunks;
+}
+
+function pushDanielProfile(chunks: FrameworkChunk[]) {
+  chunks.push({
+    id: "daniel-profile:overview",
+    source: "Start Here",
+    title: "Daniel Profile",
+    text: [
+      "Daniel is the creator and author of this project.",
+      "Profile fact: Religion: Agnostic.",
+      "If a user asks for Daniel's religious stance as a one-word or standard label, the closest label is agnostic.",
+      "That does not mean hard atheist or committed to a specific religion. It means Daniel's project holds religious claims with uncertainty, evidence-proportional caution, and resistance to premature certainty.",
+      "If asked what Daniel is religiously, answer the label first: closest label: agnostic. Then explain briefly if needed.",
+    ].join("\n\n"),
+  });
 }
 
 function pushTopic(chunks: FrameworkChunk[], topic: NavTopic) {
@@ -407,17 +439,52 @@ function argumentToChunk(
   };
 }
 
-function scoreChunk(chunk: FrameworkChunk, queryTokens: string[]) {
+function scoreChunk(chunk: FrameworkChunk, queryTokens: string[], query: string) {
   const haystack = tokenize(`${chunk.source} ${chunk.title} ${chunk.text}`);
   const counts = new Map<string, number>();
   haystack.forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
 
-  return queryTokens.reduce((score, token) => {
+  const baseScore = queryTokens.reduce((score, token) => {
     const titleBonus = tokenize(`${chunk.source} ${chunk.title}`).includes(token)
       ? 4
       : 0;
     return score + (counts.get(token) ?? 0) + titleBonus;
   }, 0);
+
+  return baseScore + contextualBoost(chunk, query);
+}
+
+function contextualBoost(chunk: FrameworkChunk, query: string) {
+  const text = query.toLowerCase();
+  const source = `${chunk.id} ${chunk.source} ${chunk.title}`.toLowerCase();
+  const asksDanielStance =
+    /\b(daniel|author|creator|person who wrote|wrote all this|made this project|his stance|what is he)\b/.test(text) &&
+    /\b(religion|religious|belief|stance|agnostic|atheist|spiritual|jewish|muslim|christian|orthodox|label)\b/.test(text);
+  const asksReligionLabel =
+    /\b(religion|religious|agnostic|atheist|spiritual|jewish|muslim|christian|orthodox)\b/.test(text) &&
+    /\b(label|one word|what is|what would|stance|beliefs?|options?)\b/.test(text);
+
+  if (!asksDanielStance && !asksReligionLabel) {
+    return 0;
+  }
+
+  if (source.includes("daniel-profile")) {
+    return 80;
+  }
+
+  if (source.includes("religion") || source.includes("belief")) {
+    return 28;
+  }
+
+  if (source.includes("philosophy") && source.includes("epistemology")) {
+    return 12;
+  }
+
+  if (source.includes("economics") || source.includes("politics")) {
+    return -30;
+  }
+
+  return 0;
 }
 
 function expandTokens(query: string) {

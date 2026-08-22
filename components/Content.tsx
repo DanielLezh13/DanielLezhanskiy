@@ -1,16 +1,24 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { Collapsible } from "@/components/Collapsible";
+import { CurrentViews } from "@/components/CurrentViews";
+import { NotesFeed } from "@/components/NotesFeed";
 import type { ContentView } from "@/app/page";
-import { economicsSectionGroups, economicsSections, philosophySections, politicsSections, psychologySections, startSection, technologySections } from "@/lib/content";
-import type { EvidentialCaseStudy, EvidentialStyle, NavTopic, ReadingSection, ReadingSectionGroup } from "@/lib/content";
+import { economicsSectionGroups, philosophySectionGroups, politicsSectionGroups, psychologySections, startSection, technologySections } from "@/lib/content";
+import type { EvidentialCaseStudy, EvidentialStyle, NavTopic, PoliticalArgumentCard, ReadingSection, ReadingSectionGroup } from "@/lib/content";
 
 type ContentProps = {
+  activeSectionId: string;
   activeView: ContentView;
+  danielDisplayMode: DanielDisplayMode;
   frameworkSections: ReadingSection[];
   topics: NavTopic[];
 };
-
-type ReadingDisplayMode = "essay" | "compare";
 
 const articleClassName =
   "content-view-enter mx-auto w-full max-w-[1040px] px-5 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20";
@@ -18,26 +26,39 @@ const articleClassName =
 const startArticleClassName =
   "content-view-enter mx-auto w-full max-w-[1040px] px-5 py-8 sm:px-8 sm:py-12 lg:px-10 lg:py-16";
 
-export function Content({ activeView, frameworkSections, topics }: ContentProps) {
-  const [overviewSection, ...remainingFrameworkSections] = frameworkSections;
-  const [philosophyDisplayMode, setPhilosophyDisplayMode] =
-    useState<ReadingDisplayMode>("essay");
-
+export function Content({
+  activeSectionId,
+  activeView,
+  danielDisplayMode,
+  frameworkSections,
+  topics,
+}: ContentProps) {
   if (activeView === "start") {
     return (
       <article className={startArticleClassName}>
-        <StartContent />
+        <StartContent displayMode={danielDisplayMode} />
       </article>
     );
+  }
+
+  if (activeView === "current-views") {
+    return <CurrentViews />;
+  }
+
+  if (activeView === "notes") {
+    return <NotesFeed />;
   }
 
   if (activeView === "politics") {
     return (
       <article className={articleClassName}>
-        <CategorySections
+        <CategorySectionGroups
           eyebrow="Politics"
-          intro="This test category applies the project framework to government, ideology, and media influence. The point is to test how future main categories can contain their own internal sections."
-          sections={politicsSections}
+          groupEyebrow="Politics"
+          activeSectionId={activeSectionId}
+          groups={politicsSectionGroups}
+          intro="A systems map of power, institutions, ideology, incentives, public opinion, uncertainty, and collective coordination."
+          showIntroHeader={false}
           title="Politics"
         />
       </article>
@@ -49,6 +70,8 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
       <article className={articleClassName}>
         <CategorySectionGroups
           eyebrow="Economics"
+          groupEyebrow="Economics"
+          activeSectionId={activeSectionId}
           groups={economicsSectionGroups}
           intro="A systems map of scarcity, incentives, compounding wealth, market power, regulation, innovation, measurement, trade, and the structural limits of economic design."
           title="Economics"
@@ -60,19 +83,14 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
   if (activeView === "philosophy") {
     return (
       <article className={articleClassName}>
-        <ReadingDisplayToggle
-          mode={philosophyDisplayMode}
-          onChange={setPhilosophyDisplayMode}
+        <CategorySectionGroups
+          activeSectionId={activeSectionId}
+          eyebrow="Philosophy"
+          groupEyebrow="Philosophy"
+          groups={philosophySectionGroups}
+          intro="A framework for reality, knowledge, morality, consciousness, meaning, and orientation under uncertainty."
+          title="Philosophy"
         />
-        <div className="space-y-20">
-          {philosophySections.map((section) => (
-            <ReadingSubsection
-              displayMode={philosophyDisplayMode}
-              key={section.id}
-              section={section}
-            />
-          ))}
-        </div>
       </article>
     );
   }
@@ -80,6 +98,7 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
   if (activeView === "psychology") {
     return (
       <article className={articleClassName}>
+        <ChapterHeader eyebrow="Human Psychology / Chapter" title="Human Psychology" />
         <div className="space-y-20">
           {psychologySections.map((section) => (
             <ReadingSubsection key={section.id} section={section} />
@@ -92,6 +111,7 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
   if (activeView === "technology") {
     return (
       <article className={articleClassName}>
+        <ChapterHeader eyebrow="Technology / Chapter" title="Technology" />
         <div className="space-y-20">
           {technologySections.map((section) => (
             <ReadingSubsection key={section.id} section={section} />
@@ -109,16 +129,32 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
     );
   }
 
+  const [
+    religionIntroductionSection,
+    religionOverviewSection,
+    ...remainingReligionFrameworkSections
+  ] = frameworkSections;
+
   return (
     <article className={articleClassName}>
+      <ChapterHeader eyebrow="Religion / Chapter" title="Religion" />
       <div className="space-y-20">
-        {overviewSection ? (
-          <ReadingSubsection key={overviewSection.id} section={overviewSection} />
+        {religionIntroductionSection ? (
+          <ReadingSubsection
+            key={religionIntroductionSection.id}
+            section={religionIntroductionSection}
+          />
+        ) : null}
+        {religionOverviewSection ? (
+          <ReadingSubsection
+            key={religionOverviewSection.id}
+            section={religionOverviewSection}
+          />
         ) : null}
         {topics.map((topic) => (
           <TopicSection key={topic.id} topic={topic} />
         ))}
-        {remainingFrameworkSections.map((section) => (
+        {remainingReligionFrameworkSections.map((section) => (
           <ReadingSubsection key={section.id} section={section} />
         ))}
       </div>
@@ -126,13 +162,23 @@ export function Content({ activeView, frameworkSections, topics }: ContentProps)
   );
 }
 
-function StartContent() {
+type DanielDisplayMode = "classic" | "immersive";
+
+function StartContent({ displayMode }: { displayMode: DanielDisplayMode }) {
   return (
-    <div className="daniel-scroll-flow scroll-mt-16" id={startSection.id}>
-      <header className="scroll-reveal relative isolate grid min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018)_44%,rgba(253,230,138,0.055))] px-5 py-6 shadow-[0_30px_120px_rgba(0,0,0,0.32)] sm:px-7 sm:py-8 lg:grid-cols-[minmax(300px,1fr)_minmax(240px,310px)] lg:items-center lg:px-9">
+    <div className="scroll-mt-16" id={startSection.id}>
+      {displayMode === "classic" ? <ClassicStartContent /> : <ImmersiveStartContent />}
+    </div>
+  );
+}
+
+function ClassicStartContent() {
+  return (
+    <div className="daniel-scroll-flow">
+      <header className="scroll-reveal relative isolate grid min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018)_44%,rgba(253,230,138,0.055))] px-5 py-6 shadow-[0_30px_120px_rgba(0,0,0,0.32)] sm:px-7 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(240px,310px)] lg:items-center lg:gap-10 lg:px-9 xl:gap-12">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(253,230,138,0.13),transparent_34rem),radial-gradient(circle_at_90%_10%,rgba(255,255,255,0.075),transparent_22rem)]" />
         <div>
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_210px] 2xl:items-start">
+          <div className="grid gap-4 min-[1800px]:grid-cols-[minmax(0,1fr)_210px] min-[1800px]:items-start">
             <div>
               <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
                 {startSection.eyebrow}
@@ -151,13 +197,16 @@ function StartContent() {
               </div>
             </div>
 
-            <DigitalMindPet />
+            <DigitalMindPet className="hidden min-[1800px]:block min-[1800px]:-ml-24" />
           </div>
 
-          <div className="mt-8 flex max-w-3xl flex-wrap gap-x-4 gap-y-3 border-t border-white/10 pt-5">
+          <div className="mt-8 grid w-full max-w-[520px] grid-cols-2 gap-x-4 gap-y-3 border-t border-white/10 pt-5 sm:grid-cols-3">
             {profileFacts.map((fact) => (
               <div
-                className="min-w-[112px] flex-1"
+                className={[
+                  "min-w-0",
+                  fact.label === "Favorite Food" ? "sm:col-span-2" : "",
+                ].join(" ")}
                 key={fact.label}
               >
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
@@ -171,13 +220,16 @@ function StartContent() {
           </div>
         </div>
 
-        <figure className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.035] shadow-[0_24px_80px_rgba(0,0,0,0.28)] lg:mt-0 lg:h-[430px]">
-          <img
-            alt="Daniel"
-            className="aspect-[4/5] w-full object-cover object-top lg:aspect-auto lg:h-full lg:object-[center_100%]"
-            src="/images/start/daniel-portrait.jpg"
-          />
-        </figure>
+        <div className="mt-6 lg:mt-0">
+          <figure className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.035] lg:h-[430px]">
+            <img
+              alt="Daniel"
+              className="aspect-[4/5] w-full object-cover object-top lg:aspect-auto lg:h-full lg:object-[center_86%]"
+              src="/images/start/daniel-portrait.jpg"
+            />
+          </figure>
+          <DigitalMindPet className="mt-5 hidden xl:-ml-8 xl:block min-[1800px]:hidden" />
+        </div>
       </header>
 
       <section className="scroll-reveal mt-20 grid min-h-[72vh] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
@@ -196,7 +248,7 @@ function StartContent() {
                 "max-w-2xl border-l border-amber-200/25 pl-5 text-stone-200",
                 index % 2 === 1 ? "lg:ml-auto" : "",
               ].join(" ")}
-              key={block}
+              key={`intro-${index}`}
             >
               {block}
             </p>
@@ -229,7 +281,7 @@ function StartContent() {
           title="Projects"
           body="Some adjacent projects built around a hobby I’ve fallen into over the last few years: building web projects, experimenting with ideas, and creating things alongside AI, with several more currently in development."
         />
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {projectCards.map((project) => (
             <ProjectCard project={project} key={project.title} />
           ))}
@@ -258,7 +310,647 @@ function StartContent() {
   );
 }
 
-function DigitalMindPet() {
+function ImmersiveStartContent() {
+  return (
+    <div className="daniel-immersive-flow">
+      <ImmersiveHero />
+      <ImmersiveMarquee />
+
+      <section className="min-h-[90vh] border-y border-white/10 py-24 sm:py-32">
+        <div className="mx-auto flex min-h-[68vh] max-w-3xl flex-col items-center justify-center text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-amber-200/70">
+            About
+          </p>
+          <h3 className="mt-5 text-5xl font-semibold leading-none text-stone-50 sm:text-7xl">
+            About Me
+          </h3>
+          <ImmersiveScrollText text={introCaptionBlocks.slice(0, 4).join(" ")} />
+          <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 border-t border-white/10 pt-6">
+            {profileFacts.slice(0, 6).map((fact) => (
+              <div className="min-w-[110px]" key={fact.label}>
+                <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-500">
+                  {fact.label}
+                </p>
+                <p className="mt-1 text-sm text-stone-200">{fact.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <EnjoymentArchiveSection />
+      <ImmersiveProjectStack />
+      <FortniteSection />
+
+      <section className="mt-28 border-y border-amber-200/15 py-20 sm:py-28">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
+              Part 6
+            </p>
+            <h3 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-50 sm:text-6xl">
+              Thinking Alongside AI
+            </h3>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-stone-300 sm:text-lg">
+              AI gradually became a major part of how I think, work, and build. I use it for coding, organizing ideas, refining arguments, exploring concepts, automating repetitive tasks, and turning vague thoughts into clearer structures. Because so much of this project was shaped through AI-assisted exploration, it felt natural to make the project itself interactive. The assistant on the right side of the site is connected to the ideas and writing throughout the project, allowing people to explore the framework conversationally instead of only reading it statically.
+            </p>
+          </div>
+          <figure className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] p-2 shadow-[0_28px_90px_rgba(0,0,0,0.4)]">
+            <img
+              alt="ChatGPT usage review"
+              className="w-full rounded object-contain"
+              loading="lazy"
+              src="/images/start/chatgpt-review.jpeg"
+            />
+          </figure>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ImmersiveHero() {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const sceneRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+    const hero = heroRef.current;
+    const stage = stageRef.current;
+
+    if (!scrollRoot || !hero || !stage) {
+      return;
+    }
+
+    let frame = 0;
+
+    const updateProgress = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        if (window.matchMedia("(max-width: 639px), (prefers-reduced-motion: reduce)").matches) {
+          setScrollProgress(0);
+          return;
+        }
+
+        const heroBounds = hero.getBoundingClientRect();
+        const travel = Math.max(1, hero.offsetHeight - stage.offsetHeight);
+        setScrollProgress(Math.min(1, Math.max(0, -heroBounds.top / travel)));
+      });
+    };
+
+    updateProgress();
+    scrollRoot.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollRoot.removeEventListener("scroll", updateProgress);
+      window.removeEventListener("resize", updateProgress);
+    };
+  }, []);
+
+  const handleScenePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const horizontalPosition =
+      ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+    const verticalPosition =
+      ((event.clientY - bounds.top) / bounds.height) * 2 - 1;
+    const scene = sceneRef.current;
+
+    scene?.style.setProperty(
+      "--profile-rotate-x",
+      `${verticalPosition * -0.8}deg`,
+    );
+    scene?.style.setProperty(
+      "--profile-rotate-y",
+      `${horizontalPosition * 1.2}deg`,
+    );
+    scene?.style.setProperty(
+      "--profile-gloss-x",
+      `${50 + horizontalPosition * 18}%`,
+    );
+  };
+
+  const resetScenePosition = () => {
+    const scene = sceneRef.current;
+
+    scene?.style.setProperty("--profile-rotate-x", "0deg");
+    scene?.style.setProperty("--profile-rotate-y", "0deg");
+    scene?.style.setProperty("--profile-gloss-x", "50%");
+  };
+
+  return (
+    <header
+      className="relative isolate w-full pt-8 sm:min-h-[112vh] sm:pt-6"
+      onPointerLeave={resetScenePosition}
+      onPointerMove={handleScenePointerMove}
+      ref={heroRef}
+    >
+      <div
+        className="daniel-profile-stage w-full sm:sticky sm:top-6"
+        ref={stageRef}
+        style={{ scale: `${1 + scrollProgress * 0.018}` }}
+      >
+        <div
+          className="daniel-profile-shell relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-amber-100/15 bg-stone-950 shadow-[0_36px_120px_rgba(0,0,0,0.48)] sm:aspect-[16/10]"
+          ref={sceneRef}
+        >
+          <img
+            alt="Daniel standing beside the water"
+            className="daniel-profile-photo absolute inset-x-0 top-0 h-[56%] w-full object-cover object-[center_31%] sm:inset-y-0 sm:left-0 sm:right-auto sm:h-full sm:w-[48%] sm:object-[center_40%]"
+            src="/images/start/daniel-portrait.jpg"
+            style={{ scale: `${1 + scrollProgress * 0.085}` }}
+          />
+
+          <div className="daniel-profile-tone absolute inset-0" />
+          <div aria-hidden="true" className="daniel-profile-gloss absolute inset-0" />
+
+          <p
+            className="daniel-profile-location absolute left-5 top-[4.75rem] z-20 inline-flex items-center gap-2 font-mono text-[10px] uppercase text-stone-900/75 sm:left-7 sm:top-7 lg:left-8 lg:top-8"
+            style={{
+              opacity: 1 - scrollProgress * 0.42,
+              translate: `0 ${scrollProgress * -10}px`,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-amber-700/75 shadow-[0_0_10px_rgba(180,125,35,0.3)]"
+            />
+            Brooklyn, NY
+          </p>
+
+          <div
+            className="daniel-profile-topline absolute inset-x-0 top-0 z-20 flex items-center justify-end p-5 sm:p-7 lg:p-8"
+            style={{
+              opacity: 1 - scrollProgress * 0.42,
+              translate: `0 ${scrollProgress * -10}px`,
+            }}
+          >
+            <div className="daniel-profile-socials flex gap-2">
+              {socialLinks.map((link) => (
+                <SocialBubble compact link={link} key={link.label} />
+              ))}
+            </div>
+          </div>
+
+          <div
+            className="daniel-profile-pet pointer-events-auto absolute bottom-[16rem] left-[58%] z-20 hidden origin-bottom scale-[0.9] sm:block lg:bottom-[17rem] lg:scale-100"
+            style={{
+              opacity: 1 - scrollProgress * 0.62,
+              translate: `0 ${scrollProgress * -14}px`,
+            }}
+          >
+            <DigitalMindPet />
+          </div>
+
+          <div
+            className="daniel-profile-copy absolute inset-x-0 bottom-0 z-20 p-5 sm:left-auto sm:w-[52%] sm:p-7 lg:p-9"
+            style={{
+              opacity: 1 - scrollProgress * 0.48,
+              translate: `0 ${scrollProgress * -16}px`,
+            }}
+          >
+            <h2
+              aria-label="Daniel Lezhanskiy"
+              className="daniel-profile-name text-[clamp(2.7rem,11vw,4.6rem)] font-semibold leading-[0.86] tracking-[0] text-stone-50 sm:text-[clamp(3.25rem,5vw,4.6rem)]"
+            >
+              Daniel
+              <span className="block">Lezhanskiy</span>
+            </h2>
+
+            <div className="daniel-profile-details mt-6 grid grid-cols-3 border-t border-white/15 pt-4">
+              <div>
+                <p className="font-mono text-[9px] uppercase text-stone-400">Born</p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">2000</p>
+              </div>
+              <div>
+                <p className="font-mono text-[9px] uppercase text-stone-400">Height</p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">6&apos;2&quot;</p>
+              </div>
+              <div>
+                <p className="font-mono text-[9px] uppercase text-stone-400">Languages</p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">EN / RU</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="daniel-profile-scroll-line absolute inset-x-0 bottom-0 z-30 h-px origin-left bg-amber-100/70"
+            style={{ scale: `${scrollProgress} 1` }}
+          />
+
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function ImmersiveMarquee() {
+  const [offset, setOffset] = useState(0);
+  const splitIndex = Math.ceil(photographyImageUrls.length / 2);
+  const firstRow = photographyImageUrls.slice(0, splitIndex);
+  const secondRow = photographyImageUrls.slice(splitIndex);
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+
+    if (!scrollRoot) {
+      return;
+    }
+
+    let frame = 0;
+    let lastScrollPosition = scrollRoot.scrollTop;
+    let accumulatedOffset = 0;
+
+    const updateOffset = () => {
+      const nextScrollPosition = scrollRoot.scrollTop;
+      const scrollDistance = Math.abs(nextScrollPosition - lastScrollPosition);
+      lastScrollPosition = nextScrollPosition;
+      accumulatedOffset = (accumulatedOffset + scrollDistance * 0.42) % 10000;
+
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setOffset(accumulatedOffset);
+      });
+    };
+
+    scrollRoot.addEventListener("scroll", updateOffset, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollRoot.removeEventListener("scroll", updateOffset);
+    };
+  }, []);
+
+  return (
+    <section className="relative w-full overflow-hidden py-3 sm:py-4">
+      <MarqueeRow images={firstRow} offset={offset} />
+      <div className="mt-3">
+        <MarqueeRow images={secondRow} offset={offset} reverse />
+      </div>
+    </section>
+  );
+}
+
+function MarqueeRow({
+  images,
+  offset,
+  reverse = false,
+}: {
+  images: string[];
+  offset: number;
+  reverse?: boolean;
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [cycleWidth, setCycleWidth] = useState(0);
+
+  useEffect(() => {
+    const track = trackRef.current;
+
+    if (!track) {
+      return;
+    }
+
+    const measureTrack = () => {
+      setCycleWidth(track.scrollWidth / 3);
+    };
+    const observer = new ResizeObserver(measureTrack);
+
+    measureTrack();
+    observer.observe(track);
+
+    return () => observer.disconnect();
+  }, [images]);
+
+  const normalizedOffset = cycleWidth > 0 ? offset % cycleWidth : 0;
+  const directionalOffset = reverse
+    ? -cycleWidth + normalizedOffset
+    : -normalizedOffset;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="w-max [will-change:transform]"
+      style={{
+        transform: `translate3d(${directionalOffset}px, 0, 0)`,
+      }}
+    >
+      <div
+        className={[
+          "flex w-max [will-change:transform]",
+          reverse ? "daniel-marquee-track-reverse" : "daniel-marquee-track",
+        ].join(" ")}
+        ref={trackRef}
+      >
+        {[0, 1, 2].map((setIndex) => (
+          <div className="flex shrink-0 gap-3 pr-3" key={setIndex}>
+            {images.map((image, imageIndex) => (
+              <figure
+                className="h-[150px] w-[230px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] sm:h-[210px] sm:w-[330px]"
+                key={`${setIndex}-${image}-${imageIndex}`}
+              >
+                <img
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  src={image}
+                />
+              </figure>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ImmersiveScrollText({ text }: { text: string }) {
+  const paragraphRef = useRef<HTMLParagraphElement | null>(null);
+  const [progress, setProgress] = useState(0);
+  const words = text.split(" ");
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+    const paragraph = paragraphRef.current;
+
+    if (!scrollRoot || !paragraph) {
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setProgress(1);
+      return;
+    }
+
+    let frame = 0;
+
+    const updateProgress = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rect = paragraph.getBoundingClientRect();
+        const start = scrollRoot.clientHeight * 0.95;
+        const distance = scrollRoot.clientHeight * 0.42 + rect.height * 0.72;
+        setProgress(Math.max(0, Math.min(1, (start - rect.top) / distance)));
+      });
+    };
+
+    updateProgress();
+    scrollRoot.addEventListener("scroll", updateProgress, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollRoot.removeEventListener("scroll", updateProgress);
+    };
+  }, []);
+
+  return (
+    <p
+      className="mt-12 max-w-3xl text-xl font-medium leading-[1.65] text-white sm:text-2xl"
+      ref={paragraphRef}
+    >
+      {words.map((word, index) => {
+        const wordStart = (index / Math.max(1, words.length - 1)) * 0.9;
+        const opacity = Math.max(0.1, Math.min(1, (progress - wordStart) * 10));
+
+        return (
+          <span className="transition-opacity duration-150" key={`${word}-${index}`} style={{ opacity }}>
+            {word}{" "}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
+function ImmersiveProjectStack() {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [stackProgress, setStackProgress] = useState(0);
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+    const track = trackRef.current;
+
+    if (!scrollRoot || !track) {
+      return;
+    }
+
+    let frame = 0;
+
+    const updateStack = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rect = track.getBoundingClientRect();
+        const travel = Math.max(1, track.offsetHeight - scrollRoot.clientHeight);
+        setStackProgress(Math.max(0, Math.min(1, -rect.top / travel)));
+      });
+    };
+
+    updateStack();
+    scrollRoot.addEventListener("scroll", updateStack, { passive: true });
+    window.addEventListener("resize", updateStack);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollRoot.removeEventListener("scroll", updateStack);
+      window.removeEventListener("resize", updateStack);
+    };
+  }, []);
+
+  return (
+    <section className="mt-28">
+      <div className="mb-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
+            Projects
+          </p>
+          <h3 className="mt-4 text-5xl font-semibold leading-none text-stone-50 sm:text-7xl">
+            Projects Built Alongside AI.
+          </h3>
+        </div>
+        <p className="max-w-sm text-sm leading-7 text-stone-400">
+          Coding became one of my main hobbies and a way to turn ideas into things I
+          could actually use. These are a few of the projects that grew out of that
+          process.
+        </p>
+      </div>
+
+      <div
+        className="relative"
+        ref={trackRef}
+        style={{ height: `${projectCards.length * 90}vh` }}
+      >
+        <div className="sticky top-0 flex h-screen items-center py-10 sm:py-14">
+          <div className="relative h-[min(680px,calc(100vh-80px))] min-h-[560px] w-full">
+            {projectCards.map((project, index) => (
+              <PinnedProjectCard
+                index={index}
+                key={project.title}
+                progress={stackProgress}
+                project={project}
+                total={projectCards.length}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PinnedProjectCard({
+  index,
+  progress,
+  project,
+  total,
+}: {
+  index: number;
+  progress: number;
+  project: (typeof projectCards)[number];
+  total: number;
+}) {
+  const segmentLength = 1 / Math.max(1, total - 1);
+  const localProgress =
+    index === 0
+      ? 1
+      : Math.max(
+          0,
+          Math.min(1, (progress - (index - 1) * segmentLength) / segmentLength),
+        );
+  const translateY = index === 0 ? 0 : (1 - localProgress) * 112 + index * 2.4;
+  const scale = 1 - Math.max(0, progress - index * segmentLength) * 0.025;
+
+  return (
+    <article
+      className="absolute inset-0 flex h-full flex-col overflow-hidden rounded-[1.4rem] border border-amber-200/35 bg-[radial-gradient(circle_at_14%_8%,rgba(253,230,138,0.17),transparent_24rem),linear-gradient(135deg,rgba(38,32,18,0.99),rgba(15,14,10,0.99)_52%,rgba(27,22,13,0.99))] shadow-[0_34px_110px_rgba(0,0,0,0.62)] [will-change:transform]"
+      style={{
+        pointerEvents: index === 0 || localProgress > 0.02 ? "auto" : "none",
+        transform: `translate3d(0, ${translateY}%, 0) scale(${scale})`,
+        zIndex: index + 1,
+      }}
+    >
+      <div className="flex min-h-[164px] flex-col items-stretch justify-between gap-3 border-b border-amber-100/20 px-5 py-5 sm:min-h-[142px] sm:flex-row sm:items-center sm:gap-4 sm:px-7">
+        <div className="flex min-w-0 items-center gap-4 sm:flex-1 sm:gap-7">
+          <span className="text-5xl font-black leading-none text-amber-50 sm:text-7xl">
+            0{index + 1}
+          </span>
+          <div className="min-w-0">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-amber-200/55">
+              Project
+            </p>
+            <h4 className="mt-2 truncate text-xl font-semibold text-stone-50 sm:text-3xl">
+              {project.title}
+            </h4>
+            <p className="mt-2 hidden max-w-xl text-xs leading-5 text-stone-400 sm:block sm:text-sm sm:leading-6">
+              {project.body}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs leading-5 text-stone-400 sm:hidden">
+          {project.body}
+        </p>
+        <div className="flex shrink-0 items-center justify-end gap-2.5 sm:ml-auto">
+          <a
+            aria-label={`${project.title} on GitHub`}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-amber-100/30 bg-black/10 text-stone-200 transition hover:-translate-y-0.5 hover:border-amber-200/60 hover:text-amber-100 sm:h-14 sm:w-14 sm:[&_svg]:h-8 sm:[&_svg]:w-8"
+            href={project.githubHref}
+            rel="noreferrer"
+            target="_blank"
+            title={`${project.title} on GitHub`}
+          >
+            <SocialIcon icon="github" />
+          </a>
+          <a
+            aria-label={`Open ${project.title}`}
+            className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-amber-100/40 bg-black/20 p-1 transition hover:-translate-y-0.5 hover:border-amber-100 hover:bg-amber-100/10 sm:h-14 sm:w-14 sm:p-1.5"
+            href={project.href}
+            rel="noreferrer"
+            target="_blank"
+            title={`Open ${project.title}`}
+          >
+            <img
+              alt=""
+              className={["h-full w-full rounded-md object-cover", project.imageClassName ?? ""].join(" ")}
+              src={project.image}
+            />
+          </a>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 p-3 sm:p-4">
+        <a
+          aria-label={`Open ${project.title}`}
+          className="group relative block h-full min-h-[340px] overflow-hidden rounded-[1.15rem] border border-amber-100/20 bg-[#090a09] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-3"
+          href={project.href}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <ProjectMediaGallery project={project} />
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/68 via-transparent to-amber-950/10" />
+          <span className="absolute bottom-5 left-5 font-mono text-[9px] uppercase tracking-[0.2em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+            Open live project ↗
+          </span>
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function ProjectMediaGallery({
+  project,
+}: {
+  project: (typeof projectCards)[number];
+}) {
+  if (project.galleryLayout === "phones") {
+    return (
+      <span className="grid h-full min-h-[320px] grid-cols-3 items-end gap-2 overflow-hidden rounded-[0.95rem] bg-[radial-gradient(circle_at_center,rgba(96,165,250,0.16),transparent_68%)] px-3 pt-4 sm:gap-4 sm:px-8 sm:pt-6">
+        {project.gallery.map((image, index) => (
+          <span
+            className="relative block max-h-full overflow-hidden rounded-t-[1.2rem] border border-white/15 bg-[#111827] shadow-[0_20px_45px_rgba(0,0,0,0.5)] transition duration-700 group-hover:-translate-y-1"
+            key={image}
+            style={{
+              aspectRatio: "332 / 720",
+              height: index === 1 ? "97%" : "91%",
+              translate: `0 ${index === 2 ? 7 : 0}px`,
+            }}
+          >
+            <img
+              alt=""
+              className="h-full w-full object-cover object-top"
+              loading="lazy"
+              src={image}
+            />
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return (
+    <span className="relative block h-full min-h-[320px] overflow-hidden rounded-[0.95rem] border border-white/10 bg-[radial-gradient(circle_at_center,rgba(253,230,138,0.12),transparent_70%),#11100c]">
+      <img
+        aria-hidden="true"
+        alt=""
+        className="absolute inset-0 h-full w-full scale-125 object-cover opacity-55 blur-2xl sm:hidden"
+        src={project.gallery[0]}
+      />
+      <img
+        alt=""
+        className="relative z-10 h-full w-full object-contain object-center transition duration-700 group-hover:scale-[1.012] sm:object-cover sm:group-hover:scale-[1.018]"
+        loading="lazy"
+        src={project.gallery[0]}
+      />
+    </span>
+  );
+}
+
+function DigitalMindPet({ className = "" }: { className?: string }) {
   const [idleStep, setIdleStep] = useState(0);
   const [insightIndex, setInsightIndex] = useState(0);
   const [showInsight, setShowInsight] = useState(false);
@@ -306,7 +998,7 @@ function DigitalMindPet() {
   return (
     <button
       aria-label="Mini Daniel pet. Click for a project insight."
-      className="mind-pet group relative hidden h-[190px] overflow-visible text-left 2xl:-ml-24 2xl:block"
+      className={["mind-pet group relative h-[190px] w-[300px] overflow-visible text-left", className].join(" ")}
       onClick={handlePetClick}
       type="button"
     >
@@ -380,10 +1072,6 @@ const profileFacts = [
     value: "Brooklyn, NY",
   },
   {
-    label: "Background",
-    value: "Ukrainian-American",
-  },
-  {
     label: "Religion",
     value: "Agnostic",
   },
@@ -394,6 +1082,10 @@ const profileFacts = [
   {
     label: "Favorite Drink",
     value: "Earl Grey Tea",
+  },
+  {
+    label: "Background",
+    value: "Ukrainian-American",
   },
   {
     label: "Favorite Food",
@@ -1001,24 +1693,72 @@ const characterGroups = [
 ];
 
 const projectCards = [
-	  {
-	    title: "DartBoard",
-	    image: "/images/Dartboard.png",
-	    imageClassName: "object-center scale-[1.01] group-hover:scale-[1.035]",
-	    body: "A stateful AI workspace for saved memories, reusable context, and long-running conversations.",
-	    href: "https://github.com/DanielLezh13/DartBoard-public",
-	  },
+  {
+    title: "DartBoard",
+    image: "/images/Dartboard.png",
+    imageClassName: "object-center scale-[1.01] group-hover:scale-[1.035]",
+    gallery: [
+      "/images/projects/dartboard/chat-workspace.png",
+      "/images/projects/dartboard/assistant-settings.png",
+      "/images/projects/dartboard/archive-search.png",
+    ],
+    galleryLayout: "wide" as const,
+    body: "A stateful AI workspace for saved memories, reusable context, and long-running conversations.",
+    href: "https://dartboard-production-71e8.up.railway.app/",
+    githubHref: "https://github.com/DanielLezh13/DartBoard",
+  },
   {
     title: "Habitual",
     image: "/images/start/habitual-preview.png",
+    gallery: [
+      "/images/projects/habitual/tracker.png",
+      "/images/projects/habitual/insights.png",
+      "/images/projects/habitual/history.png",
+    ],
+    galleryLayout: "phones" as const,
     body: "A mobile-first habit tracker focused on fast logging, sleep, and long-term patterns.",
-    href: "https://github.com/DanielLezh13/Habitual",
+    href: "https://appetize.io/app/b_jcw3saojl7d2a4onr7ed4gursy?device=iphone17promax&osVersion=26.0&toolbar=true",
+    githubHref: "https://github.com/DanielLezh13/Habitual",
   },
   {
     title: "OneShot-AI",
     image: "/images/start/oneshot-preview.png",
+    gallery: [
+      "/images/projects/oneshot/full.png",
+      "/images/projects/oneshot/terminal.png",
+      "/images/projects/oneshot/hero.png",
+    ],
+    galleryLayout: "wide" as const,
     body: "A stripped-down AI terminal for fresh, isolated prompts without memory or carryover.",
-    href: "https://github.com/DanielLezh13/0neShot-AI",
+    href: "https://0ne-shot-ai.vercel.app/",
+    githubHref: "https://github.com/DanielLezh13/0neShot-AI",
+  },
+  {
+    title: "Chess Review",
+    image: "/images/image.png",
+    imageClassName: "object-center",
+    gallery: [
+      "/images/projects/chess/play-position.png",
+      "/images/projects/chess/home-review-board.png",
+    ],
+    galleryLayout: "wide" as const,
+    body: "A chess game analyzer for reviewing moves, mistakes, and key positions.",
+    href: "https://chessreview-app.vercel.app/",
+    githubHref: "https://github.com/DanielLezh13/Chess-Game-Analyzer",
+  },
+  {
+    title: "Exceler A",
+    image: "/images/projects/exceler-a/exceler-a-mark-512.png",
+    imageClassName: "object-contain bg-[#101510] p-1",
+    gallery: [
+      "/images/projects/exceler-a/home.jpg",
+      "/images/projects/exceler-a/course.jpg",
+      "/images/projects/exceler-a/degree-map.jpg",
+    ],
+    galleryLayout: "wide" as const,
+    body: "A self-directed computer science learning workspace with structured Java lessons, demonstrated practice, progress tracking, and a visual degree map.",
+    href: "https://daymark-os.daniellezhanskiy13.chatgpt.site",
+    githubHref: "https://github.com/DanielLezh13/exceler-a",
   },
 ];
 
@@ -1145,8 +1885,8 @@ const enjoymentCategories: {
     id: "games",
     count: videoGameCards.length,
     image: "/images/start/categories/games-square.png",
-    imageClassName: "scale-[1.2] -translate-x-1.5 -translate-y-3 group-hover:scale-[1.2]",
-    imagePosition: "20% 20%",
+    imageClassName: "scale-[1.2] -translate-x-1.5 -translate-y-2.5 group-hover:scale-[1.2]",
+    imagePosition: "20% 22%",
     label: "Games",
     title: "Gaming",
   },
@@ -1154,7 +1894,8 @@ const enjoymentCategories: {
     id: "movies",
     count: movieCards.length,
     image: "/images/start/categories/movies-square.png",
-    imageClassName: "scale-[1.2] translate-x-2.5 translate-y-3 group-hover:scale-[1.2]",
+    imageClassName: "scale-[1.24] translate-x-2.5 translate-y-2.5 group-hover:scale-[1.24]",
+    imagePosition: "50% 56%",
     label: "Movies",
     title: "Movies",
   },
@@ -1162,7 +1903,8 @@ const enjoymentCategories: {
     id: "tv",
     count: tvCards.length,
     image: "/images/start/categories/tv-square.png",
-    imageClassName: "scale-[1.2] -translate-x-1.5 translate-y-3 group-hover:scale-[1.2]",
+    imageClassName: "scale-[1.24] -translate-x-1.5 translate-y-2.5 group-hover:scale-[1.24]",
+    imagePosition: "50% 56%",
     label: "TV Shows",
     title: "TV Shows",
   },
@@ -1170,7 +1912,7 @@ const enjoymentCategories: {
     id: "characters",
     count: characterGroups.reduce((total, group) => total + group.items.length, 0),
     image: "/images/start/categories/people-square.png",
-    imageClassName: "scale-[1.2] translate-x-2 -translate-y-3 group-hover:scale-[1.2]",
+    imageClassName: "scale-[1.2] translate-x-2 -translate-y-2.5 group-hover:scale-[1.2]",
     label: "Characters / People",
     title: "People",
   },
@@ -1252,7 +1994,7 @@ function EnjoymentArchiveSection() {
               <img
                 alt={category.label}
                 className={[
-                  "h-full w-full object-cover transition duration-500",
+                  "h-full w-full object-cover transition duration-500 [backface-visibility:hidden] [transform-origin:center] [will-change:transform]",
                   category.imageClassName ??
                     (isSelected ? "scale-[1.015]" : "group-hover:scale-[1.015]"),
                 ].join(" ")}
@@ -1495,8 +2237,10 @@ function FlipMediaCard({
 }
 
 function SocialBubble({
+  compact = false,
   link,
 }: {
+  compact?: boolean;
   link: {
     href: string;
     icon: string;
@@ -1506,7 +2250,10 @@ function SocialBubble({
   return (
     <a
       aria-label={link.label}
-      className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-stone-100 shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition duration-200 hover:-translate-y-1 hover:scale-105 hover:border-amber-200/35 hover:bg-amber-200/10 hover:shadow-[0_18px_48px_rgba(0,0,0,0.28)]"
+      className={[
+        "inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-stone-100 shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition duration-200 hover:-translate-y-1 hover:scale-105 hover:border-amber-200/35 hover:bg-amber-200/10 hover:shadow-[0_18px_48px_rgba(0,0,0,0.28)]",
+        compact ? "h-10 w-10" : "h-12 w-12",
+      ].join(" ")}
       href={link.href}
       rel="noreferrer"
       target={link.href.startsWith("mailto:") ? undefined : "_blank"}
@@ -1564,49 +2311,232 @@ function ProjectCard({
   project: {
     body: string;
     href: string;
+    githubHref: string;
     image: string;
     imageClassName?: string;
     title: string;
   };
 }) {
   return (
-    <a
-      className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.025] transition hover:border-amber-200/30 hover:bg-white/[0.045]"
-      href={project.href}
-      rel="noreferrer"
-      target="_blank"
-    >
-      <div className="aspect-[16/10] overflow-hidden bg-[#111827]">
-        <img
-          alt=""
-          className={[
-            "h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]",
-            project.imageClassName ?? "",
-          ].join(" ")}
-          decoding="async"
-          loading="lazy"
-          src={project.image}
-        />
+    <article className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.025] transition hover:border-amber-200/30 hover:bg-white/[0.045]">
+      <a
+        aria-label={`Open ${project.title}`}
+        className="flex flex-1 flex-col"
+        href={project.href}
+        rel="noreferrer"
+        target="_blank"
+      >
+        <div className="aspect-square overflow-hidden bg-[#111827]">
+          <img
+            alt=""
+            className={[
+              "h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]",
+              project.imageClassName ?? "",
+            ].join(" ")}
+            decoding="async"
+            loading="lazy"
+            src={project.image}
+          />
+        </div>
+        <div className="flex flex-1 flex-col border-t border-white/10 px-4 py-4">
+          <p className="text-center text-base font-semibold text-stone-100">{project.title}</p>
+          <p className="mt-2 flex-1 text-center text-sm leading-6 text-stone-400">{project.body}</p>
+          <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200/70">
+            Open live demo
+          </p>
+        </div>
+      </a>
+      <div className="flex justify-center border-t border-white/10 px-4 py-3">
+        <a
+          aria-label={`Open ${project.title} on GitHub`}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-stone-200 transition hover:-translate-y-0.5 hover:border-amber-200/35 hover:bg-amber-200/10 hover:text-amber-100"
+          href={project.githubHref}
+          rel="noreferrer"
+          target="_blank"
+          title={`${project.title} on GitHub`}
+        >
+          <SocialIcon icon="github" />
+        </a>
       </div>
-      <div className="border-t border-white/10 px-4 py-4">
-        <p className="text-center text-base font-semibold text-stone-100">{project.title}</p>
-        <p className="mt-2 text-center text-sm leading-6 text-stone-400">{project.body}</p>
-      </div>
-    </a>
+    </article>
   );
 }
 
 function FortniteSection() {
-  return (
-    <section className="scroll-reveal mt-24 min-h-[82vh] rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-8 sm:px-7 lg:px-8">
-      <SectionHeading
-        eyebrow="Part 4"
-        title="Fortnite"
-        body="Fortnite became the game that stayed mentally engaging long term because it turns combat into real-time environment manipulation, pressure, prediction, and fast adaptation."
-      />
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playbackActiveRef = useRef(false);
+  const [progress, setProgress] = useState(0);
+  const [sequenceActive, setSequenceActive] = useState(false);
+  const poweredOn = progress > 0.22;
 
-      <div className="mt-8 rounded-[1.5rem] border border-amber-200/15 bg-amber-200/[0.045] px-5 py-5 sm:px-6 sm:py-6">
-        <div className="space-y-5 text-base leading-8 text-stone-200">
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+    const section = sectionRef.current;
+
+    if (!scrollRoot || !section) {
+      return;
+    }
+
+    let frame = 0;
+
+    const updateProgress = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const bounds = section.getBoundingClientRect();
+        const travel = Math.max(1, section.offsetHeight - scrollRoot.clientHeight);
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        setProgress(
+          prefersReducedMotion
+            ? 0.7
+            : Math.max(0, Math.min(1, -bounds.top / travel)),
+        );
+        setSequenceActive(bounds.bottom > 0 && bounds.top < scrollRoot.clientHeight);
+      });
+    };
+
+    updateProgress();
+    scrollRoot.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollRoot.removeEventListener("scroll", updateProgress);
+      window.removeEventListener("resize", updateProgress);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    const playbackActive = poweredOn && sequenceActive;
+
+    if (playbackActive) {
+      if (!playbackActiveRef.current) {
+        video.currentTime = 0;
+      }
+
+      playbackActiveRef.current = true;
+      void video.play().catch(() => undefined);
+      return;
+    }
+
+    playbackActiveRef.current = false;
+    video.pause();
+  }, [poweredOn, sequenceActive]);
+
+  const powerProgress = Math.max(0, Math.min(1, (progress - 0.18) / 0.16));
+  const zoomProgress = Math.max(0, Math.min(1, (progress - 0.12) / 0.78));
+  const titleProgress = Math.max(0, Math.min(1, progress / 0.3));
+  const statsProgress = Math.max(0, Math.min(1, (progress - 0.68) / 0.16));
+  const playbackControlsAvailable = sequenceActive && zoomProgress >= 0.99;
+  const monitorScale = 0.58 + zoomProgress * 0.42;
+  const monitorTranslateY = 62 - zoomProgress * 98;
+
+  return (
+    <Fragment>
+      <section className="fortnite-scroll-sequence relative mt-28 h-[300vh]" ref={sectionRef}>
+        <div className="fortnite-pc-scene sticky top-0 flex h-screen items-center justify-center overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-x-0 top-[9vh] z-20 text-center transition-opacity duration-100"
+            style={{
+              opacity: 1 - titleProgress,
+              transform: `translate3d(0, ${titleProgress * -18}px, 0)`,
+            }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-amber-200/65">
+              Part 4 / Competitive Play
+            </p>
+            <h3 className="mt-3 text-5xl font-semibold text-stone-50 sm:text-7xl">
+              Fortnite
+            </h3>
+            <p className="mx-auto mt-4 max-w-xl px-6 text-sm leading-7 text-stone-400 sm:text-base">
+              Combat becomes real-time environment manipulation, pressure, prediction, and adaptation.
+            </p>
+          </div>
+
+          <div
+            className="fortnite-computer relative z-10 w-[min(920px,92vw)] [will-change:transform]"
+            style={{
+              transform: `translate3d(0, ${monitorTranslateY}px, 0) scale(${monitorScale})`,
+            }}
+          >
+            <div className="fortnite-monitor rounded-[1.25rem] border border-stone-500/35 bg-[#121313] p-2.5 shadow-[0_46px_130px_rgba(0,0,0,0.78)] sm:p-3.5">
+              <div className="fortnite-monitor-screen relative aspect-video overflow-hidden rounded-[0.72rem] bg-black">
+                <video
+                  aria-label="Fortnite creative fights and gameplay highlights"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  controls={playbackControlsAvailable}
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  ref={videoRef}
+                  src="/images/Char/Highlights.mp4"
+                >
+                  Your browser does not support the video tag.
+                </video>
+                <div
+                  aria-hidden="true"
+                  className="fortnite-screen-off pointer-events-none absolute inset-0 bg-[#020303]"
+                  style={{ opacity: 1 - powerProgress }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="fortnite-screen-flare pointer-events-none absolute inset-0"
+                  style={{ opacity: Math.max(0, 1 - Math.abs(powerProgress - 0.58) * 4.8) }}
+                />
+                <div aria-hidden="true" className="fortnite-scanlines pointer-events-none absolute inset-0" />
+                <div aria-hidden="true" className="fortnite-screen-gloss absolute inset-0" />
+              </div>
+              <div className="flex h-5 items-center justify-between px-2 pt-2">
+                <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-stone-600">
+                  StunnersDL / Live archive
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full transition-shadow duration-300"
+                  style={{
+                    backgroundColor: poweredOn ? "#fde68a" : "#3f3f46",
+                    boxShadow: poweredOn ? "0 0 12px rgba(253,230,138,.9)" : "none",
+                  }}
+                />
+              </div>
+            </div>
+            <div aria-hidden="true" className="fortnite-monitor-neck mx-auto h-12 w-[15%] bg-gradient-to-b from-[#242525] to-[#111212]" />
+            <div aria-hidden="true" className="fortnite-monitor-base mx-auto h-3 w-[42%] rounded-[50%] border-t border-stone-500/25 bg-[#151616] shadow-[0_12px_22px_rgba(0,0,0,0.6)]" />
+          </div>
+
+          <div
+            className="pointer-events-none absolute bottom-[5vh] left-1/2 z-20 flex items-end gap-7 transition-opacity duration-150 sm:gap-14"
+            style={{
+              opacity: statsProgress,
+              transform: `translate3d(-50%, ${(1 - statsProgress) * 18}px, 0)`,
+            }}
+          >
+            <div className="text-center">
+              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">1300+</p>
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">Online wins</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">611th</p>
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">Solo Cash Cup</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8 border-y border-amber-200/15 py-16 sm:py-24">
+        <div className="mx-auto max-w-3xl">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/65">
+            Fortnite / Why It Stayed
+          </p>
+          <div className="mt-7 space-y-6 text-base leading-8 text-stone-300 sm:text-lg sm:leading-9">
           <p>
             Fortnite has probably been the game I have spent the most time on over the last few years. Before it, I went through phases with chess, Call of Duty, and a lot of other games in between, but Fortnite was the one that stayed mentally engaging long term. I accumulated over 1300 wins over time playing regular online matches, while also spending a large amount of time in creative 1v1 build fights because that was always the part of the game I found most interesting mechanically.
           </p>
@@ -1630,7 +2560,7 @@ function FortniteSection() {
           </p>
         </div>
 
-        <div className="mt-6 flex justify-center border-t border-white/10 pt-5">
+        <div className="mt-10 flex justify-start border-t border-white/10 pt-6">
           <a
             className="inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-4 py-2 text-sm font-medium text-amber-50 transition hover:border-amber-200/45 hover:bg-amber-200/15"
             href="https://fortnitetracker.com/profile/all/StunnersDL"
@@ -1640,25 +2570,9 @@ function FortniteSection() {
             Fortnite Stat Tracker
           </a>
         </div>
-
-        <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/20 shadow-[0_24px_90px_rgba(0,0,0,0.32)]">
-          <video
-            className="aspect-video w-full bg-black object-contain"
-            controls
-            preload="metadata"
-            src="/images/Char/Highlights.mp4"
-          >
-            Your browser does not support the video tag.
-          </video>
-          <div className="border-t border-white/10 px-4 py-3">
-            <p className="text-sm font-medium text-stone-100">Highlights</p>
-            <p className="mt-1 text-xs leading-5 text-stone-500">
-              Creative fights and gameplay clips.
-            </p>
-          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </Fragment>
   );
 }
 
@@ -1717,7 +2631,7 @@ function PhotographySection() {
 
           <div
             aria-label="Photography carousel"
-            className="relative mx-14 h-[280px] overflow-visible rounded-lg outline-none [perspective:1400px] sm:mx-20 sm:h-[350px]"
+            className="relative mx-10 h-[250px] overflow-visible rounded-lg outline-none [perspective:1400px] sm:mx-14 sm:h-[320px] min-[1800px]:mx-20 min-[1800px]:h-[350px]"
             tabIndex={0}
             onKeyDown={(event) => {
               if (event.key === "ArrowLeft") {
@@ -1738,7 +2652,7 @@ function PhotographySection() {
               const stagedOffset = clamp(offset, -2.35, 2.35);
               const stagedDistance = Math.abs(stagedOffset);
               const edgeSign = stagedOffset < 0 ? -1 : 1;
-              const translateX = stagedOffset * 45;
+              const translateX = stagedOffset * 38;
               const rotateY = edgeSign * interpolateStops(stagedDistance, [
                 [0, 0],
                 [1, 28],
@@ -1768,7 +2682,7 @@ function PhotographySection() {
                   aria-label={`View photo ${index + 1}`}
                   aria-pressed={activeIndex === index}
                   className={[
-                    "absolute left-1/2 top-1/2 aspect-[4/3] w-[min(76%,420px)] rounded-lg border bg-[#12110f] p-0 shadow-[0_18px_60px_rgba(0,0,0,0.24)] transition duration-300",
+                    "absolute left-1/2 top-1/2 aspect-[4/3] w-[min(64%,340px)] rounded-lg border bg-[#12110f] p-0 shadow-[0_18px_60px_rgba(0,0,0,0.24)] transition duration-300 sm:w-[min(68%,380px)] min-[1800px]:w-[min(76%,420px)]",
                     activeIndex === index
                       ? "border-amber-200/70 ring-1 ring-amber-200/30"
                       : "border-white/10",
@@ -1877,54 +2791,98 @@ function CategorySections({
   );
 }
 
-function CategorySectionGroups({
+function ChapterHeader({
   eyebrow,
-  groups,
-  intro,
   title,
 }: {
   eyebrow: string;
-  groups: ReadingSectionGroup[];
-  intro: string;
   title: string;
 }) {
   return (
+    <header className="mx-auto mb-10 max-w-4xl border-y border-amber-200/15 px-5 py-7 text-center sm:px-7">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
+        {title}
+      </h2>
+    </header>
+  );
+}
+
+function CategorySectionGroups({
+  activeSectionId,
+  eyebrow,
+  groupEyebrow = eyebrow,
+  groups,
+  intro,
+  showIntroHeader = true,
+  title,
+}: {
+  activeSectionId: string;
+  eyebrow: string;
+  groupEyebrow?: string;
+  groups: ReadingSectionGroup[];
+  intro: string;
+  showIntroHeader?: boolean;
+  title: string;
+}) {
+  const activeGroupIndex = Math.max(
+    groups.findIndex((group) =>
+      group.id === activeSectionId ||
+      group.firstSectionId === activeSectionId ||
+      group.children.some((section) => section.id === activeSectionId),
+    ),
+    0,
+  );
+  const activeGroup = groups[activeGroupIndex] ?? groups[0];
+
+  return (
     <div>
-      <header className="mb-14">
-        <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-          {eyebrow}
-        </p>
-        <h2 className="max-w-3xl text-4xl font-semibold leading-tight text-stone-50 sm:text-5xl">
-          {title}
-        </h2>
-        <p className="mt-7 text-xl leading-9 text-stone-300">{intro}</p>
-      </header>
+      {showIntroHeader ? (
+        <header className="mx-auto mb-10 max-w-4xl border-y border-amber-200/15 px-5 py-8 text-center sm:px-7">
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
+            {eyebrow}
+          </p>
+          <h2 className="mt-3 text-4xl font-semibold leading-tight text-stone-50 sm:text-5xl">
+            {title}
+          </h2>
+          <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-stone-300">
+            {intro}
+          </p>
+        </header>
+      ) : null}
 
       <div className="space-y-24">
-        {groups.map((group) => (
-          <section key={group.id} className="scroll-mt-16">
-            <header className="mb-8 rounded-lg border border-amber-200/15 bg-amber-200/[0.04] px-5 py-5">
+        {activeGroup ? (
+          <section id={activeGroup.id} key={activeGroup.id} className="scroll-mt-16">
+            <header className="mb-10 rounded-lg border border-amber-200/15 bg-[linear-gradient(135deg,rgba(253,230,138,0.08),rgba(255,255,255,0.025))] px-5 py-6 shadow-[0_18px_70px_rgba(0,0,0,0.22)] sm:px-7">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-                Economics
+                {groupEyebrow} / Section {activeGroupIndex + 1}
               </p>
-              <h3 className="mt-2 text-2xl font-semibold leading-tight text-stone-50">
-                {group.label}
+              <h3 className="mt-3 text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
+                {activeGroup.label}
               </h3>
+              {activeGroup.intro ? (
+                <p className="mt-5 max-w-4xl text-base leading-8 text-stone-300">
+                  {activeGroup.intro}
+                </p>
+              ) : null}
             </header>
             <div className="space-y-20">
-              {group.children.map((section) => (
+              {activeGroup.children.map((section) => (
                 <ReadingSubsection key={section.id} section={section} />
               ))}
             </div>
           </section>
-        ))}
+        ) : null}
       </div>
     </div>
   );
 }
 
 const placeholderContent: Record<
-  Exclude<ContentView, "start" | "religion" | "politics" | "economics">,
+  Exclude<ContentView, "start" | "current-views" | "notes" | "religion" | "politics" | "economics">,
   {
     eyebrow: string;
     title: string;
@@ -1994,7 +2952,7 @@ const placeholderContent: Record<
   },
   philosophy: {
     eyebrow: "Future Category",
-    title: "My Philosophy",
+    title: "Philosophy",
     intro:
       "This space will collect the personal framework: evidence standards, uncertainty standards, attention priorities, and how to decide what deserves commitment.",
     cards: [
@@ -2017,7 +2975,7 @@ const placeholderContent: Record<
 function CategoryPlaceholder({
   activeView,
 }: {
-  activeView: Exclude<ContentView, "start" | "religion" | "politics" | "economics">;
+  activeView: Exclude<ContentView, "start" | "current-views" | "notes" | "religion" | "politics" | "economics">;
 }) {
   const content = placeholderContent[activeView];
 
@@ -2301,7 +3259,7 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
       },
       {
         title: "Constrained Orientation",
-        detail: "Stable principles guide action while leaving room for context and revision.",
+        detail: "Stable principles guide action while remaining open to context, uncertainty, and revision.",
       },
       {
         title: "Too Flexible",
@@ -2339,8 +3297,9 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
 };
 
 const keyTensionBySection: Record<string, string> = {
+  "religion-introduction": "Interpretation vs. Revelation",
   "religion-overviews": "Fixed Revelation vs. Human Interpretation",
-  religion: "Argument Structure vs. Specific Religion",
+  "religion-argument-patterns": "Argument Structure vs. Specific Religion",
   "probability-convergence-certainty": "Plausibility vs. Certainty",
   "belief-mechanics": "Truth Testing vs. Stability Protection",
   "from-belief-to-positions": "Understanding vs. Taking a Side",
@@ -2356,9 +3315,11 @@ const keyTensionBySection: Record<string, string> = {
 };
 
 const coreLineBySection: Record<string, string> = {
+  "religion-introduction":
+    "Religions are not only systems of belief—they are systems of interpretation.",
   "religion-overviews":
     "Interpretation is not an outside detail. It is part of how religious systems actually function.",
-  religion:
+  "religion-argument-patterns":
     "Different religions often use different language for the same underlying argument structures.",
   "probability-convergence-certainty":
     "Strong convergence can increase plausibility without automatically closing uncertainty.",
@@ -2372,6 +3333,18 @@ const coreLineBySection: Record<string, string> = {
     "Modern systems reward visible certainty more than careful restraint.",
   "personal-framework":
     "Certainty should scale with the strength and uniqueness of the evidence.",
+  "politics-introduction":
+    "Politics is fundamentally the problem of collective coordination under uncertainty.",
+  "politics-political-reality":
+    "Political certainty should remain proportional to the evidence while recognizing the unavoidable limits of every political perspective.",
+  "politics-power":
+    "Power is unavoidable; politics concerns how it is distributed, justified, exercised, and constrained.",
+  "politics-representation":
+    "Political representation is not the representation of everyone equally, but the continual balancing of competing interests, values, and interpretations.",
+  "politics-incentives":
+    "Change the incentives, and political behavior often changes with them.",
+  "politics-identity":
+    "Political identities shape politics, while political systems simultaneously shape political identities. Understanding politics therefore requires examining both sides of this reciprocal relationship.",
   "philosophy-core-orientation":
     "The chapter begins with one posture: usable orientation under uncertainty.",
   "philosophy-metaphysics":
@@ -2379,11 +3352,11 @@ const coreLineBySection: Record<string, string> = {
   "philosophy-epistemology":
     "The question is not only whether evidence points somewhere, but how much confidence it can carry.",
   "philosophy-ethics":
-    "Moral reasoning has to preserve action without pretending complexity has disappeared.",
+    "Moral reasoning must remain strong enough to guide action without pretending complexity has disappeared.",
   "philosophy-political-philosophy":
     "Political judgment has to understand internal perspectives without becoming captured by them.",
   "philosophy-mind":
-    "Consciousness may be layered rather than a single on/off switch.",
+    "Consciousness may be layered rather than a single on/off switch.\nConsciousness may not arise from processing alone, but from integrated systems that continuously preserve, update, and significance-weight their own existence across time.",
 };
 
 function FlowDiagram({ steps }: { steps: string[] }) {
@@ -2411,12 +3384,46 @@ function FlowDiagram({ steps }: { steps: string[] }) {
 }
 
 function StructureDiagram({ diagram }: { diagram: StructureDiagramConfig }) {
+  const isChapterMap = diagram.label === "Chapter Map";
   const gridClassName =
     diagram.variant === "balance"
       ? "grid gap-3 md:grid-cols-3"
       : diagram.variant === "grid"
         ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
         : "grid gap-3 md:grid-cols-5";
+
+  if (isChapterMap) {
+    return (
+      <nav className="mt-9 border-t border-white/10 pt-6" aria-label={diagram.label}>
+        <div className="mb-4">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
+            {diagram.label}
+          </p>
+          <h4 className="mt-2 text-lg font-semibold leading-7 text-stone-100">
+            {diagram.title}
+          </h4>
+        </div>
+
+        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
+          {diagram.items.map((item, index) => (
+            <div className="border-t border-white/10 pt-3" key={item.title}>
+              <div className="flex items-baseline gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/55">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <p className="text-sm font-semibold leading-5 text-stone-100">
+                  {item.title}
+                </p>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-stone-400">
+                {item.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <section className="mt-8 rounded-xl border border-amber-200/15 bg-[linear-gradient(135deg,rgba(253,230,138,0.055),rgba(255,255,255,0.018))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.14)]">
@@ -2765,98 +3772,130 @@ const consciousnessProfileDetails: Record<
   ConsciousnessProfileId,
 	  {
 	    caution: string;
+	    focus: string;
 	    image: string;
 	    imageTransform: string;
 	    reading: string;
 	    stage: string;
+	    unresolved: string;
 	    type: string;
+	    visible: string;
 	  }
 	> = {
 	  ai: {
 	    caution: "High symbolic modeling does not prove felt experience.",
+	    focus: "AI is the inversion case: abstraction and language-like patterning can be strong while the layers most tied to biological vulnerability remain weak or unresolved.",
 	    image: "/images/philosophy/consciousness-pets/ai.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "AI sits strangely in the model: strong in language, memory-like retrieval, prediction, and symbolic patterning, but weak or unresolved in embodiment, vulnerability, sensation, and felt significance.",
 	    stage: "Inverted Abstraction",
+	    unresolved: "The uncertain point is whether symbolic recursion without bodily survival, pain, attachment, and felt stakes should be treated as consciousness or as powerful simulation of conscious language.",
 	    type: "Artificial Pattern System",
+	    visible: "The most visible layers are language, prediction, memory-like retrieval, and recursive pattern manipulation.",
 	  },
 	  ant: {
 	    caution: "Strong coordination does not imply rich reflective awareness.",
+	    focus: "The ant case separates individual organism intelligence from colony-level coordination. Much of what looks complex may belong to distributed social organization rather than private reflection.",
 	    image: "/images/philosophy/consciousness-pets/ant.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "The ant profile emphasizes embodied action, sensation, chemical signaling, and social coordination. The interesting question is how much intelligence belongs to the individual organism versus the colony-scale system.",
 	    stage: "Colony-Level Adaptation",
+	    unresolved: "The thin layers are reflective identity, symbolic language, existential awareness, and individual self-modeling.",
 	    type: "Social Invertebrate",
+	    visible: "The most visible layers are embodied action, chemical response, environmental cue-following, and social coordination.",
 	  },
 	  bacteria: {
 	    caution: "Adaptive responsiveness is not the same as subjective experience.",
+	    focus: "Bacteria show why life and consciousness cannot be treated as identical. The system maintains itself, responds, repairs, and adapts without strong evidence of integrated experience.",
 	    image: "/images/philosophy/consciousness-pets/bacteria.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Bacteria represent the lower edge of the gradient: self-maintenance, environmental response, repair, movement, and survival regulation without much reason to infer integrated felt experience.",
 	    stage: "Embodied Responsiveness",
+	    unresolved: "Almost everything beyond self-maintenance is uncertain or absent: attention, memory, social modeling, identity, language, recursion, and existential awareness remain extremely thin.",
 	    type: "Cellular Life",
+	    visible: "The most visible layers are cellular boundary-maintenance, chemical response, repair, movement, and survival regulation.",
 	  },
 	  chimp: {
 	    caution: "Rich social cognition still differs from human symbolic recursion.",
+	    focus: "The chimp case sits near humans without becoming human. Social intelligence, memory, planning, emotion, and tool use are dense, while explicit symbolic metaphysics remains limited.",
 	    image: "/images/philosophy/consciousness-pets/chimp.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Chimpanzees sit close to the human side of the gradient through memory, emotion, planning, dominance tracking, social intelligence, tool use, and recognizable identity continuity.",
 	    stage: "Primate World-Modeling",
+	    unresolved: "The unresolved boundary is not whether chimps model the world, but how far that modeling becomes symbolic, self-examining, and existential.",
 	    type: "Great Ape",
+	    visible: "The most visible layers are social hierarchy, emotional intelligence, memory, planning, tool behavior, and continuing identity.",
 	  },
 	  crow: {
 	    caution: "Tool use and memory suggest complex modeling without human language.",
+	    focus: "The crow case disrupts a simple mammal ladder. It highlights flexible intelligence, memory, planning, and tool behavior without requiring human-like language or primate embodiment.",
 	    image: "/images/philosophy/consciousness-pets/crow.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Crows make the gradient feel less linear. They show flexible problem-solving, memory, social learning, and tool behavior without looking like a smaller version of human consciousness.",
 	    stage: "Flexible World-Modeling",
+	    unresolved: "The uncertain point is how much flexible problem-solving implies inner experience, self-continuity, or recursion rather than advanced adaptive cognition.",
 	    type: "Corvid Cognition",
+	    visible: "The most visible layers are memory, prediction, social learning, attention, tool use, and adaptive problem-solving.",
 	  },
 	  dog: {
 	    caution: "Attachment and emotion are strong without deep symbolic abstraction.",
+	    focus: "The dog case makes emotional consciousness more visible than abstract consciousness. Attachment, trust, fear, anticipation, and social reading dominate the profile.",
 	    image: "/images/philosophy/consciousness-pets/dog.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Dogs make emotional consciousness easy to notice: attachment, trust, fear, anticipation, social reading, and memory are prominent even without human-style symbolic abstraction.",
 	    stage: "Social-Emotional Modeling",
+	    unresolved: "The thin layers are symbolic language, explicit recursion, and existential reflection; the profile is rich emotionally without becoming philosophical.",
 	    type: "Mammalian Companion",
+	    visible: "The most visible layers are attachment, affect, social recognition, memory, anticipation, and body-centered experience.",
 	  },
 	  fish: {
 	    caution: "Pain, navigation, and memory may exist without reflective identity.",
+	    focus: "The fish case tests the gap between sensation and reflection. Pain response, navigation, memory, and prediction may be real without implying a strong self-narrative.",
 	    image: "/images/philosophy/consciousness-pets/fish.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Fish sit in the middle of the early experiential range: sensation, navigation, pain response, memory, and prediction become more integrated than simple responsiveness alone.",
 	    stage: "Sensorimotor Experience",
+	    unresolved: "The uncertain point is whether integrated sensation and pain response amount to felt experience without reflective identity or symbolic self-modeling.",
 	    type: "Aquatic Vertebrate",
+	    visible: "The most visible layers are sensation, navigation, pain response, memory, prediction, and embodied survival.",
 	  },
 	  human: {
 	    caution: "Recursive self-awareness creates meaning, anxiety, abstraction, and distortion.",
+	    focus: "The human case is not just higher processing. It is the convergence of body, emotion, language, identity, culture, mortality-awareness, and recursion into a self-interpreting world.",
 	    image: "/images/philosophy/consciousness-pets/human.png",
 	    imageTransform: "translate(0px, 0px) scale(1)",
 	    reading: "Humans mark the highest known point in this model because symbolic language, identity, civilization, long-term planning, mortality awareness, and consciousness reflecting on itself converge.",
 	    stage: "Existential Recursion",
+	    unresolved: "The danger is distortion: the same recursion that allows philosophy, science, morality, and identity also produces anxiety, ideology, self-deception, and overconfident models.",
 	    type: "Symbolic Primate",
+	    visible: "The most visible layers are language, identity, social imagination, long-term prediction, symbolic abstraction, and explicit self-reflection.",
 	  },
 	};
 
 const consciousnessStatGroups: Array<{
   label: string;
   nodeIds: ConsciousnessNodeId[];
+  reading: string;
 }> = [
   {
     label: "Embodied",
     nodeIds: ["embodiment", "sensation", "emotion"],
+    reading: "body, sensation, affect, vulnerability, and survival-facing contact with the world",
   },
   {
     label: "Modeling",
     nodeIds: ["attention", "memory", "prediction"],
+    reading: "attention, memory, anticipation, environmental learning, and flexible world-modeling",
   },
   {
     label: "Social Self",
     nodeIds: ["social", "identity"],
+    reading: "attachment, social recognition, group orientation, and continuity of self across interaction",
   },
   {
     label: "Symbolic",
     nodeIds: ["language", "recursion", "existential"],
+    reading: "language, abstraction, self-reflection, mortality awareness, and symbolic recursion",
   },
 ];
 
@@ -2878,28 +3917,22 @@ function ConsciousnessSystemsExplorer() {
 	    activeNode,
 	    activeStrength,
 	  );
-	  const humanProfile =
-	    consciousnessProfiles.find((profile) => profile.id === "human") ??
-	    consciousnessProfiles[0];
-	  const activeAverage =
-	    consciousnessLayerOrder.reduce(
-	      (total, nodeId) => total + activeProfile.weights[nodeId],
-	      0,
-	    ) / consciousnessLayerOrder.length;
-	  const humanAverage =
-	    consciousnessLayerOrder.reduce(
-	      (total, nodeId) => total + humanProfile.weights[nodeId],
-	      0,
-	    ) / consciousnessLayerOrder.length;
-	  const overallScore = Math.round((activeAverage / humanAverage) * 100);
 	  const layerProfile = consciousnessStatGroups.map((group) => ({
 	    label: group.label,
+	    nodeIds: group.nodeIds,
+	    reading: group.reading,
 	    value:
 	      group.nodeIds.reduce(
 	        (total, nodeId) => total + activeProfile.weights[nodeId],
 	        0,
 	      ) / group.nodeIds.length,
 	  }));
+	  const emphasizedGroups = [...layerProfile]
+	    .sort((left, right) => right.value - left.value)
+	    .slice(0, 2);
+	  const lighterGroups = [...layerProfile]
+	    .sort((left, right) => left.value - right.value)
+	    .slice(0, 2);
 
   return (
     <section
@@ -2944,125 +3977,163 @@ function ConsciousnessSystemsExplorer() {
         ))}
       </div>
 
-	      <div className="mt-5 grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-	        <aside className="space-y-3">
-	          <div className="overflow-hidden rounded-lg border border-amber-200/15 bg-black/25">
-	            <div className="border-b border-white/10 px-4 py-3">
-	              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-	                Specimen
-	              </p>
-	              <div className="mt-2 flex items-start justify-between gap-3">
-	                <h5 className="text-2xl font-semibold leading-none text-stone-50">
-	                  {activeProfile.label}
-	                </h5>
-	                <span className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-stone-400">
-	                  {activeProfileDetails.stage}
-	                </span>
-	              </div>
-	            </div>
-	
-	            <div className="flex min-h-[278px] items-start justify-center bg-[linear-gradient(180deg,rgba(253,230,138,0.045),rgba(0,0,0,0.02))] px-2 pb-4 pt-4">
-	              <SpecimenPortrait profileId={activeProfile.id} />
-	            </div>
-	          </div>
-	
-	          <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-4">
-	            <div className="flex items-center justify-between gap-3">
-	              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-	                Type
-	              </p>
-	              <p className="text-right text-sm font-medium text-stone-200">
-	                {activeProfileDetails.type}
-	              </p>
-	            </div>
-	            <p className="mt-3 text-sm leading-6 text-stone-300">
-	              {activeProfileDetails.reading}
-	            </p>
-	            <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-5 text-amber-50/80">
-	              {activeProfileDetails.caution}
-	            </p>
-	          </div>
-	        </aside>
-	
-	        <section className="rounded-lg border border-white/10 bg-black/20 px-4 py-4">
-	          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-	            <div>
-	              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-	                Gradient Position
-	              </p>
-	              <h5 className="mt-1 text-lg font-semibold text-stone-100">
-	                Adaptive Integration Profile
-	              </h5>
-	              <p className="mt-2 max-w-xl text-sm leading-6 text-stone-400">
-	                Relative to the highest known profile in this model: human recursive consciousness.
-	              </p>
-	            </div>
-	            <div className="min-w-[150px] rounded-md border border-amber-200/15 bg-amber-200/[0.045] px-3 py-2">
-	              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
-	                Relative Level
-	              </p>
-	              <p className="mt-1 text-3xl font-semibold leading-none text-amber-100">
-	                {overallScore}
-	              </p>
-	            </div>
-	          </div>
-	
-	          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-	            <div
-	              className="h-full rounded-full bg-amber-200"
-	              style={{ width: `${Math.min(Math.max(overallScore, 3), 100)}%` }}
-	            />
-	          </div>
-	
-	          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px] lg:items-center">
-	            <ConsciousnessRadar
-	              activeNodeId={activeNode.id}
-	              profile={activeProfile}
-	              onSelect={setActiveNodeId}
-	            />
-	
-	            <div className="space-y-4">
-	              <div className="space-y-3">
-	                {layerProfile.map((group) => (
-	                  <div key={group.label}>
-	                    <div className="flex items-center justify-between gap-3">
-	                      <span className="text-sm font-medium text-stone-200">
-	                        {group.label}
-	                      </span>
-	                      <span className="font-mono text-xs text-amber-100">
-	                        {Math.round(group.value * 100)}
-	                      </span>
-	                    </div>
-	                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-	                      <div
-	                        className="h-full rounded-full bg-amber-200/85"
-	                        style={{ width: `${Math.max(group.value * 100, 3)}%` }}
-	                      />
-	                    </div>
-	                  </div>
-	                ))}
-	              </div>
-	
-	              <div className="min-h-[138px] rounded-md border border-white/10 bg-white/[0.025] px-3 py-3">
-	                <div className="flex items-center justify-between gap-3">
-	                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-	                    Layer in This Organism
-	                  </p>
-	                  <span className="font-mono text-xs text-amber-100">
-	                    {Math.round(activeStrength * 100)}
-	                  </span>
-	                </div>
-	                <h6 className="mt-2 text-base font-semibold text-amber-50">
-	                  {activeNode.label}
-	                </h6>
-	                <p className="mt-2 text-sm leading-6 text-stone-400">
-	                  {activeLayerReading}
-	                </p>
-	              </div>
-	            </div>
-	          </div>
-	        </section>
-	      </div>
+      <div className="mt-5 grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-stretch">
+        <aside className="grid gap-3">
+          <div className="overflow-hidden rounded-lg border border-amber-200/15 bg-black/25">
+            <div className="border-b border-white/10 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                Specimen
+              </p>
+              <div className="mt-2 flex items-start justify-between gap-3">
+                <h5 className="text-2xl font-semibold leading-none text-stone-50">
+                  {activeProfile.label}
+                </h5>
+                <span className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-stone-400">
+                  {activeProfileDetails.stage}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex min-h-[260px] items-start justify-center bg-[linear-gradient(180deg,rgba(253,230,138,0.045),rgba(0,0,0,0.02))] px-2 pb-4 pt-4">
+              <SpecimenPortrait profileId={activeProfile.id} />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                Type
+              </p>
+              <p className="text-right text-sm font-medium text-stone-200">
+                {activeProfileDetails.type}
+              </p>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-stone-300">
+              {activeProfileDetails.reading}
+            </p>
+            <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-5 text-amber-50/80">
+              {activeProfileDetails.caution}
+            </p>
+          </div>
+        </aside>
+
+        <section className="grid rounded-lg border border-white/10 bg-black/20 px-4 py-4">
+          <div>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                  Gradient Position
+                </p>
+                <h5 className="mt-1 text-lg font-semibold text-stone-100">
+                  Model Reading
+                </h5>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
+                  This is not a scorecard. It is a way to visualize which layers are most visible, which layers remain thin, and where interpretation becomes uncertain.
+                </p>
+              </div>
+              <div className="w-full rounded-md border border-amber-200/15 bg-amber-200/[0.045] px-3 py-2 lg:max-w-[250px]">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
+                  Reading Caution
+                </p>
+                <p className="mt-1 text-xs leading-5 text-amber-50/85">
+                  The diagram shows relative emphasis, not proof of inner experience.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-md border border-white/10 bg-white/[0.025] px-4 py-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                  Interpretation
+                </p>
+                <p className="mt-3 text-sm leading-6 text-stone-300">
+                  {activeProfileDetails.focus}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-stone-400">
+                  {activeProfile.note}
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="rounded-md border border-white/10 bg-white/[0.025] px-4 py-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                    Most Visible Layers
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-stone-400">
+                    {activeProfileDetails.visible}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {emphasizedGroups.map((group) => (
+                      <span
+                        className="rounded-full border border-amber-200/20 bg-amber-200/[0.055] px-2 py-1 text-xs font-medium text-amber-50/85"
+                        key={group.label}
+                      >
+                        {group.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-white/[0.025] px-4 py-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                    Less Visible or Unresolved
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-stone-400">
+                    {activeProfileDetails.unresolved}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {lighterGroups.map((group) => (
+                      <span
+                        className="rounded-full border border-white/10 bg-white/[0.025] px-2 py-1 text-xs font-medium text-stone-400"
+                        key={group.label}
+                      >
+                        {group.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-md border border-white/10 bg-white/[0.025] px-4 py-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                Selected Layer
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-start">
+                <h6 className="text-base font-semibold text-amber-50">
+                  {activeNode.label}
+                </h6>
+                <p className="text-sm leading-6 text-stone-400">
+                  {activeLayerReading}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {layerProfile.map((group) => (
+                <button
+                  className={[
+                    "rounded-md border px-3 py-3 text-left transition",
+                    group.nodeIds.includes(activeNode.id)
+                      ? "border-amber-200/45 bg-amber-200/[0.075]"
+                      : "border-white/10 bg-white/[0.02] hover:border-amber-200/25",
+                  ].join(" ")}
+                  key={group.label}
+                  onClick={() => setActiveNodeId(group.nodeIds[0])}
+                  type="button"
+                >
+                  <h6 className="text-sm font-semibold leading-6 text-stone-100">
+                    {group.label}
+                  </h6>
+                  <p className="mt-1 text-xs leading-5 text-stone-400">
+                    {getConsciousnessGroupReading(activeProfile.id, group.label)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
 	    </section>
 	  );
 	}
@@ -3161,6 +4232,67 @@ const consciousnessLayerReadings: Record<
     peak: "social modeling becomes symbolic and institutional: identity, morality, politics, culture, and reputation become recursive systems.",
   },
 };
+
+const consciousnessGroupReadings: Record<
+  ConsciousnessProfileId,
+  Record<string, string>
+> = {
+  ai: {
+    Embodied: "weakest layer: no biological pain, hunger, mortality, or survival-facing body.",
+    Modeling: "strong pattern-tracking, prediction, context handling, and memory-like retrieval.",
+    "Social Self": "can simulate social roles and dialogue without stable lived belonging.",
+    Symbolic: "dominant layer: language, abstraction, recursion, and conceptual compression.",
+  },
+  ant: {
+    Embodied: "movement, chemical sensing, obstacle response, and survival routines are central.",
+    Modeling: "local cue-following and learned paths matter more than flexible imagination.",
+    "Social Self": "coordination is strong, but much of it belongs to colony structure.",
+    Symbolic: "symbolic reflection is extremely thin; signals are not human-like concepts.",
+  },
+  bacteria: {
+    Embodied: "cell boundary, repair, movement, and chemical regulation do most of the work.",
+    Modeling: "response patterns exist, but not rich world-modeling or flexible attention.",
+    "Social Self": "interaction can occur without implying a self/other social model.",
+    Symbolic: "no meaningful symbolic layer; abstraction is not visible here.",
+  },
+  chimp: {
+    Embodied: "body, emotion, sensation, tool use, and survival pressures are deeply integrated.",
+    Modeling: "planning, memory, threat-tracking, and flexible learning are highly visible.",
+    "Social Self": "dominance, alliance, attachment, and recognition organize much of the profile.",
+    Symbolic: "proto-symbolic capacity appears, but not civilization-scale language recursion.",
+  },
+  crow: {
+    Embodied: "flight, tool handling, perception, and environmental contact remain important.",
+    Modeling: "memory, problem-solving, planning, and object manipulation become unusually strong.",
+    "Social Self": "recognition, learning from others, and group behavior are clearly relevant.",
+    Symbolic: "cleverness is visible without needing human-style language or existential concepts.",
+  },
+  dog: {
+    Embodied: "sensation, pain, movement, comfort, and bodily vulnerability are easy to see.",
+    Modeling: "memory and anticipation show up through routines, expectation, and learning.",
+    "Social Self": "attachment, trust, fear, loyalty, and human-reading are the strongest signals.",
+    Symbolic: "language is mostly receptive and practical, not abstract or philosophical.",
+  },
+  fish: {
+    Embodied: "navigation, pain response, movement, and sensory orientation dominate the profile.",
+    Modeling: "learning and prediction exist mainly around routes, threat, food, and safety.",
+    "Social Self": "social behavior may exist, but the self/other model remains limited.",
+    Symbolic: "symbolic abstraction and explicit self-reflection are not visible.",
+  },
+  human: {
+    Embodied: "the body still anchors emotion, pain, vulnerability, identity, and mortality.",
+    Modeling: "memory, attention, prediction, and counterfactual imagination become long-range.",
+    "Social Self": "identity, reputation, morality, politics, family, and culture become recursive.",
+    Symbolic: "language turns experience into concepts, stories, institutions, and philosophy.",
+  },
+};
+
+function getConsciousnessGroupReading(
+  profileId: ConsciousnessProfileId,
+  groupLabel: string,
+) {
+  return consciousnessGroupReadings[profileId][groupLabel] ?? "";
+}
 
 function getConsciousnessLayerReading(
   profile: (typeof consciousnessProfiles)[number],
@@ -3432,7 +4564,26 @@ function ConsciousnessRadar({
   );
 }
 
-function CoreLine({ children }: { children: string }) {
+function CoreLine({
+  children,
+  unframed = false,
+}: {
+  children: string;
+  unframed?: boolean;
+}) {
+  if (unframed) {
+    return (
+      <section className="mt-6 border-l-2 border-amber-200/35 py-1 pl-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+          Core Principle
+        </p>
+        <p className="mt-2 whitespace-pre-line text-lg font-medium leading-8 text-stone-100">
+          {children}
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="mt-5 rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.025] px-5 py-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
       <div className="flex gap-4">
@@ -3442,7 +4593,7 @@ function CoreLine({ children }: { children: string }) {
         />
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-            Load-Bearing Line
+            Core Principle
           </p>
           <p className="mt-2 text-lg font-medium leading-8 text-stone-100">
             {children}
@@ -3453,7 +4604,24 @@ function CoreLine({ children }: { children: string }) {
   );
 }
 
-function KeyTension({ children }: { children: string }) {
+function KeyTension({
+  children,
+  unframed = false,
+}: {
+  children: string;
+  unframed?: boolean;
+}) {
+  if (unframed) {
+    return (
+      <section className="mt-8 border-t border-white/10 pt-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+          Key Tension
+        </p>
+        <p className="mt-2 text-base font-medium text-stone-100">{children}</p>
+      </section>
+    );
+  }
+
   return (
     <section className="mt-8 rounded-xl border border-amber-200/15 bg-amber-200/[0.045] px-4 py-4">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
@@ -3577,45 +4745,69 @@ function EvidentialStylesPanel({ styles }: { styles: EvidentialStyle[] }) {
 function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
   const outcomeBreakIndex = 4;
   const pressureQuestionIndex = 40;
+  const groupedParagraphRanges = [
+    [0, 3],
+    [3, 4],
+    [4, 6],
+    [6, 8],
+    [8, 11],
+    [11, 16],
+    [16, 19],
+    [19, 23],
+    [23, 27],
+    [27, 35],
+    [35, 39],
+    [41, 44],
+  ];
+  const groupedRangeStartByIndex = new Map(
+    groupedParagraphRanges.map(([start, end]) => [start, end]),
+  );
 
   const renderStudyParagraphs = (
     paragraphs: string[],
     offset = 0,
-    className = "text-lg leading-9 text-stone-300",
+    className = "text-base leading-8 text-stone-300",
   ) => (
-    <div className={["space-y-6", className].join(" ")}>
-      {paragraphs.map((block, index) => (
-        <p
-          className={[
-            "max-w-3xl",
-            (index + offset) % 2 === 1 ? "lg:ml-auto lg:text-right" : "",
-          ].join(" ")}
-          key={block}
-        >
-          {block}
-        </p>
-      ))}
+    <div className={["space-y-4", className].join(" ")}>
+      {paragraphs.map((block, index) => {
+        const originalIndex = offset + index;
+
+        if (groupedParagraphRanges.some(([start, end]) => originalIndex > start && originalIndex < end)) {
+          return null;
+        }
+
+        const groupEnd = groupedRangeStartByIndex.get(originalIndex);
+        const text = groupEnd
+          ? study.body.slice(originalIndex, groupEnd).join(" ")
+          : block;
+
+        return (
+          <p className="max-w-none" key={`study-${originalIndex}`}>
+            {text}
+          </p>
+        );
+      })}
     </div>
   );
 
   return (
-    <section className="scroll-reveal mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-7 sm:px-7 lg:px-9">
-      <div>
+    <section className="mt-10 border-t border-white/10 pt-10">
+      <div className="max-w-none">
         <p className="font-mono text-xs uppercase tracking-[0.22em] text-amber-200/70">
           {study.eyebrow}
         </p>
-        <h3 className="mt-4 max-w-3xl text-2xl font-semibold leading-tight text-stone-50 sm:text-4xl">
+        <h3 className="mt-4 text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
           {study.title}
         </h3>
-        <p className="mt-5 max-w-3xl text-xl leading-9 text-stone-300">
+        <p className="mt-4 text-base leading-8 text-stone-300">
           {study.intro}
         </p>
 
-        <div className="mt-8">
+        <div className="mt-5">
           {renderStudyParagraphs(study.body.slice(0, outcomeBreakIndex))}
         </div>
 
-        <div className="my-8 grid gap-4 md:grid-cols-2">
+        <div className="my-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-amber-200/15 bg-amber-200/[0.055] p-5">
             <h4 className="text-base font-semibold text-stone-50">
               Favorable Outcomes
@@ -3649,11 +4841,11 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
           outcomeBreakIndex,
         )}
 
-        <div className="my-8 rounded-2xl border border-amber-200/20 bg-[linear-gradient(135deg,rgba(250,204,21,0.12),rgba(0,0,0,0.22))] p-5 sm:p-6">
+        <div className="my-6 rounded-2xl border border-amber-200/20 bg-[linear-gradient(135deg,rgba(250,204,21,0.12),rgba(0,0,0,0.22))] p-5 sm:p-6">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-100/80">
             Pressure Test
           </p>
-          <p className="mt-3 text-xl font-semibold leading-8 text-stone-50 sm:text-2xl sm:leading-9">
+          <p className="mt-3 text-lg font-semibold leading-8 text-stone-50 sm:text-xl">
             {study.coreQuestion}
           </p>
         </div>
@@ -3668,48 +4860,93 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
 }
 
 function TopicSection({ topic }: { topic: NavTopic }) {
+  const isReligionTopic = topic.id === "religion-argument-patterns";
+  const topicPartHeader = isReligionTopic
+    ? getSectionPartHeader(topic.title)
+    : null;
+
   return (
-    <section className="scroll-mt-16" id={topic.id}>
-      <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-        Topic
-      </p>
-      <h2 className="text-3xl font-semibold text-stone-50 sm:text-4xl">
-        {topic.title}
-      </h2>
-      <p className="mt-5 text-lg leading-9 text-stone-300">{topic.intro}</p>
+    <section
+      className={[
+        "scroll-mt-16",
+        isReligionTopic ? "pt-10" : "",
+      ].join(" ")}
+      id={topic.id}
+    >
+      <header>
+        {topicPartHeader ? (
+          <>
+            <p className="mb-5 text-center font-mono text-xs uppercase tracking-[0.2em] text-stone-500">
+              Religion / Argument Patterns
+            </p>
+            <div
+              className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4"
+              aria-hidden="true"
+            >
+              <span className="h-px bg-gradient-to-r from-transparent via-amber-200/25 to-amber-200/10" />
+              <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.045] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/75">
+                {topicPartHeader.label}
+              </span>
+              <span className="h-px bg-gradient-to-r from-amber-200/10 via-amber-200/25 to-transparent" />
+            </div>
+            <h2 className="text-center text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
+              {topicPartHeader.title}
+            </h2>
+            <p className="mx-auto mt-5 max-w-3xl text-center text-base leading-8 text-stone-300">
+              {topic.intro}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
+              Topic
+            </p>
+            <h2 className="text-3xl font-semibold text-stone-50 sm:text-4xl">
+              {topic.title}
+            </h2>
+            <p className="mt-5 text-lg leading-9 text-stone-300">{topic.intro}</p>
+          </>
+        )}
+      </header>
+
+      {coreLineBySection[topic.id] ? (
+        <CoreLine unframed>{coreLineBySection[topic.id]}</CoreLine>
+      ) : null}
 
       {topic.contentBlocks?.length ? (
-        <div className="mt-7 space-y-6 text-lg leading-9 text-stone-300">
-          {topic.contentBlocks.map((block) => (
-            <p key={block}>{block}</p>
+        <div
+          className={[
+            "mt-7 text-stone-300",
+            isReligionTopic
+              ? "space-y-5 text-base leading-8"
+              : "space-y-6 text-lg leading-9",
+          ].join(" ")}
+        >
+          {topic.contentBlocks.map((block, index) => (
+            <p key={`${topic.id}-content-${index}`}>{block}</p>
           ))}
         </div>
       ) : null}
 
-      {keyTensionBySection[topic.id] ? (
-        <KeyTension>{keyTensionBySection[topic.id]}</KeyTension>
-      ) : null}
-
-      {coreLineBySection[topic.id] ? (
-        <CoreLine>{coreLineBySection[topic.id]}</CoreLine>
-      ) : null}
-
       {topic.layers?.length ? (
         <section className="mt-10">
+          <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
           <h3 className="text-2xl font-semibold text-stone-100">
             Three Layers of Argument
           </h3>
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 grid gap-3">
             {topic.layers.map((layer) => (
-              <div
+              <article
                 className="rounded-lg border border-white/10 bg-white/[0.025] px-5 py-5"
                 key={layer.title}
               >
-                <h4 className="text-base font-semibold text-stone-100">{layer.title}</h4>
+                <h4 className="text-base font-semibold text-stone-100">
+                  {layer.title}
+                </h4>
                 <p className="mt-3 text-base leading-8 text-stone-300">
                   {layer.description}
                 </p>
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                   {layer.examples.map((example) => (
                     <li className="flex gap-3 text-sm leading-6 text-stone-300" key={example}>
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
@@ -3718,20 +4955,27 @@ function TopicSection({ topic }: { topic: NavTopic }) {
                   ))}
                 </ul>
                 {layer.note ? (
-                  <p className="mt-4 border-t border-white/10 pt-4 text-sm leading-7 text-stone-400">
+                  <p className="mt-5 border-t border-white/10 pt-4 text-sm leading-7 text-stone-400">
                     {layer.note}
                   </p>
                 ) : null}
-              </div>
+              </article>
             ))}
           </div>
         </section>
       ) : null}
 
       {topic.afterLayers?.length ? (
-        <div className="mt-9 space-y-6 text-lg leading-9 text-stone-300">
-          {topic.afterLayers.map((block) => (
-            <p key={block}>{block}</p>
+        <div
+          className={[
+            "mt-9 text-stone-300",
+            isReligionTopic
+              ? "space-y-5 text-base leading-8"
+              : "space-y-6 text-lg leading-9",
+          ].join(" ")}
+        >
+          {topic.afterLayers.map((block, index) => (
+            <p key={`${topic.id}-after-${index}`}>{block}</p>
           ))}
         </div>
       ) : null}
@@ -3745,28 +4989,44 @@ function TopicSection({ topic }: { topic: NavTopic }) {
       ) : null}
 
       {topic.argumentPatternGroups?.length ? (
-        <section className="mt-12 border-t border-white/10 pt-10">
+        <section className="mt-12 pt-10">
+          <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
           <h3 className="text-2xl font-semibold text-stone-100">
             Core Argument Map
           </h3>
-          <p className="mt-4 text-lg leading-9 text-stone-300">
+          <p className="mt-4 text-base leading-8 text-stone-300">
             These arguments appear across multiple religions. While they differ in
             wording or context, they rely on repeatable structures.
           </p>
-          <p className="mt-4 text-lg leading-9 text-stone-300">
+          <p className="mt-4 text-base leading-8 text-stone-300">
             The map combines general cross-religion arguments and system-specific
             arguments into one layered reference.
           </p>
 
-          <div className="mt-10 space-y-12">
+          <div className="mt-8 grid gap-3">
             {topic.argumentPatternGroups.map((group, groupIndex) => (
-              <section key={group.title}>
-                <h4 className="text-xl font-semibold text-stone-100">{group.title}</h4>
-                <p className="mt-3 text-base leading-8 text-stone-300">
-                  {group.intro}
-                </p>
-
-                <div className="mt-5 space-y-3">
+              <details
+                className="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] transition hover:border-white/20 hover:bg-white/[0.04]"
+                key={group.title}
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
+                  <span>
+                    <span className="block text-lg font-semibold text-stone-100">
+                      {group.title}
+                    </span>
+                    <span className="mt-1 block text-sm text-stone-400">
+                      {group.patterns.length} argument patterns
+                    </span>
+                  </span>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-lg leading-none text-stone-400 transition group-open:rotate-45 group-open:border-white group-open:bg-stone-100 group-open:text-stone-950">
+                    +
+                  </span>
+                </summary>
+                <div className="border-t border-white/10 px-5 py-5">
+                  <p className="text-base leading-8 text-stone-300">
+                    {group.intro}
+                  </p>
+                  <div className="mt-5 divide-y divide-white/10 border-y border-white/10">
                   {group.patterns.map((pattern, index) => {
                     const patternNumber =
                       topic.argumentPatternGroups
@@ -3774,36 +5034,34 @@ function TopicSection({ topic }: { topic: NavTopic }) {
                         .reduce((total, item) => total + item.patterns.length, 0) ?? 0;
 
                     return (
-                    <div
-                      className="rounded-lg border border-white/10 bg-white/[0.025] px-5 py-5"
-                      key={pattern.title}
-                    >
-                      <h5 className="text-base font-semibold text-stone-100">
-                        {patternNumber + index + 1}. {pattern.title}
-                      </h5>
-                      <div className="mt-4 space-y-3 text-sm leading-7 text-stone-300">
-                        <p>
-                          <span className="font-medium text-stone-100">Claim:</span>{" "}
-                          {pattern.claim}
-                        </p>
-                        <p>
-                          <span className="font-medium text-stone-100">Issue:</span>{" "}
-                          {pattern.issue}
-                        </p>
-                        <p>
-                          <span className="font-medium text-stone-100">Takeaway:</span>{" "}
-                          {pattern.takeaway}
-                        </p>
+                      <div className="py-5" key={pattern.title}>
+                        <h5 className="text-base font-semibold text-stone-100">
+                          {patternNumber + index + 1}. {pattern.title}
+                        </h5>
+                        <div className="mt-4 space-y-3 text-sm leading-7 text-stone-300">
+                          <p>
+                            <span className="font-medium text-stone-100">Claim:</span>{" "}
+                            {pattern.claim}
+                          </p>
+                          <p>
+                            <span className="font-medium text-stone-100">Issue:</span>{" "}
+                            {pattern.issue}
+                          </p>
+                          <p>
+                            <span className="font-medium text-stone-100">Takeaway:</span>{" "}
+                            {pattern.takeaway}
+                          </p>
+                        </div>
                       </div>
-                    </div>
                     );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </section>
+              </details>
             ))}
           </div>
 
-          <div className="mt-10 rounded-lg border border-white/10 bg-white/[0.025] px-5 py-5">
+          <div className="mt-10 border-l-2 border-amber-200/25 py-1 pl-5">
             <h4 className="text-xl font-semibold text-stone-100">Pattern Summary</h4>
             <p className="mt-4 text-base leading-8 text-stone-300">
               Across different religions, these arguments tend to follow the same
@@ -3834,20 +5092,21 @@ function TopicSection({ topic }: { topic: NavTopic }) {
 
       {topic.children?.length ? (
         <div className="mt-12 space-y-5">
-          <div className="border-t border-white/10 pt-10">
+          <div className="pt-10">
+            <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
               Applications
             </p>
             <h3 className="text-2xl font-semibold text-stone-100">
               Religion-Specific Applications
             </h3>
-            <p className="mt-4 max-w-2xl text-lg leading-9 text-stone-300">
+            <p className="mt-4 max-w-2xl text-base leading-8 text-stone-300">
               These cards show how the shared argument map appears inside specific
               religious systems. The full deconstructions remain inside each card.
             </p>
           </div>
           {topic.children.map((section) =>
-            topic.id === "religion" ? (
+            topic.id === "religion-argument-patterns" ? (
               <ReligionPanel key={section.id} section={section} />
             ) : (
               <ReadingSubsection key={section.id} section={section} />
@@ -3871,100 +5130,83 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
 
   return (
     <section
-      className={[
-        "scroll-mt-16 overflow-hidden rounded-xl border px-5 py-5 sm:px-6 sm:py-6",
-        accentClasses.card,
-        accentClasses.border,
-      ].join(" ")}
+      className="scroll-mt-16 pt-7"
       id={section.id}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-stone-500">
-            {section.eyebrow}
-          </p>
-          <div className="mt-4 flex items-center gap-4">
-            <div
-              className={[
-                "grid h-14 w-14 shrink-0 place-items-center rounded-full border text-3xl",
-                accentClasses.symbol,
-              ].join(" ")}
-              aria-hidden="true"
-            >
-              {section.visual?.symbol}
-            </div>
-            <div>
-              <h3 className="text-2xl font-semibold text-stone-50 sm:text-3xl">
+      <details className="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] transition hover:border-white/20 hover:bg-white/[0.04]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-5 sm:px-6">
+          <span className="min-w-0">
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-stone-500">
+              {section.eyebrow}
+            </span>
+            <span className="mt-3 flex items-center gap-3">
+              <span className="text-2xl leading-none text-amber-100/80" aria-hidden="true">
+                {section.visual?.symbol}
+              </span>
+              <span className="text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
                 {section.label}
-              </h3>
-              <p className="mt-1 text-xs leading-5 text-stone-500">
-                {section.arguments.length} preserved argument notes
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-5 max-w-2xl text-base leading-8 text-stone-300">
-        {section.intro}
-      </p>
-
-      {section.visual?.families.length ? (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {section.visual.families.map((family) => (
-            <span
-              className={[
-                "rounded-full border px-3 py-1 text-xs",
-                accentClasses.chip,
-              ].join(" ")}
-              key={family}
-            >
-              {family}
+              </span>
             </span>
-          ))}
-        </div>
-      ) : null}
-
-      <div className={["mt-6 border-t pt-5", accentClasses.divider].join(" ")}>
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
-          Reading Lens
-        </p>
-        <p className="mt-3 text-sm leading-7 text-stone-300">
-          {section.contentBlocks[0]}
-        </p>
-      </div>
-
-      {philosophicalNote?.body ? (
-        <section
-          className={[
-            "mt-5 rounded-lg border px-4 py-4",
-            accentClasses.note,
-          ].join(" ")}
-        >
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-100/70">
-            {philosophicalNote.title}
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300">
-            {philosophicalNote.body}
-          </p>
-        </section>
-      ) : null}
-
-      <details className="group mt-5">
-        <summary className="cursor-pointer list-none text-sm font-medium text-stone-300 transition hover:text-stone-100">
-          <span className="inline-flex items-center gap-2">
-            <span
-              className={[
-                "grid h-6 w-6 place-items-center rounded-full border text-stone-500 transition group-open:rotate-180 group-open:bg-stone-100 group-open:text-stone-950",
-                accentClasses.iconBorder,
-              ].join(" ")}
-            >
-              ↓
+            <span className="mt-2 block text-sm text-stone-400">
+              {section.arguments.length} argument deconstructions
             </span>
-            View argument deconstructions
+          </span>
+          <span
+            className={[
+              "grid h-8 w-8 shrink-0 place-items-center rounded-full border text-lg leading-none text-stone-400 transition group-open:rotate-45 group-open:bg-stone-100 group-open:text-stone-950",
+              accentClasses.iconBorder,
+            ].join(" ")}
+            aria-hidden="true"
+          >
+            +
           </span>
         </summary>
-        <div className="mt-4 space-y-3">
+
+        <div className="border-t border-white/10 px-5 py-6 sm:px-6">
+          <p className="max-w-3xl text-base leading-8 text-stone-300">
+            {section.intro}
+          </p>
+
+          {section.visual?.families.length ? (
+            <section className="mt-6 border-y border-white/10 py-5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                Argument families
+              </p>
+              <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                {section.visual.families.map((family) => (
+                  <p className="flex gap-3 text-sm leading-6 text-stone-300" key={family}>
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+                    <span>{family}</span>
+                  </p>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="mt-6 border-l-2 border-amber-200/25 py-1 pl-5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-amber-200/70">
+              Reading Lens
+            </p>
+            <p className="mt-2 max-w-3xl text-base leading-8 text-stone-300">
+              {section.contentBlocks[0]}
+            </p>
+          </section>
+
+          {philosophicalNote?.body ? (
+            <section className="mt-6 border-l-2 border-emerald-200/30 py-1 pl-5">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-100/70">
+                {philosophicalNote.title}
+              </p>
+              <p className="mt-2 max-w-3xl text-base leading-8 text-stone-300">
+                {philosophicalNote.body}
+              </p>
+            </section>
+          ) : null}
+
+          <div className="mt-7 space-y-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+              Argument deconstructions
+            </p>
           {section.arguments.map((argument) => (
             <Collapsible
               argument={argument}
@@ -3973,6 +5215,7 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
               tagClassName={accentClasses.argumentTag}
             />
           ))}
+          </div>
         </div>
       </details>
     </section>
@@ -4030,90 +5273,124 @@ function getAccentClasses(accent = "stone") {
   return classes[accent as keyof typeof classes] ?? classes.stone;
 }
 
-function ReadingDisplayToggle({
-  mode,
-  onChange,
-}: {
-  mode: ReadingDisplayMode;
-  onChange: (mode: ReadingDisplayMode) => void;
-}) {
-  return (
-    <div className="sticky top-0 z-20 mb-8 -mx-2 rounded-b-xl border-b border-white/10 bg-[#0f0d0a]/95 px-2 py-3 backdrop-blur">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.025] px-3 py-3">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
-            Philosophy View
-          </p>
-          <p className="mt-1 text-sm leading-5 text-stone-300">
-            Essay view or archive comparison.
-          </p>
-        </div>
-        <div className="inline-flex rounded-lg border border-white/10 bg-black/20 p-1">
-          {(["essay", "compare"] as ReadingDisplayMode[]).map((option) => (
-            <button
-              className={[
-                "rounded-md px-3 py-2 text-sm font-medium transition",
-                mode === option
-                  ? "bg-amber-200 text-stone-950"
-                  : "text-stone-300 hover:bg-white/[0.06] hover:text-stone-100",
-              ].join(" ")}
-              key={option}
-              onClick={() => onChange(option)}
-              type="button"
-            >
-              {option === "essay" ? "Essay" : "Compare"}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReadingSubsection({
-  displayMode = "essay",
-  section,
-}: {
-  displayMode?: ReadingDisplayMode;
-  section: ReadingSection;
-}) {
+function ReadingSubsection({ section }: { section: ReadingSection }) {
   const isEssaySection = essayOnlySectionIds.has(section.id);
-  const isCompareMode = isEssaySection && displayMode === "compare";
+  const isPhilosophySection = section.id.startsWith("philosophy-");
+  const isEconomicsSection = section.id.startsWith("economics-");
+  const isPoliticsSection = section.id.startsWith("politics-");
+  const isReligionFrameworkSection = religionFrameworkSectionIds.has(section.id);
+  const usesReadingStyle =
+    isPhilosophySection ||
+    isEconomicsSection ||
+    isPoliticsSection ||
+    isReligionFrameworkSection;
+  const isEconomicsSectionTwo = section.id.startsWith("economics-section-2-");
+  const hideRepeatedEconomicsIntro =
+    section.id === "economics-section-2-part-1-objective";
+  const sectionPartHeader = usesReadingStyle
+    ? getSectionPartHeader(section.title)
+    : null;
   const visibleNotes = (isEssaySection ? [] : section.notes ?? []).filter(
-    (note) => !hiddenNoteTitlesBySection[section.id]?.has(note.title),
+    (note) =>
+      note.title !== "Current Status" &&
+      !hiddenNoteTitlesBySection[section.id]?.has(note.title),
   );
 
   return (
-    <section className="scroll-mt-16 border-t border-white/10 pt-9" id={section.id}>
-      <header className="mb-7">
-        <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-stone-500">
-          {section.eyebrow}
-        </p>
-        <h3 className="text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
-          {section.title}
-        </h3>
-        <p className="mt-5 text-lg leading-9 text-stone-300">{section.intro}</p>
-      </header>
+    <section
+      className={[
+        "scroll-mt-16",
+        isEconomicsSectionTwo
+          ? "pt-7"
+          : usesReadingStyle
+            ? "pt-10"
+            : "pt-9",
+        isReligionFrameworkSection ? "" : "border-t border-white/10",
+      ].join(" ")}
+      id={section.id}
+    >
+      {sectionPartHeader ? (
+        <header className={isEconomicsSectionTwo ? "mb-5" : "mb-8"}>
+          <p className="mb-5 text-center font-mono text-xs uppercase tracking-[0.2em] text-stone-500">
+            {section.eyebrow}
+          </p>
+          <div
+            className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4"
+            aria-hidden="true"
+          >
+            <span className="h-px bg-gradient-to-r from-transparent via-amber-200/25 to-amber-200/10" />
+            <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.045] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/75">
+              {sectionPartHeader.label}
+            </span>
+            <span className="h-px bg-gradient-to-r from-amber-200/10 via-amber-200/25 to-transparent" />
+          </div>
+          <h3 className="text-center text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
+            {sectionPartHeader.title}
+          </h3>
+          {!hideRepeatedEconomicsIntro && section.intro.trim() ? (
+            <p className="mx-auto mt-5 max-w-3xl text-center text-base leading-8 text-stone-300">
+              {section.intro}
+            </p>
+          ) : null}
+        </header>
+      ) : (
+        <header
+          className={[
+            usesReadingStyle
+              ? [
+                  "border-l-2 border-amber-200/25 pl-5",
+                  isEconomicsSectionTwo ? "mb-5" : "mb-8",
+                ].join(" ")
+              : "mb-7",
+          ].join(" ")}
+        >
+          <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-stone-500">
+            {section.eyebrow}
+          </p>
+          <h3 className="text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
+            {section.title}
+          </h3>
+          {!hideRepeatedEconomicsIntro && section.intro.trim() ? (
+            <p
+              className={[
+                "mt-5 text-stone-300",
+                usesReadingStyle
+                  ? "text-base leading-8"
+                  : "text-lg leading-9",
+              ].join(" ")}
+            >
+              {section.intro}
+            </p>
+          ) : null}
+        </header>
+      )}
 
-      {isCompareMode ? (
-        <ArchiveCompareView section={section} />
+      {coreLineBySection[section.id] ? (
+        <CoreLine unframed>{coreLineBySection[section.id]}</CoreLine>
+      ) : null}
+
+      {section.id === "economics-section-2-part-4-structural-stress-tests" ? (
+        <StructuralStressTestsSection />
+      ) : section.id === "economics-section-2-part-5-success-metrics" ? (
+        <SuccessMetricsSection />
+      ) : section.id === "economics-section-2-part-6-known-limitations" ? (
+        <KnownLimitationsSection />
+      ) : section.id === "economics-section-2-part-7-closing-position" ? (
+        <ClosingPositionSection />
       ) : isEssaySection ? (
         <EssayBody blocks={section.contentBlocks} sectionId={section.id} />
       ) : (
-        <div className="space-y-6 text-lg leading-9 text-stone-300">
-          {section.contentBlocks.map((block) => (
-            <ContentBlock block={block} key={block} />
-          ))}
+        <div
+          className={[
+            "text-stone-300",
+            usesReadingStyle
+              ? "space-y-5 text-base leading-8"
+              : "space-y-6 text-lg leading-9",
+          ].join(" ")}
+        >
+          {renderContentBlocks(section)}
         </div>
       )}
-
-      {!isCompareMode && keyTensionBySection[section.id] ? (
-        <KeyTension>{keyTensionBySection[section.id]}</KeyTension>
-      ) : null}
-
-      {!isCompareMode && coreLineBySection[section.id] ? (
-        <CoreLine>{coreLineBySection[section.id]}</CoreLine>
-      ) : null}
 
       {section.id === "religion-overviews" ? <ReligionComparisonTable /> : null}
 
@@ -4121,14 +5398,20 @@ function ReadingSubsection({
         <FlowDiagram steps={flowStepsBySection[section.id]} />
       ) : null}
 
-      {!isCompareMode && structureDiagramsBySection[section.id] ? (
+      {structureDiagramsBySection[section.id] ? (
         <StructureDiagram diagram={structureDiagramsBySection[section.id]} />
       ) : null}
 
       <ArgumentList section={section} />
 
       {visibleNotes.length ? (
-        <div className="mt-5 space-y-4">
+        <div
+          className={
+            isPhilosophySection || isPoliticsSection || isReligionFrameworkSection
+              ? "mt-10 divide-y divide-white/10 border-y border-white/10"
+              : "mt-5 space-y-4"
+          }
+        >
           {visibleNotes.map((note) => (
             <Fragment key={note.title}>
               <NoteCard note={note} sectionId={section.id} />
@@ -4147,12 +5430,1844 @@ function ReadingSubsection({
   );
 }
 
-function ContentBlock({ block }: { block: string }) {
-  if (block.trim().startsWith("<pre") || block.trim().startsWith("<ul")) {
-    return <div dangerouslySetInnerHTML={{ __html: block }} />;
+function getSectionPartHeader(title: string) {
+  const introductionMatch = title.match(/^Introduction\s+[-—]\s+(.+)$/);
+
+  if (introductionMatch) {
+    return {
+      label: "Introduction",
+      title: introductionMatch[1],
+    };
   }
 
-  return <p dangerouslySetInnerHTML={{ __html: block }} />;
+  const partMatch = title.match(/^(?:Section\s+\d+\s*\/\s*)?Part\s+([\d.]+)\s+[-—]\s+(.+)$/);
+
+  if (partMatch) {
+    return {
+      label: `Part ${partMatch[1]}`,
+      title: partMatch[2],
+    };
+  }
+
+  const caseStudyMatch = title.match(/^(Case Study\s+\d+)\s+[-—]\s+(.+)$/);
+
+  if (caseStudyMatch) {
+    return {
+      label: caseStudyMatch[1],
+      title: caseStudyMatch[2],
+    };
+  }
+
+  return null;
+}
+
+function renderContentBlocks(section: ReadingSection) {
+  const rendered: React.ReactNode[] = [];
+  const contentBlocks =
+    section.id === "politics-analysis-israel-palestine"
+      ? groupIsraelPalestineContentBlocks(section.contentBlocks)
+      : section.contentBlocks;
+
+  for (let index = 0; index < contentBlocks.length; index += 1) {
+    const block = contentBlocks[index];
+
+    if (
+      block.replace(/<[^>]*>/g, "").trim() === "Current Status" ||
+      block.startsWith("Framework Tested /") ||
+      block.startsWith("Fully Written /")
+    ) {
+      continue;
+    }
+
+    if (block.includes("Defining Compounding Escape Velocity")) {
+      rendered.push(
+        <CompoundingEscapeVelocitySection key={`${section.id}-escape-velocity`} />,
+      );
+      index += 6;
+      continue;
+    }
+
+    if (block.includes("[ THE CAPITAL-TO-LABOR GRADIENT ]")) {
+      rendered.push(<CapitalLaborGradientDiagram key={`${section.id}-gradient`} />);
+      index += 4;
+      continue;
+    }
+
+    if (block.includes("[ THE STRUCTURAL TUG-OF-WAR ]")) {
+      rendered.push(<StructuralTugOfWarDiagram key={`${section.id}-tug`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE MODERN K-SHAPED DYNAMIC ]")) {
+      rendered.push(<KShapedEconomyDiagram key={`${section.id}-kshape`} />);
+      index += 3;
+      continue;
+    }
+
+    if (block.includes("[ THE MONOPOLY FORTRESS ]")) {
+      rendered.push(<MonopolyFortressDiagram key={`${section.id}-monopoly-fortress`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE REGULATORY INTERFACE ]")) {
+      rendered.push(<RegulatoryInterfaceDiagram key={`${section.id}-regulatory-interface`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE TWO ENGINES OF THE MACROECONOMY ]")) {
+      rendered.push(<MacroeconomicEnginesDiagram key={`${section.id}-two-engines`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE MEASUREMENT DIVERGENCE ]")) {
+      rendered.push(<MeasurementDivergenceDiagram key={`${section.id}-measurement-divergence`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE INTERCONNECTED TRADE LOOP ]")) {
+      rendered.push(<InterconnectedTradeLoopDiagram key={`${section.id}-trade-loop`} />);
+      index += 1;
+      continue;
+    }
+
+    if (block.includes("[ THE STRUCTURAL EQUILIBRIUM CODES ]")) {
+      rendered.push(<StructuralEquilibriumCodesDiagram key={`${section.id}-equilibrium`} />);
+      index += 4;
+      continue;
+    }
+
+    if (
+      section.id === "politics-analysis-israel-palestine" &&
+      block.includes("Israeli Framework")
+    ) {
+      const nextPartIndex = contentBlocks.findIndex(
+        (candidate, candidateIndex) =>
+          candidateIndex > index && candidate.includes('data-case-part="true"'),
+      );
+      rendered.push(
+        <CompetingFrameworksTable key={`${section.id}-competing-frameworks`} />,
+      );
+      index = nextPartIndex > index ? nextPartIndex - 1 : index;
+      continue;
+    }
+
+    if (
+      section.id === "politics-analysis-israel-palestine" &&
+      block.includes('data-case-part="true"') &&
+      block.includes("9. Possible Paths Forward")
+    ) {
+      const nextPartIndex = contentBlocks.findIndex(
+        (candidate, candidateIndex) =>
+          candidateIndex > index && candidate.includes('data-case-part="true"'),
+      );
+      const pathBlocks = contentBlocks.slice(
+        index + 1,
+        nextPartIndex > index ? nextPartIndex : contentBlocks.length,
+      );
+
+      rendered.push(
+        <ContentBlock
+          block={block}
+          key={`${section.id}-block-${index}`}
+          sectionId={section.id}
+        />,
+        <PossiblePathsForwardGrid
+          blocks={pathBlocks}
+          key={`${section.id}-possible-paths`}
+        />,
+      );
+      index = nextPartIndex > index ? nextPartIndex - 1 : contentBlocks.length;
+      continue;
+    }
+
+    if (
+      section.id === "politics-analysis-israel-palestine" &&
+      block.includes("[ ISRAEL-PALESTINE ARGUMENT FAMILIES ]")
+    ) {
+      rendered.push(
+        <IsraelPalestineArgumentFamilies
+          key={`${section.id}-argument-families`}
+        />,
+      );
+      continue;
+    }
+
+    if (
+      section.id === "politics-analysis-israel-palestine" &&
+      block.includes("[ ISRAEL-PALESTINE ARGUMENT DECONSTRUCTIONS ]")
+    ) {
+      rendered.push(
+        <IsraelPalestineArgumentCards
+          arguments={section.politicalArgumentCards ?? []}
+          key={`${section.id}-argument-deconstructions`}
+        />,
+      );
+      continue;
+    }
+
+    rendered.push(
+      <ContentBlock
+        block={block}
+        key={`${section.id}-block-${index}`}
+        sectionId={section.id}
+      />,
+    );
+  }
+
+  return rendered;
+}
+
+function groupIsraelPalestineContentBlocks(blocks: string[]) {
+  const grouped: string[] = [];
+  let paragraph = "";
+
+  function flushParagraph() {
+    if (paragraph) {
+      grouped.push(paragraph);
+      paragraph = "";
+    }
+  }
+
+  blocks.forEach((block) => {
+    const structuralBlock =
+      block.includes("<strong") ||
+      block.trim().startsWith("<ul") ||
+      block.trim().startsWith("<ol") ||
+      block.trim().startsWith("<pre") ||
+      block.includes("[ ISRAEL-PALESTINE ARGUMENT");
+
+    if (structuralBlock) {
+      flushParagraph();
+      grouped.push(block);
+      return;
+    }
+
+    if (paragraph && paragraph.length + block.length > 1050) {
+      flushParagraph();
+    }
+
+    paragraph = paragraph ? `${paragraph} ${block}` : block;
+  });
+
+  flushParagraph();
+  return grouped;
+}
+
+function IsraelPalestineArgumentFamilies() {
+  const families = [
+    {
+      title: "Freedom and sovereignty",
+      description:
+        "What meaningful Palestinian political freedom requires and which governing arrangement could deliver it.",
+    },
+    {
+      title: "Security and withdrawal",
+      description:
+        "How much Israeli control is necessary for protection and when that control prevents Palestinian sovereignty.",
+    },
+    {
+      title: "Resistance and self-defense",
+      description:
+        "Which defensive or resistant aims are legitimate and which methods remain morally or legally impermissible.",
+    },
+    {
+      title: "Civilian harm and military necessity",
+      description:
+        "What evidence, urgency, precautions, and expected harm can justify an individual military action.",
+    },
+    {
+      title: "Genocide and intent",
+      description:
+        "When cumulative destruction and foreseeable consequences establish a group-destructive policy or intent.",
+    },
+    {
+      title: "Settlements and territorial control",
+      description:
+        "Whether control of the West Bank is temporary security management or part of a permanent territorial project.",
+    },
+    {
+      title: "Representation and political legitimacy",
+      description:
+        "Who can legitimately govern, negotiate, and enforce agreements on behalf of Palestinians.",
+    },
+    {
+      title: "Historical legitimacy",
+      description:
+        "How ancient connection, continuous residence, persecution, displacement, and present reality should be weighted.",
+    },
+    {
+      title: "Refugees and return",
+      description:
+        "How restoration, compensation, acknowledgment, demographic consequences, and present stability should interact.",
+    },
+    {
+      title: "Trust, proof, and political transition",
+      description:
+        "What observable and enforceable evidence could make restraint safer than continued control or resistance.",
+    },
+  ];
+
+  return (
+    <section className="mt-5 grid gap-x-8 gap-y-4 border-y border-white/10 py-6 sm:grid-cols-2">
+      {families.map((family) => (
+        <article className="flex gap-3" key={family.title}>
+          <span
+            aria-hidden="true"
+            className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70"
+          />
+          <div>
+            <h5 className="text-base font-semibold leading-7 text-stone-100">
+              {family.title}
+            </h5>
+            <p className="mt-1 text-sm leading-6 text-stone-400">
+              {family.description}
+            </p>
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function IsraelPalestineArgumentCards({
+  arguments: argumentCards,
+}: {
+  arguments: PoliticalArgumentCard[];
+}) {
+  return (
+    <section className="mt-6 space-y-3">
+      {argumentCards.map((argument, index) => (
+        <details
+          className="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] transition hover:border-white/20 hover:bg-white/[0.04]"
+          key={argument.title}
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-5 sm:px-6">
+            <span className="flex min-w-0 items-start gap-4">
+              <span className="font-mono text-xs leading-7 text-amber-200/65">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="text-base font-semibold leading-7 text-stone-100 sm:text-lg">
+                {argument.title}
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 text-lg leading-none text-stone-400 transition group-open:rotate-45 group-open:border-white group-open:bg-stone-100 group-open:text-stone-950"
+            >
+              +
+            </span>
+          </summary>
+
+          <div className="border-t border-white/10 px-5 py-6 sm:px-6">
+            <ArgumentCardSection label="Claim" paragraphs={argument.claim} />
+            <ArgumentCardSection
+              className="mt-7"
+              label="Counterargument"
+              paragraphs={argument.counterargument}
+            />
+            <ArgumentCardSection
+              className="mt-7"
+              label="Analysis"
+              paragraphs={argument.analysis}
+            />
+
+            {argument.questions?.length ? (
+              <ul className="mt-4 grid gap-x-8 gap-y-2 pl-1 sm:grid-cols-2">
+                {argument.questions.map((question) => (
+                  <li
+                    className="flex gap-3 text-sm leading-6 text-stone-300"
+                    key={question}
+                  >
+                    <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/65" />
+                    <span>{question}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {argument.analysisAfterQuestions?.map((paragraph) => (
+              <p className="mt-4 text-base leading-8 text-stone-300" key={paragraph}>
+                {paragraph}
+              </p>
+            ))}
+
+            <section className="mt-7 border-l-2 border-amber-200/30 py-1 pl-5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+                Underlying disagreement
+              </p>
+              <p className="mt-2 text-base font-medium leading-8 text-stone-200">
+                {argument.underlyingDisagreement}
+              </p>
+            </section>
+          </div>
+        </details>
+      ))}
+    </section>
+  );
+}
+
+function ArgumentCardSection({
+  className = "",
+  label,
+  paragraphs,
+}: {
+  className?: string;
+  label: string;
+  paragraphs: string[];
+}) {
+  return (
+    <section className={className}>
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+        {label}
+      </p>
+      <div className="mt-2 space-y-3">
+        {paragraphs.map((paragraph) => (
+          <p className="text-base leading-8 text-stone-300" key={paragraph}>
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PossiblePathsForwardGrid({ blocks }: { blocks: string[] }) {
+  type Path = {
+    title: string;
+    fields: Array<{ label: string; value: string }>;
+  };
+
+  const paths: Path[] = [];
+
+  blocks.forEach((block) => {
+    const plainText = block.replace(/<[^>]*>/g, "").trim();
+    const titleMatch = plainText.match(/^\d+\.\s+(.+)$/);
+
+    if (titleMatch) {
+      paths.push({ title: titleMatch[1], fields: [] });
+      return;
+    }
+
+    const fieldMatch = plainText.match(
+      /^(Overview|Problem Solved|New Risks|Tradeoffs|Current Feasibility):\s*(.+)$/,
+    );
+    const currentPath = paths.at(-1);
+
+    if (fieldMatch && currentPath) {
+      currentPath.fields.push({ label: fieldMatch[1], value: fieldMatch[2] });
+    } else if (currentPath && plainText) {
+      currentPath.fields.push({ label: "Context", value: plainText });
+    }
+  });
+
+  return (
+    <section className="mt-8 grid gap-4 lg:grid-cols-2">
+      {paths.map((path, index) => (
+        <article
+          className="rounded-lg border border-white/10 bg-white/[0.025] px-5 py-5"
+          key={path.title}
+        >
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+            Path {String(index + 1).padStart(2, "0")}
+          </p>
+          <h5 className="mt-2 text-lg font-semibold leading-7 text-stone-50">
+            {path.title}
+          </h5>
+          <dl className="mt-5 divide-y divide-white/10 border-y border-white/10">
+            {path.fields.map((field) => (
+              <div className="py-3.5" key={field.label}>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-stone-500">
+                  {field.label}
+                </dt>
+                <dd className="mt-1.5 text-sm leading-6 text-stone-300">
+                  {field.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function StructuralStressTestsSection() {
+  const tests = [
+    {
+      challenge:
+        "Large pools of capital may reduce domestic investment, move operations abroad, automate faster, or shift funds toward financial assets.",
+      response:
+        "Domestic reinvestment incentives lower tax exposure when capital moves into manufacturing, infrastructure, workforce development, and research.",
+      title: "Wall 0 — Capital Reallocation",
+      weakness:
+        "Some capital flight remains unavoidable. Incentives can redirect behavior but cannot eliminate the search for higher returns elsewhere.",
+    },
+    {
+      challenge:
+        "Large corporations may split into many legal entities to claim small-business benefits and avoid large-corporation obligations.",
+      response:
+        "Ultimate Beneficial Ownership tracking and shared-infrastructure analysis treat connected firms as one economic entity.",
+      title: "Wall 1 — Corporate Slicing",
+      weakness:
+        "Ownership structures can keep becoming more complex, requiring continuous monitoring and legal adaptation.",
+    },
+    {
+      challenge:
+        "Independent domestic businesses often rely on imported components, machinery, and raw materials, making broad tariffs self-defeating.",
+      response:
+        "Tariffs target finished consumer goods while strategic production inputs receive exemptions.",
+      title: "Wall 2 — The Supply Chain Trap",
+      weakness:
+        "The line between finished goods and production inputs can become politically contested and administratively difficult.",
+    },
+    {
+      challenge:
+        "Foreign governments may answer protectionist measures with retaliatory tariffs aimed at vulnerable domestic exporters.",
+      response:
+        "Tariffs function primarily as negotiating leverage, supported by strategic exemptions and domestic demand protections.",
+      title: "Wall 3 — Retaliatory Trade Wars",
+      weakness:
+        "Geopolitical responses remain partly outside domestic control and cannot be predicted or prevented completely.",
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="max-w-3xl text-base leading-8 text-stone-300">
+        <p>
+          No economic policy exists in a vacuum. These tests evaluate the framework
+          by the secondary and tertiary responses it may generate after major actors
+          begin adapting strategically.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {tests.map((test) => (
+          <article
+            className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]"
+            key={test.title}
+          >
+            <header className="border-b border-white/10 bg-white/[0.025] px-5 py-4">
+              <h4 className="text-lg font-semibold leading-7 text-stone-50">
+                {test.title}
+              </h4>
+            </header>
+            <dl className="divide-y divide-white/10">
+              {[
+                ["Challenge", test.challenge],
+                ["Framework Response", test.response],
+                ["Remaining Weakness", test.weakness],
+              ].map(([label, body]) => (
+                <div
+                  className="grid gap-2 px-5 py-4 sm:grid-cols-[150px_minmax(0,1fr)]"
+                  key={label}
+                >
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200/70">
+                    {label}
+                  </dt>
+                  <dd className="text-sm leading-6 text-stone-300">{body}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
+      </div>
+
+      <section className="border-l-2 border-amber-200/30 py-1 pl-5">
+        <h4 className="text-base font-semibold text-stone-100">What the tests establish</h4>
+        <p className="mt-2 max-w-3xl text-base leading-7 text-stone-300">
+          The framework should be judged by whether its remaining vulnerabilities
+          stay manageable after adaptation begins, not by whether every loophole
+          disappears. Economic design is the management of trade-offs, not the
+          elimination of uncertainty.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function CompetingFrameworksTable() {
+  const frameworks = [
+    {
+      title: "Israeli Framework",
+      intro:
+        "Israeli arguments often combine several overlapping claims rather than relying upon a single justification.",
+      claims: [
+        [
+          "Historical Connection",
+          "The Jewish people originated in the land and maintained historical, cultural, and religious connections to it over thousands of years. Although many Jews were dispersed, Jewish communities remained continuously present while preserving a strong historical attachment to the region.",
+        ],
+        [
+          "National Self-Determination",
+          "Like other peoples, Jews possess the right to establish and maintain their own sovereign state.",
+        ],
+        [
+          "Security",
+          "Centuries of persecution, culminating in the Holocaust and followed by repeated wars and attacks after Israel's establishment, reinforce the argument that Jews require a secure state capable of defending itself.",
+        ],
+        [
+          "Legal and Political Legitimacy",
+          "Supporters often point to international recognition, Israel's declaration of independence, admission to the United Nations, and subsequent diplomatic recognition as contributing to the state's legitimacy.",
+        ],
+        [
+          "Present Reality",
+          "Israel has now existed as a functioning state for multiple generations. Many argue that political legitimacy should account not only for historical origins but also for the reality that millions of people have been born, raised, and built their lives within the state.",
+        ],
+      ],
+    },
+    {
+      title: "Palestinian Framework",
+      intro:
+        "Palestinian arguments likewise combine multiple claims into a broader framework.",
+      claims: [
+        [
+          "Continuous Residence",
+          "Palestinian Arabs formed much of the local population prior to 1948 and had lived in the region for generations.",
+        ],
+        [
+          "National Self-Determination",
+          "Palestinians argue that they likewise possess the right to establish an independent state and exercise political sovereignty over their own population.",
+        ],
+        [
+          "Displacement",
+          "The creation of Israel and the 1948 war resulted in the displacement of hundreds of thousands of Palestinians, an event remembered as the Nakba. Many view this displacement as a foundational injustice that continues influencing the conflict today.",
+        ],
+        [
+          "Occupation and Political Rights",
+          "Many Palestinians point to later developments, particularly after 1967, including military occupation, settlement expansion, movement restrictions, and unresolved questions of sovereignty, as continuing sources of injustice.",
+        ],
+        [
+          "Historical Legitimacy",
+          "Many argue that generations of continuous residence create political claims that should not be overridden solely by earlier historical connections.",
+        ],
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-12 pt-4">
+      {frameworks.map((framework) => (
+        <section className="overflow-hidden" key={framework.title}>
+          <header className="mb-7">
+            <h4 className="text-2xl font-semibold leading-tight text-stone-50">
+              {framework.title}
+            </h4>
+            <p className="mt-3 max-w-3xl text-base leading-8 text-stone-300">
+              {framework.intro}
+            </p>
+          </header>
+
+          <div className="grid grid-cols-[minmax(150px,220px)_minmax(0,1fr)] gap-5 border-b border-white/10 pb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-stone-300/80">
+            <p>Claim</p>
+            <p>Structural Meaning</p>
+          </div>
+
+          <div className="divide-y divide-white/10">
+            {framework.claims.map(([claim, body]) => (
+              <div
+                className="grid gap-4 py-5 sm:grid-cols-[minmax(150px,220px)_minmax(0,1fr)] sm:gap-5"
+                key={claim}
+              >
+                <h5 className="text-base font-semibold leading-7 text-stone-100">
+                  {claim}
+                </h5>
+                <p className="text-base leading-8 text-stone-300">{body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function SuccessMetricsSection() {
+  const metrics = [
+    {
+      title: "Metric 1 — Median Purchasing Power",
+      description:
+        "The framework prioritizes the purchasing power of the median worker rather than aggregate national wealth.",
+      questions: [
+        "Can a full-time worker afford basic necessities?",
+        "Is real purchasing power increasing over time?",
+        "Are wages growing faster than essential living costs?",
+      ],
+    },
+    {
+      title: "Metric 2 — Economic Mobility",
+      description:
+        "A healthy economy should allow individuals to improve their economic position over time.",
+      questions: [
+        "How easily can workers transition into ownership?",
+        "Are new businesses being created?",
+        "Is upward mobility available across generations?",
+      ],
+    },
+    {
+      title: "Metric 3 — Housing Accessibility",
+      description:
+        "Housing functions as both a necessity and a major wealth-building asset.",
+      questions: [
+        "Can ordinary workers realistically purchase housing?",
+        "Are housing costs rising faster than incomes?",
+        "Is ownership becoming more or less accessible?",
+      ],
+    },
+    {
+      title: "Metric 4 — Business Formation and Competition",
+      description: "A resilient economy requires continual market entry.",
+      questions: [
+        "Are new businesses being formed?",
+        "Are independent firms surviving?",
+        "Is market concentration increasing or decreasing?",
+      ],
+    },
+    {
+      title: "Metric 5 — Concentration Indicators",
+      description:
+        "The framework treats concentration itself as a measurable variable.",
+      questions: [
+        "How concentrated is corporate ownership?",
+        "How concentrated is land ownership?",
+        "How concentrated is political influence?",
+      ],
+    },
+    {
+      title: "Metric 6 — Innovation and Productivity",
+      description: "Economic balance must not come at the expense of innovation.",
+      questions: [
+        "Is research and development increasing?",
+        "Are productivity gains continuing?",
+        "Are new industries emerging?",
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="max-w-3xl space-y-3 text-base leading-7 text-stone-300">
+        <p>
+          Economic systems are often judged using narrow indicators such as GDP,
+          stock market performance, or aggregate corporate profitability. Those
+          measures do not fully show whether ordinary citizens are gaining
+          stability, opportunity, or mobility.
+        </p>
+        <p>
+          The Equilibrium Framework therefore evaluates success through a broader
+          collection of indicators.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {metrics.map((metric) => (
+          <article
+            className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]"
+            key={metric.title}
+          >
+            <header className="border-b border-amber-200/15 bg-amber-200/[0.04] px-5 py-4">
+              <h4 className="text-lg font-semibold leading-7 text-stone-50">
+                {metric.title}
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-stone-300">
+                {metric.description}
+              </p>
+            </header>
+            <div className="px-5 py-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                Key Questions
+              </p>
+              <ul className="mt-3 space-y-2.5">
+                {metric.questions.map((question) => (
+                  <li
+                    className="flex gap-3 text-sm leading-6 text-stone-300"
+                    key={question}
+                  >
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/65" />
+                    <span>{question}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <p className="max-w-3xl border-l-2 border-amber-200/30 py-1 pl-5 text-base leading-7 text-stone-200">
+        Success means maintaining a productive economy where ownership,
+        opportunity, and stability remain broadly accessible while innovation and
+        wealth creation continue.
+      </p>
+    </div>
+  );
+}
+
+function KnownLimitationsSection() {
+  const limitations = [
+    ["Adaptation Never Stops", "New loopholes, avoidance strategies, and unintended incentives will continue to emerge."],
+    ["Enforcement Capacity", "The framework depends on competent administration; weak institutions may apply it unevenly."],
+    ["Political Resistance", "Existing beneficiaries will oppose reforms, limiting what can be implemented in practice."],
+    ["International Constraints", "National policy cannot control global markets, geopolitical events, foreign governments, or international capital flows."],
+    ["Imperfect Measurement", "No statistical system captures economic reality completely; blind spots will remain."],
+    ["Innovation Trade-Offs", "Reducing concentration can sometimes weaken investment incentives, risk-taking, or entrepreneurial activity."],
+  ];
+
+  return (
+    <div className="space-y-5">
+      <p className="max-w-3xl text-base leading-8 text-stone-300">
+        The Equilibrium Framework targets specific structural tendencies rather
+        than claiming to solve economics as a whole. Its limits are part of the
+        design, not footnotes to hide.
+      </p>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {limitations.map(([title, body], index) => (
+          <article
+            className="grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-4"
+            key={title}
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/20 bg-amber-200/[0.05] font-mono text-xs text-amber-100">
+              {index + 1}
+            </span>
+            <div>
+              <h4 className="text-base font-semibold leading-6 text-stone-100">{title}</h4>
+              <p className="mt-1.5 text-sm leading-6 text-stone-300">{body}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <p className="max-w-3xl border-t border-white/10 pt-5 text-base leading-7 text-stone-300">
+        The framework does not eliminate scarcity, competition, conflict, or power.
+        It attempts to keep them within boundaries compatible with stability,
+        opportunity, and productive growth.
+      </p>
+    </div>
+  );
+}
+
+function ClosingPositionSection() {
+  const tensions = [
+    "Labor and capital",
+    "Innovation and concentration",
+    "Efficiency and resilience",
+    "Domestic protection and global integration",
+    "Measurement and reality",
+    "Freedom and regulation",
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="max-w-3xl space-y-4 text-base leading-8 text-stone-300">
+        <p>
+          Perfect economic systems do not exist. Every framework creates
+          trade-offs, incentives, winners, losers, adaptations, and unintended
+          consequences.
+        </p>
+        <p>
+          The Equilibrium Framework therefore has a narrower objective: preserve
+          the productive strengths of markets while limiting the tendency for
+          capital, ownership, and institutional influence to compound into
+          self-reinforcing concentrations of power.
+        </p>
+        <p>
+          It accepts that wealth creation is necessary, innovation requires reward,
+          and risk-taking deserves compensation. It also argues that ownership must
+          remain attainable, competition viable, and ordinary citizens capable of
+          reaching stability and upward mobility.
+        </p>
+      </div>
+
+      <section className="rounded-lg border border-amber-200/15 bg-amber-200/[0.035] px-5 py-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+          Economics is continuous balance
+        </p>
+        <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          {tensions.map((tension) => (
+            <div className="flex items-center gap-3 border-b border-white/10 pb-3" key={tension}>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+              <span className="text-sm font-medium text-stone-200">{tension}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <p className="max-w-3xl text-lg leading-8 text-stone-100">
+        The goal is not to eliminate these tensions. It is to maintain a dynamic
+        equilibrium where none becomes dominant enough to undermine the system itself.
+      </p>
+    </div>
+  );
+}
+
+function ContentBlock({
+  block,
+  sectionId,
+}: {
+  block: string;
+  sectionId: string;
+}) {
+  const plainText = block.replace(/<[^>]*>/g, "").trim();
+  const startsWithEmoji =
+    /^(?:[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}])/u.test(plainText);
+  const isTopicsCovered = plainText.startsWith("Topics Covered");
+  const fullyStrong = /^<strong[^>]*>[\s\S]*<\/strong>$/.test(block.trim());
+  const isPoliticsSubheading =
+    sectionId.startsWith("politics-") && fullyStrong && plainText.length <= 80;
+  const isStandardSubheading =
+    fullyStrong && plainText.length <= 80 && !isPoliticsSubheading;
+  const shouldUseNumberedPartDivider =
+    sectionId === "politics-analysis-israel-palestine";
+  const numberedPartMatch =
+    shouldUseNumberedPartDivider &&
+    block.includes('data-case-part="true"') &&
+    fullyStrong
+    ? plainText.match(/^(\d+)\.\s+(.+)$/)
+    : null;
+
+  if (block.includes("$B_n = B_0 \\times 2^n$")) {
+    return (
+      <EquationBlock
+        expression={
+          <>
+            <MathVar>B</MathVar>
+            <sub>n</sub>
+            <span>=</span>
+            <MathVar>B</MathVar>
+            <sub>0</sub>
+            <span>×</span>
+            <span>2</span>
+            <sup>n</sup>
+          </>
+        }
+      />
+    );
+  }
+
+  if (block.includes("$T = B_0 \\times (2^{n+1} - 1)$")) {
+    return (
+      <EquationBlock
+        expression={
+          <>
+            <MathVar>T</MathVar>
+            <span>=</span>
+            <MathVar>B</MathVar>
+            <sub>0</sub>
+            <span>×</span>
+            <span>(</span>
+            <span>2</span>
+            <sup>n+1</sup>
+            <span>-</span>
+            <span>1</span>
+            <span>)</span>
+          </>
+        }
+      />
+    );
+  }
+
+  if (block.includes("\\text{Institutional Rule}")) {
+    return (
+      <EconomicsProcessFlow
+        eyebrow="Adaptive Regulatory Cycle"
+        steps={[
+          "Institutional Rule",
+          "Behavioral Adaptation",
+          "Loophole Manifestation",
+          "Enforcement Action",
+          "Systemic Counter-Adaptation",
+        ]}
+      />
+    );
+  }
+
+  if (block.includes("\\text{Scientific Discovery}")) {
+    return (
+      <EconomicsProcessFlow
+        eyebrow="Innovation Feedback Loop"
+        steps={[
+          "Scientific Discovery",
+          "Entrepreneurial Scaling",
+          "Productivity Expansion",
+          "Surplus Wealth Generation",
+          "Reinvestment in R&D",
+        ]}
+      />
+    );
+  }
+
+  if (block.includes("\\text{Stagnant Purchasing Power}")) {
+    return (
+      <EconomicsProcessFlow
+        eyebrow="Credit-Supported Stability"
+        steps={[
+          "Stagnant Purchasing Power",
+          "Credit Expansion",
+          "Sustained Consumption",
+          "Rising Debt Burdens",
+          "Financial Fragility",
+        ]}
+      />
+    );
+  }
+
+  if (block.includes("<strong") && startsWithEmoji) {
+    const heading = formatInlineMath(block).replace(
+      /^(?:[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}])\s*/u,
+      "",
+    );
+
+    return (
+      <div className="pt-9">
+        <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
+        <h4
+          className="text-xl font-semibold leading-tight text-stone-100 sm:text-2xl [&_strong]:font-semibold [&_strong]:text-stone-100"
+          dangerouslySetInnerHTML={{ __html: heading }}
+        />
+      </div>
+    );
+  }
+
+  if (numberedPartMatch) {
+    const [, partNumber, partTitle] = numberedPartMatch;
+
+    return (
+      <div
+        className={[
+          "pt-8",
+          partNumber === "1" ? "" : "mt-12",
+        ].join(" ")}
+      >
+        <div
+          className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4"
+          aria-hidden="true"
+        >
+          <span className="h-px bg-gradient-to-r from-transparent via-amber-200/25 to-amber-200/10" />
+          <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.045] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/75">
+            Part {partNumber}
+          </span>
+          <span className="h-px bg-gradient-to-r from-amber-200/10 via-amber-200/25 to-transparent" />
+        </div>
+        <h4 className="text-center text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
+          {partTitle}
+        </h4>
+      </div>
+    );
+  }
+
+  if (isPoliticsSubheading) {
+    return (
+      <div className="pt-9">
+        <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
+        <h4
+          className="text-xl font-semibold leading-tight text-stone-100 sm:text-2xl"
+          dangerouslySetInnerHTML={{ __html: formatInlineMath(block) }}
+        />
+      </div>
+    );
+  }
+
+  if (isStandardSubheading) {
+    return (
+      <div className="pt-9">
+        <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
+        <h4
+          className="text-xl font-semibold leading-tight text-stone-100 sm:text-2xl"
+          dangerouslySetInnerHTML={{ __html: formatInlineMath(block) }}
+        />
+      </div>
+    );
+  }
+
+  if (isTopicsCovered) {
+    const topics = block
+      .replace(/<strong[^>]*>Topics Covered<\/strong>/, "")
+      .split(/<br\s*\/?>/)
+      .map((topic) => topic.replace(/<[^>]*>/g, "").trim())
+      .filter(Boolean);
+
+    return (
+      <div className="pt-4">
+        <h4 className="text-xl font-medium leading-tight text-stone-100 sm:text-2xl">
+          Topics Covered
+        </h4>
+        <ul className="mt-4 space-y-2">
+          {topics.map((topic) => (
+            <li className="flex gap-3 text-base leading-7 text-stone-300" key={topic}>
+              <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+              <span>{topic}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  if (fullyStrong && plainText.length > 90 && plainText.includes(":")) {
+    const separatorIndex = plainText.indexOf(":");
+    const label = plainText.slice(0, separatorIndex + 1);
+    const detail = plainText.slice(separatorIndex + 1).trim();
+
+    return (
+      <p className="border-l-2 border-amber-200/25 pl-4 text-stone-300">
+        <strong className="font-semibold text-stone-100">{label}</strong>{" "}
+        {detail}
+      </p>
+    );
+  }
+
+  if (block.trim().startsWith("<ul")) {
+    const compactItems = getCompactListItems(block);
+
+    if (compactItems) {
+      return (
+        <ul className="grid gap-x-8 gap-y-2 pl-0 sm:grid-cols-2 lg:grid-cols-3">
+          {compactItems.map((item) => (
+            <li className="flex gap-3 text-base leading-7 text-stone-300" key={item}>
+              <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+  }
+
+  if (block.trim().startsWith("<pre") || block.trim().startsWith("<ul")) {
+    return (
+      <div
+        className="[&_pre]:rounded-lg [&_pre]:border-white/15 [&_pre]:bg-black/30 [&_pre]:text-[11px] [&_pre]:leading-6"
+        dangerouslySetInnerHTML={{ __html: block }}
+      />
+    );
+  }
+
+  return <p dangerouslySetInnerHTML={{ __html: formatInlineMath(block) }} />;
+}
+
+function getCompactListItems(block: string) {
+  if (block.includes("<strong") || !block.trim().startsWith("<ul")) {
+    return null;
+  }
+
+  const items = Array.from(block.matchAll(/<li>([\s\S]*?)<\/li>/g))
+    .map((match) => match[1].replace(/<[^>]*>/g, "").trim())
+    .filter(Boolean);
+
+  if (items.length < 4 || items.some((item) => item.length > 34)) {
+    return null;
+  }
+
+  return items;
+}
+
+function EquationBlock({ expression }: { expression: React.ReactNode }) {
+  return (
+    <div className="my-5 overflow-x-auto border-y border-white/10 py-5">
+      <div className="flex min-w-max items-baseline justify-center gap-3 font-serif text-3xl leading-none text-stone-100 sm:text-4xl [&_sub]:text-base [&_sub]:leading-none [&_sup]:text-base [&_sup]:leading-none">
+        {expression}
+      </div>
+    </div>
+  );
+}
+
+function MathVar({ children }: { children: React.ReactNode }) {
+  return <span className="italic">{children}</span>;
+}
+
+function EconomicsProcessFlow({
+  eyebrow,
+  steps,
+}: {
+  eyebrow: string;
+  steps: string[];
+}) {
+  return (
+    <section className="my-8 border-y border-white/10 py-6">
+      <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/70">
+        {eyebrow}
+      </p>
+      <ol className="grid gap-3 md:grid-cols-5 md:items-stretch">
+        {steps.map((step, index) => (
+          <li
+            className="relative flex min-h-[76px] items-center rounded-lg border border-white/10 bg-white/[0.025] px-4 py-4 text-center text-sm font-medium leading-6 text-stone-200"
+            key={step}
+          >
+            <span className="mx-auto">{step}</span>
+            {index < steps.length - 1 ? (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-5 left-1/2 z-10 -translate-x-1/2 bg-stone-950 px-2 text-lg text-amber-200/65 md:-right-[18px] md:bottom-auto md:left-auto md:top-1/2 md:-translate-y-1/2 md:translate-x-0"
+              >
+                →
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function MonopolyFortressDiagram() {
+  const walls = [
+    {
+      description: "Micro-competitors undercut instantly on production costs.",
+      title: "Economies of Scale",
+    },
+    {
+      description:
+        "Platform value scales with size; isolated alternatives are useless.",
+      title: "Network Effects",
+    },
+    {
+      description:
+        "Ecosystem integration traps consumers with financial/data penalties.",
+      title: "Switching Costs",
+    },
+    {
+      description:
+        "The corporation owns the marketplace itself, acting as a tollbooth.",
+      title: "Platform Lock-In",
+    },
+  ];
+
+  return (
+    <section className="my-8 border-y border-white/10 py-7">
+      <header className="mb-6">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
+          The Monopoly Fortress
+        </p>
+      </header>
+
+      <ol className="space-y-0">
+        {walls.map((wall, index) => (
+          <li className="relative grid gap-4 border-l-2 border-stone-700/80 pb-6 pl-7 last:border-l-0 last:pb-0 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-6" key={wall.title}>
+            <span
+              aria-hidden="true"
+              className="absolute -left-[9px] top-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-200/50 bg-stone-950"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-200/80" />
+            </span>
+            <div className="flex items-start gap-2 font-mono text-sm uppercase tracking-[0.08em] text-stone-100">
+              <span className="w-5 shrink-0 text-amber-200/75">{index + 1}.</span>
+              <span className="min-w-0">{wall.title}</span>
+            </div>
+            <p className="text-base leading-7 text-stone-300">{wall.description}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function formatInlineMath(block: string) {
+  return block
+    .replaceAll("$B_n$", "<span class=\"font-serif italic\">B<sub>n</sub></span>")
+    .replaceAll("$B_0$", "<span class=\"font-serif italic\">B<sub>0</sub></span>")
+    .replaceAll("$n$", "<span class=\"font-serif italic\">n</span>");
+}
+
+function EconomicsDiagramFrame({
+  children,
+  eyebrow,
+  title,
+}: {
+  children: React.ReactNode;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <figure className="my-9 overflow-hidden rounded-lg border border-amber-200/15 bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018))] shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+      <figcaption className="border-b border-white/10 px-5 py-4 sm:px-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/70">
+          {eyebrow}
+        </p>
+        <h4 className="mt-2 text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
+          {title}
+        </h4>
+      </figcaption>
+      <div className="px-4 py-5 sm:px-6 sm:py-6">{children}</div>
+    </figure>
+  );
+}
+
+function DiagramNode({
+  children,
+  muted = false,
+  title,
+}: {
+  children?: React.ReactNode;
+  muted?: boolean;
+  title: string;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-lg border px-4 py-4 text-center shadow-[0_16px_45px_rgba(0,0,0,0.18)]",
+        muted
+          ? "border-white/10 bg-white/[0.025]"
+          : "border-amber-200/20 bg-amber-200/[0.055]",
+      ].join(" ")}
+    >
+      <p className="text-base font-semibold leading-6 text-stone-50">{title}</p>
+      {children ? (
+        <div className="mt-2 text-sm leading-6 text-stone-300">{children}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function DiagramArrow({ label }: { label?: string }) {
+  return (
+    <div className="flex items-center justify-center py-2 text-amber-200/70">
+      <div className="h-px flex-1 bg-white/10" />
+      <span className="mx-3 font-mono text-xs uppercase tracking-[0.18em]">
+        {label ?? "↓"}
+      </span>
+      <div className="h-px flex-1 bg-white/10" />
+    </div>
+  );
+}
+
+function RegulatoryInterfaceDiagram() {
+  const pressures = [
+    {
+      detail: "Voter demands, safety, and equity",
+      title: "Public Interest",
+    },
+    {
+      detail: "Re-election and power consolidation",
+      title: "Political Incentives",
+    },
+    {
+      detail: "Lobbying, campaign funding, and capital",
+      title: "Corporate Influence",
+    },
+    {
+      detail: "Policy paradigms and economic beliefs",
+      title: "Ideological Shifts",
+    },
+  ];
+
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Competing Pressures"
+      title="The Regulatory Interface"
+    >
+      <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-md">
+          <DiagramNode title="Governance and Regulation">
+            Rules emerge from competing sources of institutional leverage.
+          </DiagramNode>
+        </div>
+
+        <div aria-hidden="true" className="relative mx-auto hidden h-14 md:block">
+          <span className="absolute left-1/2 top-0 h-7 w-px -translate-x-1/2 bg-amber-200/45" />
+          <span className="absolute left-[12.5%] right-[12.5%] top-7 h-px bg-amber-200/45" />
+          {[12.5, 37.5, 62.5, 87.5].map((position) => (
+            <span
+              className="absolute top-7 h-7 w-px bg-amber-200/45"
+              key={position}
+              style={{ left: `${position}%` }}
+            />
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-3 md:mt-0 md:grid-cols-4 md:items-stretch">
+          {pressures.map((pressure, index) => (
+            <div className="relative pl-6 md:pl-0" key={pressure.title}>
+              <span
+                aria-hidden="true"
+                className="absolute left-1.5 top-0 h-full w-px bg-white/10 md:hidden"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-5 flex h-4 w-4 items-center justify-center rounded-full border border-amber-200/45 bg-stone-950 font-mono text-[8px] text-amber-100 md:hidden"
+              >
+                {index + 1}
+              </span>
+              <DiagramNode muted title={pressure.title}>
+                {pressure.detail}
+              </DiagramNode>
+            </div>
+          ))}
+        </div>
+
+        <p className="mx-auto mt-6 max-w-3xl text-center text-sm leading-6 text-stone-400">
+          Regulatory outcomes shift as the relative leverage of these four
+          pressures changes across institutions and historical periods.
+        </p>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function MacroeconomicEnginesDiagram() {
+  const engines = [
+    {
+      accent: "capture",
+      eyebrow: "Parts 2–5",
+      metrics: [
+        ["Focus", "Value Capture"],
+        ["Mechanics", "Compounding, rents, and moats"],
+        ["Result", "Wealth Concentration"],
+      ],
+      title: "The Accumulation Engine",
+    },
+    {
+      accent: "expansion",
+      eyebrow: "Part 5.5",
+      metrics: [
+        ["Focus", "Value Expansion"],
+        ["Mechanics", "Innovation, science, and efficiency"],
+        ["Result", "Structural Abundance"],
+      ],
+      title: "The Creation Engine",
+    },
+  ];
+
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Value Capture vs. Value Expansion"
+      title="The Two Engines of the Macroeconomy"
+    >
+      <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
+        {engines.map((engine) => (
+          <section
+            className={[
+              "flex min-w-0 flex-col overflow-hidden rounded-lg border bg-black/15",
+              engine.accent === "capture"
+                ? "border-white/10"
+                : "border-amber-200/20",
+            ].join(" ")}
+            key={engine.title}
+          >
+            <header
+              className={[
+                "border-b px-5 py-5",
+                engine.accent === "capture"
+                  ? "border-white/10 bg-white/[0.025]"
+                  : "border-amber-200/15 bg-amber-200/[0.055]",
+              ].join(" ")}
+            >
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                {engine.eyebrow}
+              </p>
+              <h5 className="mt-2 text-xl font-semibold leading-tight text-stone-50">
+                {engine.title}
+              </h5>
+            </header>
+
+            <dl className="flex flex-1 flex-col">
+              {engine.metrics.map(([label, value]) => (
+                <div
+                  className="grid flex-1 gap-2 border-b border-white/10 px-5 py-4 last:border-b-0 sm:grid-cols-[92px_minmax(0,1fr)] sm:items-start"
+                  key={label}
+                >
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                    {label}
+                  </dt>
+                  <dd
+                    className={[
+                      "text-sm font-medium leading-6",
+                      label === "Focus"
+                        ? "text-amber-100"
+                        : "text-stone-300",
+                    ].join(" ")}
+                  >
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 text-center sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+        <p className="text-sm leading-6 text-stone-400">
+          Accumulation determines who controls existing value.
+        </p>
+        <span className="font-mono text-lg text-amber-200/60">↔</span>
+        <p className="text-sm leading-6 text-stone-400">
+          Creation determines how much value the system can produce.
+        </p>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function MeasurementDivergenceDiagram() {
+  const columns = [
+    {
+      eyebrow: "The Map",
+      items: [
+        "Rocketing GDP growth metrics",
+        "All-time-high stock indexes",
+        "Low core consumer inflation",
+      ],
+      title: "The Visible Model",
+    },
+    {
+      eyebrow: "The Territory",
+      items: [
+        "Flat median purchasing power",
+        "Maxed-out consumer credit cards",
+        "Explosive housing and asset prices",
+      ],
+      title: "The Physical Reality",
+    },
+  ];
+
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Statistical Model vs. Lived Conditions"
+      title="The Measurement Divergence"
+    >
+      <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+        {columns.map((column, index) => (
+          <Fragment key={column.title}>
+            <section className="overflow-hidden rounded-lg border border-white/10 bg-black/15">
+              <header className="border-b border-white/10 bg-white/[0.025] px-5 py-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                  {column.eyebrow}
+                </p>
+                <h5 className="mt-2 text-xl font-semibold text-stone-50">
+                  {column.title}
+                </h5>
+              </header>
+              <ul className="divide-y divide-white/10">
+                {column.items.map((item) => (
+                  <li className="flex gap-3 px-5 py-4 text-sm leading-6 text-stone-300" key={item}>
+                    <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/65" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            {index === 0 ? (
+              <div className="grid place-items-center font-mono text-xs uppercase tracking-[0.2em] text-amber-200/65">
+                diverges from
+              </div>
+            ) : null}
+          </Fragment>
+        ))}
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function InterconnectedTradeLoopDiagram() {
+  const stages = [
+    {
+      detail: "Nation A places a protectionist tax on foreign manufacturing.",
+      title: "Tariff Action",
+    },
+    {
+      detail: "Domestic consumers and local builders face immediate cost increases.",
+      title: "Higher-Cost Impulse",
+    },
+    {
+      detail: "Nation B responds by restricting Nation A's vulnerable exports.",
+      title: "Foreign Retaliation",
+    },
+    {
+      detail: "Mutual pressure pushes both sides toward a rebalanced agreement.",
+      title: "Strategic Truce",
+    },
+  ];
+
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Game-Theory Standoff"
+      title="The Interconnected Trade Loop"
+    >
+      <ol className="grid gap-3 md:grid-cols-4 md:items-stretch">
+        {stages.map((stage, index) => (
+          <li
+            className="relative flex min-w-0 flex-col rounded-lg border border-white/10 bg-white/[0.025] px-4 py-5"
+            key={stage.title}
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/70">
+              Stage {index + 1}
+            </span>
+            <h5 className="mt-2 text-base font-semibold leading-6 text-stone-50">
+              {stage.title}
+            </h5>
+            <p className="mt-3 text-sm leading-6 text-stone-300">{stage.detail}</p>
+            {index < stages.length - 1 ? (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-5 left-1/2 z-10 -translate-x-1/2 bg-stone-950 px-2 text-lg text-amber-200/65 md:-right-[18px] md:bottom-auto md:left-auto md:top-1/2 md:-translate-y-1/2 md:translate-x-0"
+              >
+                →
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+      <div className="mt-5 flex items-center justify-center gap-3 border-t border-white/10 pt-5 text-center">
+        <span className="font-mono text-lg text-amber-200/60">↺</span>
+        <p className="text-sm leading-6 text-stone-400">
+          The truce resets the bargaining position; future disputes can restart the cycle.
+        </p>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function StructuralEquilibriumCodesDiagram() {
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Policy Architecture"
+      title="The Structural Equilibrium Codes"
+    >
+      <div className="mx-auto max-w-4xl">
+        <DiagramNode title="The Structural Equilibrium Codes">
+          Closed loop for redirecting capital without printing new money.
+        </DiagramNode>
+        <DiagramArrow />
+        <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
+          <DiagramNode title="The Inbound Valve">
+            Tier 1: Progressive Corporate Revenue Tax (&gt; $500M)
+          </DiagramNode>
+          <DiagramNode title="The Outbound Vector">
+            Tier 2: Small Business Labor Fund Wage Subsidies
+          </DiagramNode>
+        </div>
+        <DiagramArrow label="integrates through" />
+        <DiagramNode title="The Border Integration">
+          Tier 3: Strategic Protectionist Shield
+          <br />
+          Exemptions for raw materials + consumer tariffs
+        </DiagramNode>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function CapitalLaborGradientDiagram() {
+  const stages = [
+    ["Wage Labor", "Pure manual"],
+    ["Skilled Labor", "High-income doctor"],
+    ["Small Capital Owners", "Plumber w/ 12 employees"],
+    ["Medium Capital Owners", "Retired teacher on index funds"],
+    ["Large Capital Owners", "The multi-billionaire"],
+    ["Institutional Capital", "Mega-conglomerates / banks"],
+  ];
+
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Economic Spectrum"
+      title="The Capital-to-Labor Gradient"
+    >
+      <div className="grid gap-5">
+        <div className="grid gap-3 md:grid-cols-6">
+          {stages.map(([title, body]) => (
+            <DiagramNode key={title} muted title={title}>
+              {body}
+            </DiagramNode>
+          ))}
+        </div>
+        <div className="hidden items-center gap-2 text-amber-200/55 md:flex">
+          {stages.map(([title], index) => (
+            <Fragment key={`${title}-arrow`}>
+              <div className="h-px flex-1 bg-white/10" />
+              {index < stages.length - 1 ? (
+                <span className="font-mono text-xl">→</span>
+              ) : null}
+            </Fragment>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-[1fr_1.4fr_1fr] md:items-stretch">
+          <DiagramNode title="The Starving Lion">
+            High cash velocity / survival
+          </DiagramNode>
+          <div className="grid place-items-center rounded-lg border border-white/10 bg-black/20 px-4 py-4 text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-stone-400">
+              Position changes continuously across the gradient
+            </p>
+          </div>
+          <DiagramNode title="The Wealthy Lion">
+            Abundance leverage / recoup
+          </DiagramNode>
+        </div>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function StructuralTugOfWarDiagram() {
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Power Dynamics"
+      title="The Structural Tug-of-War"
+    >
+      <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+        <DiagramNode title="The Working Population">
+          <p className="font-semibold text-amber-100/90">Pulls via: Burst Forces</p>
+          <ul className="mt-3 space-y-2 text-left">
+            <li>Democratic voting</li>
+            <li>Labor organization / strikes</li>
+            <li>Public outrage &amp; boycotts</li>
+          </ul>
+        </DiagramNode>
+        <div className="grid place-items-center px-2 font-mono text-3xl text-amber-200/70">
+          ↔
+        </div>
+        <DiagramNode title="Institutional Capital Owners">
+          <p className="font-semibold text-amber-100/90">Pulls via: Automated Forces</p>
+          <ul className="mt-3 space-y-2 text-left">
+            <li>Continuous asset compounding</li>
+            <li>High-yield institutional lobbying</li>
+            <li>Media / perception influence</li>
+          </ul>
+        </DiagramNode>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function KShapedEconomyDiagram() {
+  return (
+    <EconomicsDiagramFrame
+      eyebrow="Modern Stress Pattern"
+      title="The Modern K-Shaped Dynamic"
+    >
+      <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+        <DiagramNode title="Top Vector">
+          <ul className="space-y-2 text-left">
+            <li>Asset appreciation</li>
+            <li>Technology concentration</li>
+            <li>Strong equity markets</li>
+            <li>Institutional capital accumulation</li>
+          </ul>
+        </DiagramNode>
+        <div className="grid place-items-center px-2 font-mono text-sm uppercase tracking-[0.2em] text-amber-200/70">
+          vs.
+        </div>
+        <DiagramNode title="Bottom Vector">
+          <ul className="space-y-2 text-left">
+            <li>Rising housing costs</li>
+            <li>Consumer debt growth</li>
+            <li>Stagnant purchasing power</li>
+            <li>Cost-of-living pressure</li>
+          </ul>
+        </DiagramNode>
+      </div>
+    </EconomicsDiagramFrame>
+  );
+}
+
+function CompoundingEscapeVelocitySection() {
+  const phases = [
+    {
+      phase: "Phase 1: The Worker Phase",
+      condition: ["Labor Income", "> Asset Income"],
+      reality:
+        "Survival is entirely dependent on continuous physical or mental output. Cash velocity is high; savings are minimal or non-existent.",
+    },
+    {
+      phase: "Phase 2: The Transitional Phase",
+      condition: ["Labor Income", "≈ Asset Income"],
+      reality:
+        "Assets generate meaningful returns, but personal labor cannot cease safely without severely lowering the individual's standard of living (e.g., a local doctor or plumbing business owner).",
+    },
+    {
+      phase: "Phase 3: Escape Velocity",
+      condition: ["Asset Income", "> Living Expenses"],
+      reality:
+        "Human labor is completely uncoupled from baseline survival. The passive return on compounding assets comfortably covers all life expenses (e.g., large-scale asset owners and institutional funds).",
+    },
+  ];
+  const loopSteps = [
+    "Asset Income",
+    "Surplus Cash Flow",
+    "Reinvestment",
+    "Asset Expansion",
+    "Exponential Wealth Replication",
+  ];
+
+  return (
+    <section className="my-9">
+      <header className="mb-6">
+        <h4 className="text-xl font-medium leading-tight text-stone-100 sm:text-2xl">
+          📈 Defining Compounding Escape Velocity
+        </h4>
+        <p className="mt-4 text-base leading-8 text-stone-300">
+          The boundary lines across the Capital-to-Labor Gradient are defined by
+          a rigid mathematical progression. An individual&apos;s economic
+          life-cycle moves through three distinct, non-ideological operational
+          phases determined by the ratio of their labor input to their asset
+          yield:
+        </p>
+      </header>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-white/15">
+              <th className="w-[24%] px-5 py-4 text-sm font-semibold text-stone-100">
+                Economic Phase
+              </th>
+              <th className="w-[25%] px-5 py-4 text-sm font-semibold text-stone-100">
+                Mathematical Condition
+              </th>
+              <th className="px-5 py-4 text-sm font-semibold text-stone-100">
+                Structural Operational Reality
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {phases.map((phase) => (
+              <tr className="border-b border-white/10 last:border-b-0" key={phase.phase}>
+                <td className="px-5 py-5 align-top text-base font-semibold leading-7 text-stone-100">
+                  {phase.phase}
+                </td>
+                <td className="px-5 py-5 align-top font-serif text-lg leading-8 text-stone-200">
+                  <span>{phase.condition[0]}</span>
+                  <br />
+                  <span>{phase.condition[1]}</span>
+                </td>
+                <td className="px-5 py-5 align-top text-base leading-8 text-stone-300">
+                  {phase.reality}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-10">
+        <h5 className="text-lg font-medium text-stone-100">
+          The Phase 3 Automated Loop
+        </h5>
+        <p className="mt-4 text-base leading-8 text-stone-300">
+          Once an actor crosses the threshold into Phase 3, labor income is
+          entirely eliminated from the wealth-generation equation. The entry
+          valve of the cycle is self-generated, shifting the mechanics into an
+          automated, self-replicating feedback loop:
+        </p>
+        <div className="mt-5 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-3 py-3">
+            {loopSteps.map((step, index) => (
+              <Fragment key={step}>
+                <span className="font-serif text-lg text-stone-100">{step}</span>
+                {index < loopSteps.length - 1 ? (
+                  <span className="text-xl text-amber-200/70">→</span>
+                ) : null}
+              </Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 const essayOnlySectionIds = new Set([
@@ -4165,65 +7280,24 @@ const essayOnlySectionIds = new Set([
   "philosophy-stoicism",
   "philosophy-utilitarianism",
   "philosophy-postmodernism",
+  "philosophy-phenomenology",
+  "philosophy-logic",
+  "philosophy-ontology",
+]);
+
+const religionFrameworkSectionIds = new Set([
+  "religion-introduction",
+  "religion-overviews",
+  "probability-convergence-certainty",
+  "belief-mechanics",
+  "from-belief-to-positions",
+  "modern-context",
+  "personal-framework",
 ]);
 
 const hiddenNoteTitlesBySection: Record<string, Set<string>> = {
   "philosophy-mind": new Set(["Possible Consciousness Gradient Model"]),
 };
-
-function ArchiveCompareView({ section }: { section: ReadingSection }) {
-  return (
-    <div className="space-y-8">
-      <div>
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
-          Current Essay
-        </p>
-        <EssayBody blocks={section.contentBlocks} sectionId={section.id} />
-      </div>
-
-      <div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.025] px-4 py-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
-            Archived Notes
-          </p>
-          <p className="mt-2 text-sm leading-6 text-stone-400">
-            Earlier note cards kept for reference while the essay version is revised.
-          </p>
-
-          {section.notes?.length ? (
-            <div className="mt-4 space-y-2">
-              {section.notes.map((note) => (
-                <details
-                  className="rounded-lg border border-white/10 bg-black/10 px-3 py-3"
-                  key={note.title}
-                >
-                  <summary className="cursor-pointer text-sm font-semibold leading-5 text-stone-100">
-                    {note.title}
-                  </summary>
-                  <div className="mt-3 border-t border-white/10 pt-3">
-                    {note.body ? <NoteBody body={note.body} /> : null}
-                    {note.items?.length ? (
-                      <ul className="mt-3 space-y-2">
-                        {note.items.map((item) => (
-                          <li className="flex gap-2 text-sm leading-6 text-stone-300" key={item}>
-                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                </details>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-stone-500">No archived notes for this section.</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 type EssaySegment =
   | {
@@ -4252,28 +7326,28 @@ function EssayBody({
   blocks: string[];
   sectionId: string;
 }) {
-  const markers = essaySectionMarkersBySection[sectionId] ?? [];
   const segments = groupEssayBlocks(blocks, sectionId);
 
   return (
-    <div className="space-y-5 text-lg leading-9 text-stone-300">
-      {markers.length ? <EssayPartMap markers={markers} sectionId={sectionId} /> : null}
-
+    <div className="space-y-5 text-base leading-8 text-stone-300">
       {segments.map((segment, index) =>
         segment.type === "bubble" ? (
-          <p
-            className="rounded-lg border border-amber-200/15 bg-amber-200/[0.045] px-5 py-4 font-medium leading-8 text-amber-50"
-            dangerouslySetInnerHTML={{ __html: segment.text }}
+          <div
+            className="border-l-2 border-amber-200/35 py-1 pl-5"
             key={`${segment.text}-${index}`}
-          />
-        ) : segment.type === "heading" ? (
-          <h4
-            className="scroll-mt-20 pt-6 text-xl font-semibold leading-8 text-stone-50"
-            id={segment.id}
-            key={segment.id}
           >
-            {segment.title}
-          </h4>
+            <p
+              className="font-medium leading-8 text-stone-100"
+              dangerouslySetInnerHTML={{ __html: segment.text }}
+            />
+          </div>
+        ) : segment.type === "heading" ? (
+          <div className="scroll-mt-20 pt-8" id={segment.id} key={segment.id}>
+            <div className="mb-3 h-px w-12 bg-amber-200/45" />
+            <h4 className="text-xl font-semibold leading-8 text-stone-50">
+              {cleanPhilosophyLabel(segment.title)}
+            </h4>
+          </div>
         ) : (
           <p
             dangerouslySetInnerHTML={{ __html: segment.blocks.join(" ") }}
@@ -4285,36 +7359,10 @@ function EssayBody({
   );
 }
 
-function EssayPartMap({
-  markers,
-  sectionId,
-}: {
-  markers: EssaySectionMarker[];
-  sectionId: string;
-}) {
-  return (
-    <nav className="mb-8 rounded-lg border border-white/10 bg-white/[0.025] px-4 py-4">
-      <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-stone-500">
-        Part Map
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {markers.map((marker) => (
-          <a
-            className="rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm font-medium leading-5 text-stone-200 transition hover:border-amber-200/30 hover:text-amber-100"
-            href={`#${essaySectionAnchorId(sectionId, marker.title)}`}
-            key={marker.title}
-          >
-            {marker.title}
-          </a>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
 function groupEssayBlocks(blocks: string[], sectionId: string) {
   const segments: EssaySegment[] = [];
   const markers = essaySectionMarkersBySection[sectionId] ?? [];
+  const useBubbleBlocks = essayBubbleSectionIds.has(sectionId);
   let paragraphBlocks: string[] = [];
   let paragraphLength = 0;
 
@@ -4343,7 +7391,7 @@ function groupEssayBlocks(blocks: string[], sectionId: string) {
       });
     }
 
-    if (essayBubbleBlocks.has(block)) {
+    if (useBubbleBlocks && essayBubbleBlocks.has(block)) {
       flushParagraph();
       segments.push({
         text: block,
@@ -4364,6 +7412,13 @@ function groupEssayBlocks(blocks: string[], sectionId: string) {
   return segments;
 }
 
+const essayBubbleSectionIds = new Set([
+  "philosophy-metaphysics",
+  "philosophy-epistemology",
+  "philosophy-ethics",
+  "philosophy-political-philosophy",
+]);
+
 function essaySectionAnchorId(sectionId: string, title: string) {
   return `${sectionId}-${title
     .toLowerCase()
@@ -4371,26 +7426,30 @@ function essaySectionAnchorId(sectionId: string, title: string) {
     .replace(/^-|-$/g, "")}`;
 }
 
+function cleanPhilosophyLabel(title: string) {
+  return title.replace(/^\d+(?:\.\d+)*\.?\s+/, "");
+}
+
 const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
   "philosophy-metaphysics": [
     {
-      title: "1.1 Embedded Access",
-      startsWith: "A human being does not stand outside existence",
+      title: "1.1 The Embedded Observer",
+      startsWith: "Human beings do not stand outside existence",
     },
     {
-      title: "1.2 Operational Reality vs. Ultimate Reality",
-      startsWith: "This creates the central distinction",
+      title: "1.2 Reliable Models, Incomplete Access",
+      startsWith: "This immediately raises a second question",
     },
     {
-      title: "1.3 Process, Agency, and Time",
-      startsWith: "Reality also does not appear",
+      title: "1.3 Reality as Process",
+      startsWith: "Reality itself also appears less static",
     },
     {
       title: "1.4 Meaning Under Partial Access",
       startsWith: "Meaning enters",
     },
     {
-      title: "1.5 Transition to Epistemology",
+      title: "1.5 From Reality to Knowledge",
       startsWith: "Metaphysics therefore does not end",
     },
   ],
@@ -4401,25 +7460,29 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
     },
     {
       title: "2.2 Categories of Truth",
-      startsWith: "This distinction matters",
+      startsWith: "This distinction becomes especially important because humans often treat very different kinds of claims",
     },
     {
-      title: "2.3 Belief Formation and Reasoning Failure",
-      startsWith: "This becomes especially important",
+      title: "2.3 Belief Formation",
+      startsWith: "Evidence is only one ingredient",
     },
     {
-      title: "2.4 Social Confidence and Information Systems",
-      startsWith: "The problem becomes even more difficult",
+      title: "2.4 Sources of Error",
+      startsWith: "This distinction becomes especially important because human reasoning is vulnerable",
     },
     {
-      title: "2.5 Revision Capacity",
-      startsWith: "This is why falsifiability",
+      title: "2.5 Social Confidence and Information Systems",
+      startsWith: "The problem becomes even more complex",
+    },
+    {
+      title: "2.6 Revision Capacity",
+      startsWith: "A stronger epistemic framework therefore requires more than confidence",
     },
   ],
   "philosophy-ethics": [
     {
       title: "3.1 Moral Orientation",
-      startsWith: "Moral life does not occur",
+      startsWith: "Moral life does not unfold",
     },
     {
       title: "3.2 Shared Human Conditions",
@@ -4427,11 +7490,11 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
     },
     {
       title: "3.3 Systems, Burden, and Failure Modes",
-      startsWith: "At the same time, moral reasoning becomes dangerous",
+      startsWith: "Moral reasoning becomes especially dangerous",
     },
     {
       title: "3.4 Historical Scale",
-      startsWith: "Historical morality reveals",
+      startsWith: "Historical morality makes",
     },
     {
       title: "3.5 Transition to Political Philosophy",
@@ -4444,19 +7507,15 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Politics is not merely",
     },
     {
-      title: "4.2 Cohesion, Variation, and Institutions",
-      startsWith: "The central political tension",
+      title: "4.2 Coordination and Legitimacy",
+      startsWith: "One of the central tensions",
     },
     {
       title: "4.3 Incentives and Uneven Power",
-      startsWith: "This becomes more difficult because systems",
+      startsWith: "Political systems become more difficult",
     },
     {
-      title: "4.4 Conflict, Threat, and Certainty",
-      startsWith: "These tensions become most visible",
-    },
-    {
-      title: "4.5 Political Orientation",
+      title: "4.4 Political Orientation",
       startsWith: "Because of this, political analysis",
     },
   ],
@@ -4590,6 +7649,72 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "At the same time, this framework",
     },
   ],
+  "philosophy-phenomenology": [
+    {
+      title: "11.1 Lived Experience",
+      startsWith: "While metaphysics asks",
+    },
+    {
+      title: "11.2 Mediated Perception",
+      startsWith: "Human experience is filtered",
+    },
+    {
+      title: "11.3 Embodiment",
+      startsWith: "Human consciousness does not operate",
+    },
+    {
+      title: "11.4 Lived Realities",
+      startsWith: "Experience is not composed",
+    },
+    {
+      title: "11.5 Subjective Access",
+      startsWith: "Phenomenology introduces",
+    },
+  ],
+  "philosophy-logic": [
+    {
+      title: "12.1 Valid Inference",
+      startsWith: "While philosophy often asks",
+    },
+    {
+      title: "12.2 Deduction",
+      startsWith: "Deductive reasoning attempts",
+    },
+    {
+      title: "12.3 Induction",
+      startsWith: "Much of human knowledge",
+    },
+    {
+      title: "12.4 Consistency",
+      startsWith: "Logic requires internal consistency",
+    },
+    {
+      title: "12.5 Reasoning Failure",
+      startsWith: "Reasoning can fail",
+    },
+  ],
+  "philosophy-ontology": [
+    {
+      title: "13.1 Categories of Existence",
+      startsWith: "Rather than asking",
+    },
+    {
+      title: "13.2 Entities, Properties, Relations",
+      startsWith: "Many ontological systems",
+    },
+    {
+      title: "13.3 Abstract and Concrete Reality",
+      startsWith: "Some things appear physical",
+    },
+    {
+      title: "13.4 Layered Reality",
+      startsWith: "Reality may contain multiple layers",
+    },
+    {
+      title: "13.5 Ontological Assumptions",
+      startsWith: "Many philosophical disagreements",
+    },
+  ],
 };
 
 const essayBubbleBlocks = new Set([
@@ -4708,7 +7833,49 @@ function NoteCard({
   note: NonNullable<ReadingSection["notes"]>[number];
   sectionId: string;
 }) {
+  const isPhilosophyNote = sectionId.startsWith("philosophy-");
+  const isPoliticsNote = sectionId.startsWith("politics-");
+  const isReligionFrameworkNote = religionFrameworkSectionIds.has(sectionId);
+  const isUnframedReadingNote =
+    isPhilosophyNote || isPoliticsNote || isReligionFrameworkNote;
   const emphasized = isEmphasisNote(note.title);
+  const displayTitle = isPhilosophyNote
+    ? cleanPhilosophyLabel(note.title)
+    : note.title;
+
+  if (isUnframedReadingNote) {
+    return (
+      <section className="py-7 first:pt-6 last:pb-6">
+        <div>
+          <div className="mb-3 h-px w-12 bg-amber-200/45" />
+          <h4 className="text-xl font-semibold leading-8 text-stone-50">
+            {displayTitle}
+          </h4>
+          {note.body ? (
+            <NoteBody
+              body={note.body}
+              emphasizeLeadLabels={sectionId === "religion-overviews"}
+              unframed
+            />
+          ) : null}
+          {sectionId === "philosophy-mind" &&
+          note.title === "The Benoit Blanc Example" ? (
+            <TrailerEmbed />
+          ) : null}
+          {note.items?.length ? (
+            <ul className="mt-4 space-y-2">
+              {note.items.map((item) => (
+                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -4733,8 +7900,13 @@ function NoteCard({
               Key Point
             </p>
           ) : null}
-          <h4 className="text-base font-semibold text-stone-100">{note.title}</h4>
-          {note.body ? <NoteBody body={note.body} /> : null}
+          <h4 className="text-base font-semibold text-stone-100">{displayTitle}</h4>
+          {note.body ? (
+            <NoteBody
+              body={note.body}
+              emphasizeLeadLabels={sectionId === "religion-overviews"}
+            />
+          ) : null}
           {sectionId === "probability-convergence-certainty" &&
           note.title === "The Benoit Blanc Example" ? (
             <TrailerEmbed />
@@ -4755,23 +7927,50 @@ function NoteCard({
   );
 }
 
-function NoteBody({ body }: { body: string }) {
+function NoteBody({
+  body,
+  emphasizeLeadLabels = false,
+  unframed = false,
+}: {
+  body: string;
+  emphasizeLeadLabels?: boolean;
+  unframed?: boolean;
+}) {
   return (
     <div className="mt-3 space-y-4">
       {body.split("\n\n").map((paragraph) => {
         const highlighted = isHighlightParagraph(paragraph);
+        const [leadLabel, ...remainingLines] = paragraph.split("\n");
+        const shouldEmphasizeLeadLabel =
+          emphasizeLeadLabels &&
+          remainingLines.length > 0 &&
+          /^[A-Z][A-Za-z ]{2,40}$/.test(leadLabel.trim());
 
         return (
           <p
             className={[
               "whitespace-pre-line text-base leading-8 text-stone-300",
-              highlighted
+              highlighted && !unframed
                 ? "rounded-lg border border-amber-200/15 bg-black/15 px-4 py-3 text-stone-100"
                 : "",
             ].join(" ")}
             key={paragraph}
-            dangerouslySetInnerHTML={{ __html: paragraph }}
-          />
+          >
+            {shouldEmphasizeLeadLabel ? (
+              <>
+                <strong className="mb-1 block font-semibold text-stone-100">
+                  {leadLabel}
+                </strong>
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: remainingLines.join("\n"),
+                  }}
+                />
+              </>
+            ) : (
+              <span dangerouslySetInnerHTML={{ __html: paragraph }} />
+            )}
+          </p>
         );
       })}
     </div>
