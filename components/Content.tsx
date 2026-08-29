@@ -5,23 +5,43 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { ArrowUpRight, BarChart3, Volume2 } from "lucide-react";
 import { Collapsible } from "@/components/Collapsible";
 import { CurrentViews } from "@/components/CurrentViews";
 import { NotesFeed } from "@/components/NotesFeed";
 import type { ContentView } from "@/app/page";
-import { economicsSectionGroups, philosophySectionGroups, politicsSectionGroups, psychologySections, startSection, technologySections } from "@/lib/content";
-import type { EvidentialCaseStudy, EvidentialStyle, NavTopic, PoliticalArgumentCard, ReadingSection, ReadingSectionGroup } from "@/lib/content";
+import {
+  economicsSectionGroups,
+  economicsSections,
+  philosophySectionGroups,
+  philosophySections,
+  politicsAnalysisSections,
+  politicsSectionGroups,
+  politicsSections,
+  psychologySections,
+  startSection,
+  technologySections,
+} from "@/lib/content";
+import { epistemologySyncAdditions } from "@/lib/website-sync-content";
+import type {
+  EvidentialCaseStudy,
+  EvidentialStyle,
+  NavTopic,
+  PoliticalArgumentCard,
+  ReadingSection,
+  ReadingSectionGroup,
+} from "@/lib/content";
 
 type ContentProps = {
   activeSectionId: string;
   activeView: ContentView;
-  danielDisplayMode: DanielDisplayMode;
   frameworkSections: ReadingSection[];
+  onOpenIdeaSubject: (view: IdeaSubjectView) => void;
   topics: NavTopic[];
 };
 
 const articleClassName =
-  "content-view-enter mx-auto w-full max-w-[1040px] px-5 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20";
+  "content-view-enter mx-auto w-full max-w-[1120px] px-5 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-20";
 
 const startArticleClassName =
   "content-view-enter mx-auto w-full max-w-[1040px] px-5 py-8 sm:px-8 sm:py-12 lg:px-10 lg:py-16";
@@ -29,14 +49,14 @@ const startArticleClassName =
 export function Content({
   activeSectionId,
   activeView,
-  danielDisplayMode,
   frameworkSections,
+  onOpenIdeaSubject,
   topics,
 }: ContentProps) {
   if (activeView === "start") {
     return (
       <article className={startArticleClassName}>
-        <StartContent displayMode={danielDisplayMode} />
+        <StartContent />
       </article>
     );
   }
@@ -49,17 +69,22 @@ export function Content({
     return <NotesFeed />;
   }
 
+  if (activeView === "ideas") {
+    return (
+      <IdeasExplorer
+        frameworkSections={frameworkSections}
+        onOpenSubject={onOpenIdeaSubject}
+        topics={topics}
+      />
+    );
+  }
+
   if (activeView === "politics") {
     return (
       <article className={articleClassName}>
         <CategorySectionGroups
-          eyebrow="Politics"
-          groupEyebrow="Politics"
           activeSectionId={activeSectionId}
           groups={politicsSectionGroups}
-          intro="A systems map of power, institutions, ideology, incentives, public opinion, uncertainty, and collective coordination."
-          showIntroHeader={false}
-          title="Politics"
         />
       </article>
     );
@@ -69,12 +94,8 @@ export function Content({
     return (
       <article className={articleClassName}>
         <CategorySectionGroups
-          eyebrow="Economics"
-          groupEyebrow="Economics"
           activeSectionId={activeSectionId}
           groups={economicsSectionGroups}
-          intro="A systems map of scarcity, incentives, compounding wealth, market power, regulation, innovation, measurement, trade, and the structural limits of economic design."
-          title="Economics"
         />
       </article>
     );
@@ -85,38 +106,32 @@ export function Content({
       <article className={articleClassName}>
         <CategorySectionGroups
           activeSectionId={activeSectionId}
-          eyebrow="Philosophy"
-          groupEyebrow="Philosophy"
           groups={philosophySectionGroups}
-          intro="A framework for reality, knowledge, morality, consciousness, meaning, and orientation under uncertainty."
-          title="Philosophy"
         />
       </article>
     );
   }
 
   if (activeView === "psychology") {
+    const activeSection =
+      psychologySections.find((section) => section.id === activeSectionId) ??
+      psychologySections[0];
+
     return (
       <article className={articleClassName}>
-        <ChapterHeader eyebrow="Human Psychology / Chapter" title="Human Psychology" />
-        <div className="space-y-20">
-          {psychologySections.map((section) => (
-            <ReadingSubsection key={section.id} section={section} />
-          ))}
-        </div>
+        {activeSection ? <ReadingSubsection section={activeSection} /> : null}
       </article>
     );
   }
 
   if (activeView === "technology") {
+    const activeSection =
+      technologySections.find((section) => section.id === activeSectionId) ??
+      technologySections[0];
+
     return (
       <article className={articleClassName}>
-        <ChapterHeader eyebrow="Technology / Chapter" title="Technology" />
-        <div className="space-y-20">
-          {technologySections.map((section) => (
-            <ReadingSubsection key={section.id} section={section} />
-          ))}
-        </div>
+        {activeSection ? <ReadingSubsection section={activeSection} /> : null}
       </article>
     );
   }
@@ -134,178 +149,35 @@ export function Content({
     religionOverviewSection,
     ...remainingReligionFrameworkSections
   ] = frameworkSections;
+  const religionSections = [
+    religionIntroductionSection,
+    religionOverviewSection,
+    ...remainingReligionFrameworkSections,
+  ].filter((section): section is ReadingSection => Boolean(section));
+  const activeReligionSection = religionSections.find(
+    (section) => section.id === activeSectionId,
+  );
+  const activeReligionTopic = topics.find(
+    (topic) => topic.id === activeSectionId,
+  );
 
   return (
     <article className={articleClassName}>
-      <ChapterHeader eyebrow="Religion / Chapter" title="Religion" />
-      <div className="space-y-20">
-        {religionIntroductionSection ? (
-          <ReadingSubsection
-            key={religionIntroductionSection.id}
-            section={religionIntroductionSection}
-          />
-        ) : null}
-        {religionOverviewSection ? (
-          <ReadingSubsection
-            key={religionOverviewSection.id}
-            section={religionOverviewSection}
-          />
-        ) : null}
-        {topics.map((topic) => (
-          <TopicSection key={topic.id} topic={topic} />
-        ))}
-        {remainingReligionFrameworkSections.map((section) => (
-          <ReadingSubsection key={section.id} section={section} />
-        ))}
-      </div>
+      {activeReligionTopic ? (
+        <TopicSection topic={activeReligionTopic} />
+      ) : activeReligionSection ? (
+        <ReadingSubsection section={activeReligionSection} />
+      ) : religionIntroductionSection ? (
+        <ReadingSubsection section={religionIntroductionSection} />
+      ) : null}
     </article>
   );
 }
 
-type DanielDisplayMode = "classic" | "immersive";
-
-function StartContent({ displayMode }: { displayMode: DanielDisplayMode }) {
+function StartContent() {
   return (
     <div className="scroll-mt-16" id={startSection.id}>
-      {displayMode === "classic" ? <ClassicStartContent /> : <ImmersiveStartContent />}
-    </div>
-  );
-}
-
-function ClassicStartContent() {
-  return (
-    <div className="daniel-scroll-flow">
-      <header className="scroll-reveal relative isolate grid min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018)_44%,rgba(253,230,138,0.055))] px-5 py-6 shadow-[0_30px_120px_rgba(0,0,0,0.32)] sm:px-7 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(240px,310px)] lg:items-center lg:gap-10 lg:px-9 xl:gap-12">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(253,230,138,0.13),transparent_34rem),radial-gradient(circle_at_90%_10%,rgba(255,255,255,0.075),transparent_22rem)]" />
-        <div>
-          <div className="grid gap-4 min-[1800px]:grid-cols-[minmax(0,1fr)_210px] min-[1800px]:items-start">
-            <div>
-              <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-                {startSection.eyebrow}
-              </p>
-              <h2 className="max-w-3xl text-5xl font-semibold leading-[0.98] text-stone-50 sm:text-6xl lg:text-7xl">
-                {startSection.title}
-              </h2>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-300">
-                An organized map of the patterns, interests, arguments, systems, and questions that shaped the rest of this project.
-              </p>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                {socialLinks.map((link) => (
-                  <SocialBubble link={link} key={link.label} />
-                ))}
-              </div>
-            </div>
-
-            <DigitalMindPet className="hidden min-[1800px]:block min-[1800px]:-ml-24" />
-          </div>
-
-          <div className="mt-8 grid w-full max-w-[520px] grid-cols-2 gap-x-4 gap-y-3 border-t border-white/10 pt-5 sm:grid-cols-3">
-            {profileFacts.map((fact) => (
-              <div
-                className={[
-                  "min-w-0",
-                  fact.label === "Favorite Food" ? "sm:col-span-2" : "",
-                ].join(" ")}
-                key={fact.label}
-              >
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-                  {fact.label}
-                </p>
-                <p className="mt-1 text-sm font-medium leading-5 text-stone-100">
-                  {fact.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 lg:mt-0">
-          <figure className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.035] lg:h-[430px]">
-            <img
-              alt="Daniel"
-              className="aspect-[4/5] w-full object-cover object-top lg:aspect-auto lg:h-full lg:object-[center_86%]"
-              src="/images/start/daniel-portrait.jpg"
-            />
-          </figure>
-          <DigitalMindPet className="mt-5 hidden xl:-ml-8 xl:block min-[1800px]:hidden" />
-        </div>
-      </header>
-
-      <section className="scroll-reveal mt-20 grid min-h-[72vh] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-        <div className="lg:sticky lg:top-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-            About Me
-          </p>
-          <h3 className="mt-4 max-w-sm text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
-            The perspective the project starts from.
-          </h3>
-        </div>
-        <div className="space-y-8 text-lg leading-9 text-stone-200">
-          {introCaptionBlocks.map((block, index) => (
-            <p
-              className={[
-                "max-w-2xl border-l border-amber-200/25 pl-5 text-stone-200",
-                index % 2 === 1 ? "lg:ml-auto" : "",
-              ].join(" ")}
-              key={`intro-${index}`}
-            >
-              {block}
-            </p>
-          ))}
-        </div>
-      </section>
-
-      <section className="scroll-reveal mt-24 rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-8 sm:px-7 lg:px-8">
-        <SectionHeading
-          eyebrow="Part 1"
-          title="Things that influenced my thought."
-          body="These are not credentials. They are inputs: the kinds of things that shaped how I notice patterns, pressure, framing, systems, and confidence."
-        />
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {influenceCards.map((card) => (
-            <InfoCard card={card} key={card.title} />
-          ))}
-        </div>
-      </section>
-
-      <EnjoymentArchiveSection />
-
-      <PhotographySection />
-
-      <FortniteSection />
-
-      <section className="scroll-reveal mt-24 rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-8 sm:px-7 lg:px-8">
-        <SectionHeading
-          eyebrow="Part 5"
-          title="Projects"
-          body="Some adjacent projects built around a hobby I’ve fallen into over the last few years: building web projects, experimenting with ideas, and creating things alongside AI, with several more currently in development."
-        />
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {projectCards.map((project) => (
-            <ProjectCard project={project} key={project.title} />
-          ))}
-        </div>
-      </section>
-
-      <section className="scroll-reveal daniel-gradient-panel mt-24 grid min-h-[72vh] gap-8 overflow-hidden rounded-[2rem] border border-amber-200/15 px-5 py-8 shadow-[0_32px_130px_rgba(0,0,0,0.35)] sm:px-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center lg:px-8">
-        <div>
-          <SectionHeading
-            eyebrow="Part 6"
-            title="Thinking Alongside AI"
-            body="AI gradually became a major part of how I think, work, and build. I use it for coding, organizing ideas, refining arguments, exploring concepts, automating repetitive tasks, and turning vague thoughts into clearer structures. Because so much of this project was shaped through AI-assisted exploration, it felt natural to make the project itself interactive. The assistant on the right side of the site is connected to the ideas and writing throughout the project, allowing people to explore the framework conversationally instead of only reading it statically."
-          />
-        </div>
-        <figure className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.035] p-2">
-          <img
-            alt="ChatGPT usage review"
-            className="max-h-[360px] w-full rounded-md object-contain"
-            decoding="async"
-            loading="lazy"
-            src="/images/start/chatgpt-review.jpeg"
-          />
-        </figure>
-      </section>
+      <ImmersiveStartContent />
     </div>
   );
 }
@@ -324,16 +196,34 @@ function ImmersiveStartContent() {
           <h3 className="mt-5 text-5xl font-semibold leading-none text-stone-50 sm:text-7xl">
             About Me
           </h3>
-          <ImmersiveScrollText text={introCaptionBlocks.slice(0, 4).join(" ")} />
-          <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 border-t border-white/10 pt-6">
-            {profileFacts.slice(0, 6).map((fact) => (
-              <div className="min-w-[110px]" key={fact.label}>
-                <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-500">
-                  {fact.label}
-                </p>
-                <p className="mt-1 text-sm text-stone-200">{fact.value}</p>
-              </div>
-            ))}
+          <ImmersiveScrollText
+            text={introCaptionBlocks.slice(0, 4).join(" ")}
+          />
+          <div className="mt-12 w-full border-t border-white/10 pt-6">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-5 sm:grid-cols-5">
+              {profileFacts.slice(0, 5).map((fact) => (
+                <div className="min-w-0" key={fact.label}>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-500">
+                    {fact.label}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-stone-200">
+                    {fact.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mx-auto mt-6 grid max-w-xl grid-cols-2 gap-6 border-t border-white/[0.07] pt-5">
+              {profileFacts.slice(5, 7).map((fact) => (
+                <div className="min-w-0" key={fact.label}>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-500">
+                    {fact.label}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-stone-200">
+                    {fact.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -343,29 +233,425 @@ function ImmersiveStartContent() {
       <FortniteSection />
 
       <section className="mt-28 border-y border-amber-200/15 py-20 sm:py-28">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-stretch">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
               Part 6
             </p>
-            <h3 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-50 sm:text-6xl">
+            <h3 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-50 sm:whitespace-nowrap sm:text-5xl">
               Thinking Alongside AI
             </h3>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-stone-300 sm:text-lg">
-              AI gradually became a major part of how I think, work, and build. I use it for coding, organizing ideas, refining arguments, exploring concepts, automating repetitive tasks, and turning vague thoughts into clearer structures. Because so much of this project was shaped through AI-assisted exploration, it felt natural to make the project itself interactive. The assistant on the right side of the site is connected to the ideas and writing throughout the project, allowing people to explore the framework conversationally instead of only reading it statically.
-            </p>
+            <div className="mt-6 max-w-2xl space-y-6 text-base leading-8 text-stone-300 sm:text-lg sm:leading-9">
+              <p>
+                AI gradually became a major part of how I think, work, and
+                build. A large portion of the writing in this project was
+                generated with AI, but calling it simply “AI-written” misses how
+                it was actually created. Most ideas developed through long
+                conversations: starting with an observation or half-formed
+                thought, questioning the first explanation, testing different
+                interpretations, rejecting what did not fit, and refining the
+                result until it reflected what I was actually trying to
+                understand and accurately captured my perspective.
+              </p>
+              <p>
+                I think of the process less as using AI to supply answers and
+                more as thinking alongside it. I provide the direction,
+                questions, intuitions, disagreements, and examples; AI helps
+                expand them, expose gaps, suggest connections, organize them,
+                and translate them into clearer language. Sometimes the most
+                useful result is not an answer at all, but a response that gives
+                me something new to question or causes me to reframe the
+                original problem.
+              </p>
+              <p>
+                The wording may often be AI-generated, but the project reflects
+                a much larger process of conversation, selection, revision, and
+                exploration. That same idea is built into the site itself
+                through the assistant that becomes available when someone opens
+                and reads through my ideas, allowing people to explore the
+                project conversationally rather than only reading it as a
+                finished body of text.
+              </p>
+            </div>
           </div>
-          <figure className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] p-2 shadow-[0_28px_90px_rgba(0,0,0,0.4)]">
-            <img
-              alt="ChatGPT usage review"
-              className="w-full rounded object-contain"
-              loading="lazy"
-              src="/images/start/chatgpt-review.jpeg"
-            />
-          </figure>
+          <div className="grid gap-7 lg:content-between lg:self-stretch lg:pb-20 lg:pt-[10.5rem]">
+            <figure className="ml-auto w-full max-w-[320px] overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] p-2 shadow-[0_28px_90px_rgba(0,0,0,0.4)]">
+              <img
+                alt="ChatGPT usage review"
+                className="w-full rounded object-contain"
+                loading="lazy"
+                src="/images/start/chatgpt-review.jpeg"
+              />
+            </figure>
+            <figure className="ml-auto w-full max-w-[320px] overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] p-2 shadow-[0_28px_90px_rgba(0,0,0,0.4)]">
+              <img
+                alt="Daniel's Codex activity profile"
+                className="w-full rounded object-contain"
+                loading="lazy"
+                src="/images/start/codex-profile-card.png"
+              />
+            </figure>
+          </div>
         </div>
       </section>
+
+      <GoalSection />
     </div>
+  );
+}
+
+const goalStages = [
+  {
+    cue: "Build the tools",
+    label: "Foundation",
+    text: "My aim is to build a strong foundation in computer science while gradually moving toward the parts of AI that interest me most: reasoning, discovery, and systems that can do more than simply follow a predefined objective. I’m especially interested in how AI could learn to question the way a problem is framed, generate alternative explanations or approaches, test competing ideas, and recognize when a completely different direction may be more useful than continuing to optimize the current one.",
+  },
+  {
+    cue: "Question the objective",
+    label: "Reframing",
+    text: "I want to explore areas where AI can help discover new algorithms, scientific hypotheses, reasoning methods, or even better ways of building intelligent systems themselves. What interests me most is not just making an existing system slightly more efficient, but understanding how intelligent systems could uncover new principles, identify hidden assumptions, and find solutions that were not obvious from the original framing of a problem.",
+  },
+  {
+    cue: "Test possible directions",
+    label: "Exploration",
+    text: "I’m not committed to one specific research title or field yet. Part of the goal is to keep building the programming, mathematics, and computer science foundation that gives me enough technical understanding to explore these questions seriously. As I learn more, I want to test different areas of computer science and AI, build projects, follow ideas that seem promising, and gradually figure out where my interests and abilities fit best.",
+  },
+  {
+    cue: "Work at the unknown",
+    label: "Discovery",
+    text: "Long term, I would like to work on problems where there is still something genuinely unknown to figure out—where the task is not only to implement an existing solution, but to investigate how a system works, question existing approaches, experiment with alternatives, and potentially contribute something new.",
+  },
+] as const;
+
+function GoalSection() {
+  const [activeStage, setActiveStage] = useState(0);
+  const stageRefs = useRef<Array<HTMLElement | null>>([]);
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+
+    if (!scrollRoot) {
+      return;
+    }
+
+    let frame = 0;
+    let stageTimer = 0;
+    let pendingStage = 0;
+    let initialized = false;
+
+    const updateActiveStage = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const rootBounds = scrollRoot.getBoundingClientRect();
+        const readingLine = rootBounds.top + scrollRoot.clientHeight * 0.46;
+        let nextStage = 0;
+
+        stageRefs.current.forEach((stage, index) => {
+          if (stage && stage.getBoundingClientRect().top <= readingLine) {
+            nextStage = index;
+          }
+        });
+
+        if (!initialized) {
+          initialized = true;
+          pendingStage = nextStage;
+          setActiveStage(nextStage);
+          return;
+        }
+
+        if (nextStage === pendingStage) {
+          return;
+        }
+
+        pendingStage = nextStage;
+        window.clearTimeout(stageTimer);
+        stageTimer = window.setTimeout(() => {
+          setActiveStage(pendingStage);
+        }, 90);
+      });
+    };
+
+    updateActiveStage();
+    scrollRoot.addEventListener("scroll", updateActiveStage, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateActiveStage);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(stageTimer);
+      scrollRoot.removeEventListener("scroll", updateActiveStage);
+      window.removeEventListener("resize", updateActiveStage);
+    };
+  }, []);
+
+  const selectedStage = goalStages[activeStage];
+
+  return (
+    <section className="border-b border-amber-200/15 py-24 sm:py-32">
+      <header className="mx-auto max-w-3xl text-center">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
+          Part 7
+        </p>
+        <h3 className="mt-4 text-4xl font-semibold leading-tight text-stone-50 sm:text-6xl">
+          My Goal
+        </h3>
+        <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-stone-400 sm:text-base">
+          Reasoning, discovery, and intelligent systems that can question the
+          frame they are given.
+        </p>
+      </header>
+
+      <div className="mt-16 grid gap-12 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-20">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="border-y border-amber-200/20 py-7">
+            <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-amber-200/55">
+              Research direction
+            </p>
+            <div className="mt-5 flex items-end gap-4 overflow-hidden">
+              <span
+                className="min-w-[88px] font-mono text-7xl leading-none text-amber-100 transition-all duration-500"
+                key={`goal-number-${activeStage}`}
+              >
+                {String(activeStage + 1).padStart(2, "0")}
+              </span>
+              <span className="pb-1">
+                <span
+                  className="block text-xl font-semibold text-stone-100 transition-all duration-500"
+                  key={`goal-label-${activeStage}`}
+                >
+                  {selectedStage.label}
+                </span>
+                <span className="mt-1 block text-xs text-stone-500">
+                  {selectedStage.cue}
+                </span>
+              </span>
+            </div>
+
+            <div className="mt-8 grid grid-cols-4 gap-2">
+              {goalStages.map((stage, index) => {
+                const isActive = index === activeStage;
+
+                return (
+                  <button
+                    aria-label={`Read ${stage.label}`}
+                    className="group py-2 text-left"
+                    key={stage.label}
+                    onClick={() =>
+                      stageRefs.current[index]?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      })
+                    }
+                    type="button"
+                  >
+                    <span
+                      className={`block h-px transition-colors duration-300 ${
+                        isActive
+                          ? "bg-amber-200"
+                          : "bg-white/15 group-hover:bg-amber-200/45"
+                      }`}
+                      style={{
+                        transition:
+                          "width 680ms cubic-bezier(0.22, 1, 0.36, 1), background-color 300ms ease",
+                        width: isActive ? "100%" : "40%",
+                      }}
+                    />
+                    <span
+                      className={`mt-2 block font-mono text-[8px] transition-colors ${
+                        isActive ? "text-amber-100" : "text-stone-600"
+                      }`}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="mt-6 font-mono text-[9px] uppercase leading-5 tracking-[0.18em] text-stone-600">
+            Foundation / Reframing / Exploration / Discovery
+          </p>
+        </div>
+
+        <div className="divide-y divide-white/10">
+          {goalStages.map((stage, index) => {
+            const isActive = index === activeStage;
+
+            return (
+              <article
+                className={`flex min-h-[34vh] scroll-mt-28 items-center py-12 transition-all duration-500 first:pt-0 last:pb-0 ${
+                  isActive ? "translate-x-0 opacity-100" : "opacity-65"
+                }`}
+                data-stage={index}
+                key={stage.label}
+                ref={(node) => {
+                  stageRefs.current[index] = node;
+                }}
+              >
+                <div>
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className="font-mono text-[9px] text-amber-200/60">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="h-px w-9 bg-amber-200/35" />
+                    <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                      {stage.label}
+                    </h4>
+                  </div>
+                  <p className="max-w-2xl text-base leading-8 text-stone-300 sm:text-lg sm:leading-9">
+                    {stage.text}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export type IdeaSubjectView =
+  | "philosophy"
+  | "religion"
+  | "politics"
+  | "economics"
+  | "psychology"
+  | "technology";
+
+type IdeaChapter = {
+  id: string;
+  label: string;
+};
+
+type IdeaSubject = {
+  chapters: IdeaChapter[];
+  description: string;
+  label: string;
+  shortLabel: string;
+  view: IdeaSubjectView;
+};
+
+function IdeasExplorer({
+  frameworkSections,
+  onOpenSubject,
+  topics,
+}: {
+  frameworkSections: ReadingSection[];
+  onOpenSubject: (view: IdeaSubjectView) => void;
+  topics: NavTopic[];
+}) {
+  const religionChapters = [
+    ...frameworkSections.slice(0, 2),
+    ...topics.slice(0, 1),
+    ...frameworkSections.slice(2),
+  ];
+  const subjects: IdeaSubject[] = [
+    {
+      chapters: philosophySections,
+      description:
+        "Reality, knowledge, morality, consciousness, meaning, and uncertainty.",
+      label: "Philosophy",
+      shortLabel: "Philosophy",
+      view: "philosophy",
+    },
+    {
+      chapters: religionChapters,
+      description:
+        "Belief, revelation, interpretation, evidence, and religious certainty.",
+      label: "Religion",
+      shortLabel: "Religion",
+      view: "religion",
+    },
+    {
+      chapters: [...politicsSections, ...politicsAnalysisSections],
+      description:
+        "Power, institutions, identity, incentives, and collective coordination.",
+      label: "Politics",
+      shortLabel: "Politics",
+      view: "politics",
+    },
+    {
+      chapters: economicsSections,
+      description:
+        "Scarcity, markets, wealth, labor, regulation, innovation, and trade.",
+      label: "Economics",
+      shortLabel: "Economics",
+      view: "economics",
+    },
+    {
+      chapters: psychologySections,
+      description:
+        "Belief formation, bias, motivation, identity, and human behavior.",
+      label: "Human Psychology",
+      shortLabel: "Psychology",
+      view: "psychology",
+    },
+    {
+      chapters: technologySections,
+      description:
+        "AI, algorithms, media systems, automation, and reality distortion.",
+      label: "Technology",
+      shortLabel: "Technology",
+      view: "technology",
+    },
+  ];
+  const subjectPositions = [
+    [27, 31],
+    [49, 21],
+    [74, 34],
+    [20, 65],
+    [43, 80],
+    [68, 72],
+  ];
+  return (
+    <section className="ideas-explorer content-view-enter relative isolate min-h-screen overflow-hidden px-4 pb-4 pt-24 sm:px-8 sm:pb-5 sm:pt-16">
+      <div aria-hidden="true" className="ideas-grid" />
+      <header className="relative z-20 mx-auto max-w-3xl text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/65">
+          The project map
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold text-stone-50 sm:text-5xl">
+          Explore My Ideas
+        </h1>
+        <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-stone-400 sm:text-base sm:leading-7">
+          Choose a subject to open its focused reading page.
+        </p>
+      </header>
+
+      <div className="ideas-stage relative z-10 mx-auto mt-2 w-full max-w-[1240px] sm:mt-3">
+        <div className="ideas-subject-field absolute inset-0">
+          {subjects.map((subject, index) => {
+            const [baseX, baseY] = subjectPositions[index];
+
+            return (
+              <button
+                className={`idea-subject-bubble idea-subject-${index + 1}`}
+                key={subject.view}
+                onClick={() => onOpenSubject(subject.view)}
+                style={
+                  {
+                    left: `${baseX}%`,
+                    top: `${baseY}%`,
+                  } as React.CSSProperties
+                }
+                type="button"
+              >
+                <span className="idea-subject-label block text-base font-semibold text-stone-50 sm:text-lg">
+                  {subject.shortLabel}
+                </span>
+                <span className="mt-2 block font-mono text-[9px] uppercase tracking-[0.16em] text-amber-200/55">
+                  {subject.chapters.length}{" "}
+                  {subject.chapters.length === 1 ? "entry" : "chapters"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -385,18 +671,27 @@ function ImmersiveHero() {
     }
 
     let frame = 0;
+    const stageStartOffset = stage.offsetTop;
 
     const updateProgress = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        if (window.matchMedia("(max-width: 639px), (prefers-reduced-motion: reduce)").matches) {
+        if (
+          window.matchMedia(
+            "(max-width: 639px), (prefers-reduced-motion: reduce)",
+          ).matches
+        ) {
           setScrollProgress(0);
           return;
         }
 
-        const heroBounds = hero.getBoundingClientRect();
-        const travel = Math.max(1, hero.offsetHeight - stage.offsetHeight);
-        setScrollProgress(Math.min(1, Math.max(0, -heroBounds.top / travel)));
+        const travel = Math.max(
+          1,
+          hero.offsetHeight - stage.offsetHeight - stageStartOffset,
+        );
+        setScrollProgress(
+          Math.min(1, Math.max(0, scrollRoot.scrollTop / travel)),
+        );
       });
     };
 
@@ -453,7 +748,7 @@ function ImmersiveHero() {
       ref={heroRef}
     >
       <div
-        className="daniel-profile-stage w-full sm:sticky sm:top-6"
+        className="daniel-profile-stage w-full sm:sticky sm:top-[72px] lg:top-[88px]"
         ref={stageRef}
         style={{ scale: `${1 + scrollProgress * 0.018}` }}
       >
@@ -469,7 +764,10 @@ function ImmersiveHero() {
           />
 
           <div className="daniel-profile-tone absolute inset-0" />
-          <div aria-hidden="true" className="daniel-profile-gloss absolute inset-0" />
+          <div
+            aria-hidden="true"
+            className="daniel-profile-gloss absolute inset-0"
+          />
 
           <p
             className="daniel-profile-location absolute left-5 top-[4.75rem] z-20 inline-flex items-center gap-2 font-mono text-[10px] uppercase text-stone-900/75 sm:left-7 sm:top-7 lg:left-8 lg:top-8"
@@ -526,16 +824,28 @@ function ImmersiveHero() {
 
             <div className="daniel-profile-details mt-6 grid grid-cols-3 border-t border-white/15 pt-4">
               <div>
-                <p className="font-mono text-[9px] uppercase text-stone-400">Born</p>
-                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">2000</p>
+                <p className="font-mono text-[9px] uppercase text-stone-400">
+                  Born
+                </p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">
+                  07/13/2000
+                </p>
               </div>
               <div>
-                <p className="font-mono text-[9px] uppercase text-stone-400">Height</p>
-                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">6&apos;2&quot;</p>
+                <p className="font-mono text-[9px] uppercase text-stone-400">
+                  Height
+                </p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">
+                  6&apos;2&quot;
+                </p>
               </div>
               <div>
-                <p className="font-mono text-[9px] uppercase text-stone-400">Languages</p>
-                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">EN / RU</p>
+                <p className="font-mono text-[9px] uppercase text-stone-400">
+                  Languages
+                </p>
+                <p className="mt-1 text-xs font-medium text-stone-100 sm:text-sm">
+                  EN / RU
+                </p>
               </div>
             </div>
           </div>
@@ -545,7 +855,6 @@ function ImmersiveHero() {
             className="daniel-profile-scroll-line absolute inset-x-0 bottom-0 z-30 h-px origin-left bg-amber-100/70"
             style={{ scale: `${scrollProgress} 1` }}
           />
-
         </div>
       </div>
     </header>
@@ -720,7 +1029,11 @@ function ImmersiveScrollText({ text }: { text: string }) {
         const opacity = Math.max(0.1, Math.min(1, (progress - wordStart) * 10));
 
         return (
-          <span className="transition-opacity duration-150" key={`${word}-${index}`} style={{ opacity }}>
+          <span
+            className="transition-opacity duration-150"
+            key={`${word}-${index}`}
+            style={{ opacity }}
+          >
             {word}{" "}
           </span>
         );
@@ -747,7 +1060,10 @@ function ImmersiveProjectStack() {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const rect = track.getBoundingClientRect();
-        const travel = Math.max(1, track.offsetHeight - scrollRoot.clientHeight);
+        const travel = Math.max(
+          1,
+          track.offsetHeight - scrollRoot.clientHeight,
+        );
         setStackProgress(Math.max(0, Math.min(1, -rect.top / travel)));
       });
     };
@@ -775,9 +1091,9 @@ function ImmersiveProjectStack() {
           </h3>
         </div>
         <p className="max-w-sm text-sm leading-7 text-stone-400">
-          Coding became one of my main hobbies and a way to turn ideas into things I
-          could actually use. These are a few of the projects that grew out of that
-          process.
+          Coding became one of my main hobbies and a way to turn ideas into
+          things I could actually use. These are a few of the projects that grew
+          out of that process.
         </p>
       </div>
 
@@ -876,7 +1192,10 @@ function PinnedProjectCard({
           >
             <img
               alt=""
-              className={["h-full w-full rounded-md object-cover", project.imageClassName ?? ""].join(" ")}
+              className={[
+                "h-full w-full rounded-md object-cover",
+                project.imageClassName ?? "",
+              ].join(" ")}
               src={project.image}
             />
           </a>
@@ -998,7 +1317,10 @@ function DigitalMindPet({ className = "" }: { className?: string }) {
   return (
     <button
       aria-label="Mini Daniel pet. Click for a project insight."
-      className={["mind-pet group relative h-[190px] w-[300px] overflow-visible text-left", className].join(" ")}
+      className={[
+        "mind-pet group relative h-[190px] w-[300px] overflow-visible text-left",
+        className,
+      ].join(" ")}
       onClick={handlePetClick}
       type="button"
     >
@@ -1018,7 +1340,9 @@ function DigitalMindPet({ className = "" }: { className?: string }) {
       <span
         className={[
           "mind-pet-bubble-layer absolute bottom-[76px] left-[94px] transition duration-300",
-          showInsight && textVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
+          showInsight && textVisible
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-2 opacity-0",
         ].join(" ")}
         style={{
           height: bubbleLayout.height,
@@ -1084,12 +1408,12 @@ const profileFacts = [
     value: "Earl Grey Tea",
   },
   {
-    label: "Background",
-    value: "Ukrainian-American",
+    label: "Favorite Food",
+    value: "Poppy Seed Bagel w/\nCream Cheese and Lox",
   },
   {
-    label: "Favorite Food",
-    value: "Poppy Seed Bagel, Cream Cheese + Lox",
+    label: "Background",
+    value: "Ukrainian-American",
   },
 ];
 
@@ -1173,11 +1497,7 @@ const petIdleFrames = [
 ];
 
 const petIdleSequence = [
-  0, 0, 0, 0, 0, 0,
-  1, 2, 1,
-  0, 0, 0, 0, 0,
-  3, 4, 5, 4, 3,
-  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 3, 4, 5, 4, 3, 0, 0, 0, 0, 0, 0, 0,
 ];
 
 const photographyImageUrls = Array.from({ length: 18 }, (_, index) => {
@@ -1208,156 +1528,195 @@ const videoGameCards = [
   {
     title: "Pac-Man World 2",
     year: 2002,
-    image: "https://upload.wikimedia.org/wikipedia/en/6/6b/Pac-Man_World_2_Coverart.png",
-    summary: "A 3D platformer about movement, timing, navigation, and reading level flow.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/6/6b/Pac-Man_World_2_Coverart.png",
+    summary:
+      "A 3D platformer about movement, timing, navigation, and reading level flow.",
   },
   {
     title: "Super Monkey Ball 2",
     year: 2002,
-    image: "https://upload.wikimedia.org/wikipedia/en/d/d5/Super_Monkey_Ball_2_Coverart.png",
-    summary: "A precision puzzle game built around momentum, patience, and micro-adjustments.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/d/d5/Super_Monkey_Ball_2_Coverart.png",
+    summary:
+      "A precision puzzle game built around momentum, patience, and micro-adjustments.",
   },
   {
     title: "Yoshi Touch and Go",
     year: 2005,
     image: "https://upload.wikimedia.org/wikipedia/en/4/4c/Ytagbox.jpg",
     imagePosition: "62% 68%",
-    summary: "A DS game where drawing paths turns reaction into planning and improvisation.",
+    summary:
+      "A DS game where drawing paths turns reaction into planning and improvisation.",
   },
   {
     title: "New Super Mario Bros.",
     year: 2006,
-    image: "https://upload.wikimedia.org/wikipedia/en/d/db/NewSuperMarioBrothers.jpg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/d/db/NewSuperMarioBrothers.jpg",
     imagePosition: "62% 68%",
-    summary: "Classic platforming literacy: rhythm, timing, hidden paths, and repeated mastery.",
+    summary:
+      "Classic platforming literacy: rhythm, timing, hidden paths, and repeated mastery.",
   },
   {
     title: "Pokemon Diamond",
     year: 2007,
     image: "/images/start/pokemon-diamond-ds-cover.webp",
     imagePosition: "62% 68%",
-    summary: "A slower strategy loop about collection, types, team balance, and progression.",
+    summary:
+      "A slower strategy loop about collection, types, team balance, and progression.",
   },
   {
     title: "Minecraft",
     year: 2009,
     image: "/images/start/minecraft-cover.jpg",
     imagePosition: "center 28%",
-    summary: "Open-ended creation, survival, experimentation, and making your own goals.",
+    summary:
+      "Open-ended creation, survival, experimentation, and making your own goals.",
   },
   {
     title: "Call of Duty: MW3",
     year: 2011,
-    image: "https://upload.wikimedia.org/wikipedia/en/b/bf/Call_of_Duty_Modern_Warfare_3_box_art.png",
-    summary: "Fast multiplayer feedback through map awareness, recoil, spawns, and reaction speed.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/b/bf/Call_of_Duty_Modern_Warfare_3_box_art.png",
+    summary:
+      "Fast multiplayer feedback through map awareness, recoil, spawns, and reaction speed.",
   },
   {
     title: "Call of Duty: Black Ops II",
     year: 2012,
-    image: "https://upload.wikimedia.org/wikipedia/en/0/05/Call_of_Duty_Black_Ops_II_box_artwork.png",
-    summary: "A shooter that rewards map flow, route familiarity, positioning, and prediction.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/0/05/Call_of_Duty_Black_Ops_II_box_artwork.png",
+    summary:
+      "A shooter that rewards map flow, route familiarity, positioning, and prediction.",
   },
   {
     title: "Grand Theft Auto V",
     year: 2013,
-    image: "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
-    summary: "A sandbox for roaming, testing systems, and mixing story with player freedom.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
+    summary:
+      "A sandbox for roaming, testing systems, and mixing story with player freedom.",
   },
   {
     title: "Destiny",
     year: 2014,
     image: "/images/start/destiny-cover.jpg",
-    summary: "A sci-fi shooter built around loot, raids, atmosphere, repetition, and shared goals.",
+    summary:
+      "A sci-fi shooter built around loot, raids, atmosphere, repetition, and shared goals.",
   },
   {
     title: "Mortal Kombat X",
     year: 2015,
-    image: "https://upload.wikimedia.org/wikipedia/en/d/d0/Mortal_Kombat_X_Cover_Art.png",
-    summary: "A technical fighting game about matchup knowledge, execution, and counterplay.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/d/d0/Mortal_Kombat_X_Cover_Art.png",
+    summary:
+      "A technical fighting game about matchup knowledge, execution, and counterplay.",
   },
   {
     title: "Batman: Arkham Knight",
     year: 2015,
-    image: "https://upload.wikimedia.org/wikipedia/en/6/6c/Batman_Arkham_Knight_Cover_Art.jpg",
-    summary: "Rhythmic combat where timing, crowd control, and flow replace button mashing.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/6/6c/Batman_Arkham_Knight_Cover_Art.jpg",
+    summary:
+      "Rhythmic combat where timing, crowd control, and flow replace button mashing.",
   },
   {
     title: "Call of Duty: Black Ops III",
     year: 2015,
     image: "/images/start/bo3.jpg",
-    summary: "Vertical movement, wall-running, fast tracking, and staying composed at speed.",
+    summary:
+      "Vertical movement, wall-running, fast tracking, and staying composed at speed.",
   },
   {
     title: "Overwatch",
     year: 2016,
-    image: "https://upload.wikimedia.org/wikipedia/en/5/51/Overwatch_cover_art.jpg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/5/51/Overwatch_cover_art.jpg",
     imagePosition: "center 30%",
-    summary: "A team shooter about roles, positioning, ability timing, and adapting quickly.",
+    summary:
+      "A team shooter about roles, positioning, ability timing, and adapting quickly.",
   },
   {
     title: "Modern Warfare Remastered",
     year: 2016,
-    image: "https://upload.wikimedia.org/wikipedia/en/d/d4/Call_of_Duty_-_Modern_Warfare_Remastered.jpeg",
-    summary: "A fundamentals-heavy shooter where aim, routes, and positioning carry hard.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/d/d4/Call_of_Duty_-_Modern_Warfare_Remastered.jpeg",
+    summary:
+      "A fundamentals-heavy shooter where aim, routes, and positioning carry hard.",
   },
   {
     title: "Fortnite",
     year: 2017,
-    image: "https://upload.wikimedia.org/wikipedia/en/a/ae/Fortnite_Save_The_World.jpg",
-    summary: "A layered skill game combining aim, building, materials, and fast improvisation.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/a/ae/Fortnite_Save_The_World.jpg",
+    summary:
+      "A layered skill game combining aim, building, materials, and fast improvisation.",
   },
   {
     title: "Among Us",
     year: 2018,
-    image: "https://upload.wikimedia.org/wikipedia/en/9/9a/Among_Us_cover_art.jpg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/9/9a/Among_Us_cover_art.jpg",
     imagePosition: "center 16%",
-    summary: "Social deduction where timing, behavior, persuasion, and confidence become evidence.",
+    summary:
+      "Social deduction where timing, behavior, persuasion, and confidence become evidence.",
   },
   {
     title: "Mortal Kombat 11",
     year: 2019,
-    image: "https://upload.wikimedia.org/wikipedia/en/7/7e/Mortal_Kombat_11_cover_art.png",
-    summary: "A heavier fighting game about spacing, punish windows, patience, and matchup control.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/7/7e/Mortal_Kombat_11_cover_art.png",
+    summary:
+      "A heavier fighting game about spacing, punish windows, patience, and matchup control.",
   },
   {
     title: "Valorant",
     year: 2020,
     image: "https://upload.wikimedia.org/wikipedia/en/b/ba/Valorant_cover.jpg",
     imagePosition: "center 6%",
-    summary: "A tactical shooter about angle discipline, information control, and precision.",
+    summary:
+      "A tactical shooter about angle discipline, information control, and precision.",
   },
   {
     title: "Fall Guys",
     year: 2020,
-    image: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1097150/header.jpg",
-    summary: "Chaotic party-game timing, movement, failure recovery, and staying calm in nonsense.",
+    image:
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1097150/header.jpg",
+    summary:
+      "Chaotic party-game timing, movement, failure recovery, and staying calm in nonsense.",
   },
   {
     title: "Black Ops Cold War",
     year: 2020,
     image: "https://upload.wikimedia.org/wikipedia/en/3/31/BOCW_Cover_Art.jpg",
-    summary: "A fast shooter that reinforces reflex accuracy, movement habits, and map knowledge.",
+    summary:
+      "A fast shooter that reinforces reflex accuracy, movement habits, and map knowledge.",
   },
   {
     title: "Splitgate",
     year: 2021,
     image: "/images/start/splitgate-arena-cover.jpg",
     imagePosition: "center 32%",
-    summary: "Arena shooter pacing plus portals, weird angles, and creative spatial problem solving.",
+    summary:
+      "Arena shooter pacing plus portals, weird angles, and creative spatial problem solving.",
   },
   {
     title: "Counter-Strike 2",
     year: 2023,
     image: "/images/start/counter-strike-2-cover.jpg",
-    summary: "A precision shooter about angle discipline, utility, economy, and tiny mistakes.",
+    summary:
+      "A precision shooter about angle discipline, utility, economy, and tiny mistakes.",
   },
   {
     title: "PEAK",
     year: 2025,
-    image: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3527290/c6791f0f1b7b29f6304e283ac7a2cabc27c7eb0d/capsule_616x353.jpg?t=1775581133",
+    image:
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3527290/c6791f0f1b7b29f6304e283ac7a2cabc27c7eb0d/capsule_616x353.jpg?t=1775581133",
     imageClassName: "object-contain bg-black scale-[1.00]",
     imagePosition: "68% center",
-    summary: "A climbing co-op loop about communication, risk, bad decisions, and recovery under pressure.",
+    summary:
+      "A climbing co-op loop about communication, risk, bad decisions, and recovery under pressure.",
   },
 ];
 
@@ -1366,139 +1725,162 @@ const movieCards = [
     title: "Good Will Hunting",
     year: "1997",
     image: "/images/movies/good-will-hunting.png",
-    summary: "Talent, fear, self-worth, and whether intelligence becomes another hiding place.",
+    summary:
+      "Talent, fear, self-worth, and whether intelligence becomes another hiding place.",
   },
   {
     title: "Harry Potter Series",
     year: "2001-2011",
     image: "/images/movies/harry-potter-series.jpg",
-    summary: "A full coming-of-age fantasy arc built around friendship, fear, loyalty, memory, and sacrifice.",
+    summary:
+      "A full coming-of-age fantasy arc built around friendship, fear, loyalty, memory, and sacrifice.",
   },
   {
     title: "The Prestige",
     year: "2006",
     image: "/images/movies/the-prestige.jpg",
-    summary: "Obsession, sacrifice, rivalry, and the cost of turning identity into performance.",
+    summary:
+      "Obsession, sacrifice, rivalry, and the cost of turning identity into performance.",
   },
   {
     title: "Funny Games",
     year: "2007",
     image: "/images/movies/funny-games.jpg",
-    summary: "Cold, confrontational control and discomfort instead of easy entertainment.",
+    summary:
+      "Cold, confrontational control and discomfort instead of easy entertainment.",
   },
   {
     title: "The Social Network",
     year: "2010",
     image: "/images/movies/the-social-network.jpg",
-    summary: "Ambition, resentment, status, intelligence, and friendship turning into a system.",
+    summary:
+      "Ambition, resentment, status, intelligence, and friendship turning into a system.",
   },
   {
     title: "Life of Pi",
     year: "2012",
     image: "/images/movies/life-of-pi.jpg",
-    summary: "Survival, faith, storytelling, beauty, and the question of which version of reality people can live with.",
+    summary:
+      "Survival, faith, storytelling, beauty, and the question of which version of reality people can live with.",
   },
   {
     title: "The Impossible",
     year: "2012",
     image: "/images/movies/the-impossible.jpg",
-    summary: "Disaster, family separation, survival, and trying to hold onto hope inside catastrophe.",
+    summary:
+      "Disaster, family separation, survival, and trying to hold onto hope inside catastrophe.",
   },
   {
     title: "Dredd",
     year: "2012",
     image: "/images/movies/dredd.jpg",
-    summary: "A brutal world, a simple mission, and stripped-down pressure with no softness.",
+    summary:
+      "A brutal world, a simple mission, and stripped-down pressure with no softness.",
   },
   {
     title: "The Wolf of Wall Street",
     year: "2013",
     image: "/images/movies/the-wolf-of-wall-street.png",
-    summary: "Money, appetite, ego, fraud, and greed turning into a whole ecosystem.",
+    summary:
+      "Money, appetite, ego, fraud, and greed turning into a whole ecosystem.",
   },
   {
     title: "Prisoners",
     year: "2013",
     image: "/images/movies/prisoners.jpg",
-    summary: "Desperation, moral pressure, suspicion, and what people justify when fear takes over.",
+    summary:
+      "Desperation, moral pressure, suspicion, and what people justify when fear takes over.",
   },
   {
     title: "The One I Love",
     year: "2014",
     image: "/images/movies/the-one-i-love.jpg",
-    summary: "A relationship puzzle about projection, dissatisfaction, and wanting a cleaner version of someone.",
+    summary:
+      "A relationship puzzle about projection, dissatisfaction, and wanting a cleaner version of someone.",
   },
   {
     title: "Whiplash",
     year: "2014",
     image: "/images/movies/whiplash.jpg",
-    summary: "Discipline, obsession, approval, pressure, and the ugly question of what greatness costs.",
+    summary:
+      "Discipline, obsession, approval, pressure, and the ugly question of what greatness costs.",
   },
   {
     title: "Ex Machina",
     year: "2015",
     image: "/images/movies/ex-machina.jpg",
-    summary: "Clean design, small conversations, AI, manipulation, and hidden motives.",
+    summary:
+      "Clean design, small conversations, AI, manipulation, and hidden motives.",
   },
   {
     title: "Good Time",
     year: "2017",
     image: "/images/movies/good-time.png",
-    summary: "One overheated bad night where every attempted fix makes the collapse worse.",
+    summary:
+      "One overheated bad night where every attempted fix makes the collapse worse.",
   },
   {
     title: "Logan",
     year: "2017",
     image: "/images/movies/logan.jpg",
-    summary: "A worn-down hero story about age, violence, care, and the cost of surviving too long.",
+    summary:
+      "A worn-down hero story about age, violence, care, and the cost of surviving too long.",
   },
   {
     title: "Parasite",
     year: "2019",
     image: "/images/movies/parasite.png",
-    summary: "Class tension, deception, structure, and a story that keeps loading pressure.",
+    summary:
+      "Class tension, deception, structure, and a story that keeps loading pressure.",
   },
   {
     title: "Uncut Gems",
     year: "2019",
     image: "/images/movies/uncut-gems.jpg",
-    summary: "Greed with the volume maxed out: risk stacked on risk until everything tightens.",
+    summary:
+      "Greed with the volume maxed out: risk stacked on risk until everything tightens.",
   },
   {
     title: "Midsommar",
     year: "2019",
     image: "/images/movies/midsommar.jpg",
-    summary: "Grief, belonging, ritual, and daylight horror inside a community that feels warm and terrifying.",
+    summary:
+      "Grief, belonging, ritual, and daylight horror inside a community that feels warm and terrifying.",
   },
   {
     title: "Joker",
     year: "2019",
     image: "/images/movies/joker.jpg",
-    summary: "Alienation, humiliation, social breakdown, and a person turning pain into identity.",
+    summary:
+      "Alienation, humiliation, social breakdown, and a person turning pain into identity.",
   },
   {
     title: "The Batman",
     year: "2022",
     image: "/images/movies/the-batman.jpg",
-    summary: "Detective noir, rain, dread, obsession, and a city that feels rotten.",
+    summary:
+      "Detective noir, rain, dread, obsession, and a city that feels rotten.",
   },
   {
     title: "Glass Onion",
     year: "2022",
     image: "/images/movies/glass-onion.jpg",
-    summary: "A bright mystery box about ego, performance, wealth, and people pretending to be smarter than they are.",
+    summary:
+      "A bright mystery box about ego, performance, wealth, and people pretending to be smarter than they are.",
   },
   {
     title: "Pearl",
     year: "2022",
     image: "/images/movies/pearl.jpg",
-    summary: "Desire, resentment, performance, and a dream of escape turning poisonous.",
+    summary:
+      "Desire, resentment, performance, and a dream of escape turning poisonous.",
   },
   {
     title: "Barbarian",
     year: "2022",
     image: "/images/movies/barbarian.jpg",
-    summary: "A horror setup that keeps changing shape as trust, danger, and hidden history unfold.",
+    summary:
+      "A horror setup that keeps changing shape as trust, danger, and hidden history unfold.",
   },
   {
     title: "Anora",
@@ -1510,26 +1892,30 @@ const movieCards = [
     title: "Challengers",
     year: "2024",
     image: "/images/movies/challengers.jpeg",
-    summary: "Desire, rivalry, tennis, scorekeeping, and the feeling that everyone is trying to win.",
+    summary:
+      "Desire, rivalry, tennis, scorekeeping, and the feeling that everyone is trying to win.",
   },
   {
     title: "Marty Supreme",
     year: "2025",
     image: "/images/movies/marty-supreme.jpg",
-    summary: "Ambition with no off switch: pressure, ego, humiliation, and chasing a bigger life.",
+    summary:
+      "Ambition with no off switch: pressure, ego, humiliation, and chasing a bigger life.",
   },
   {
     title: "Wake Up Dead Man",
     year: "2025",
     image: "/images/movies/wake-up-dead-man.jpg",
-    summary: "A darker Benoit Blanc case with a moodier, more severe mystery-room feel.",
+    summary:
+      "A darker Benoit Blanc case with a moodier, more severe mystery-room feel.",
   },
   {
     title: "Weapons",
     year: "2025",
     image: "/images/movies/weapons.jpeg",
-    summary: "Mass disappearance, community panic, suspicion, and mystery-driven dread.",
-  }
+    summary:
+      "Mass disappearance, community panic, suspicion, and mystery-driven dread.",
+  },
 ];
 
 const tvCards = [
@@ -1537,75 +1923,87 @@ const tvCards = [
     title: "Friends",
     year: "1994-2004",
     image: "/images/tv-wide/friends.jpg",
-    summary: "Comfort sitcom rhythm, friendship, timing, and familiar characters growing through everyday chaos.",
+    summary:
+      "Comfort sitcom rhythm, friendship, timing, and familiar characters growing through everyday chaos.",
   },
   {
     title: "Teen Titans",
     year: "2003-2006",
     image: "/images/tv-wide/teen-titans.jpg",
-    summary: "Team loyalty, stylized action, emotional episodes, and animated superhero identity.",
+    summary:
+      "Team loyalty, stylized action, emotional episodes, and animated superhero identity.",
   },
   {
     title: "Avatar: The Last Airbender",
     year: "2005-2008",
     image: "/images/tv-wide/avatar-the-last-airbender.jpg",
-    summary: "Clean arcs, earned payoff, humor, adventure, and real emotional growth.",
+    summary:
+      "Clean arcs, earned payoff, humor, adventure, and real emotional growth.",
   },
   {
     title: "Lost",
     year: "2004-2010",
     image: "/images/tv-wide/lost.jpg",
-    summary: "Mystery, atmosphere, ensemble character work, and a tone that feels specific.",
+    summary:
+      "Mystery, atmosphere, ensemble character work, and a tone that feels specific.",
   },
   {
     title: "Breaking Bad",
     year: "2008-2013",
     image: "/images/tv-wide/breaking-bad.jpg",
-    summary: "Transformation, consequence, escalation, and pacing that keeps tightening.",
+    summary:
+      "Transformation, consequence, escalation, and pacing that keeps tightening.",
   },
   {
     title: "11.22.63",
     year: "2016",
     image: "/images/tv-wide/112263.jpg",
-    summary: "Time travel, romance, tragedy, and trying to change something that resists change.",
+    summary:
+      "Time travel, romance, tragedy, and trying to change something that resists change.",
   },
   {
     title: "Prison Break",
     year: "2005-2017",
     image: "/images/tv-wide/prison-break.jpg",
-    summary: "Urgency, planning, escape logic, and one mistake threatening the whole chain.",
+    summary:
+      "Urgency, planning, escape logic, and one mistake threatening the whole chain.",
   },
   {
     title: "Game of Thrones",
     year: "2011-2019",
     image: "/images/tv-wide/game-of-thrones.jpg",
-    summary: "Power, loyalty, scale, consequence, and rivalries that make politics feel personal.",
+    summary:
+      "Power, loyalty, scale, consequence, and rivalries that make politics feel personal.",
   },
   {
     title: "Invincible",
     year: "2021-",
     image: "/images/tv-wide/invincible.jpg",
-    summary: "Coming-of-age superhero scale with violence, damage, and heavier consequence.",
+    summary:
+      "Coming-of-age superhero scale with violence, damage, and heavier consequence.",
   },
   {
     title: "House of the Dragon",
     year: "2022-",
     image: "/images/tv-wide/house-of-the-dragon.jpg",
-    summary: "Family fracture, succession pressure, and catastrophe before everything fully breaks.",
+    summary:
+      "Family fracture, succession pressure, and catastrophe before everything fully breaks.",
   },
   {
     title: "Dexter",
     year: "2006-2013 / 2021 / 2025-",
     image: "/images/tv-wide/dexter.jpg",
     imagePosition: "62% center",
-    summary: "Routine, secrecy, moral drift, and ordinary details slowly becoming dangerous.",
+    summary:
+      "Routine, secrecy, moral drift, and ordinary details slowly becoming dangerous.",
   },
   {
     title: "A Knight of the Seven Kingdoms",
     year: "2026-",
     image: "/images/tv-wide/a-knight-of-the-seven-kingdoms.jpg",
     imagePosition: "60% center",
-    summary: "Smaller Westeros adventure with character chemistry, travel, and old-world texture.",
+    summary:
+      "Smaller Westeros adventure with character chemistry, travel, and old-world texture.",
   },
 ];
 
@@ -1613,81 +2011,386 @@ const characterGroups = [
   {
     title: "Intellectuals",
     items: [
-      { name: "Socrates", image: "/images/char/socrates-upload.jpg", meta: "Philosophy | c. 470-399 BCE", note: "Questioning, humility, dialogue, and exposing weak certainty through pressure." },
-      { name: "Diogenes", image: "/images/char/Diogenes.jpeg", meta: "Philosophy | c. 412-323 BCE", note: "Radical simplicity, social defiance, and refusing polite performance." },
-      { name: "Voltaire", image: "/images/char/voltaire-local.jpg", meta: "Philosophy / Writing | 1694-1778", note: "Wit, criticism, skepticism toward authority, and pressure against dogma." },
-      { name: "Arthur Schopenhauer", image: "/images/char/arthur-schopenhauer-local.jpg", meta: "Philosophy | 1788-1860", note: "Pessimism, desire, suffering, and the darker structure underneath wanting." },
-      { name: "Fyodor Dostoevsky", image: "/images/char/fyodor-dostoevsky-local.jpg", meta: "Literature / Psychology | 1821-1881", note: "Guilt, faith, suffering, psychology, and moral contradiction pushed inward." },
-      { name: "Friedrich Nietzsche", image: "/images/char/friedrich-nietzsche-local.jpg", meta: "Philosophy | 1844-1900", note: "Meaning collapse, self-overcoming, value creation, and suspicion of inherited morality." },
-      { name: "Nikola Tesla", image: "/images/char/nikola-tesla.jpg", meta: "Engineering / Invention | 1856-1943", note: "Invention, imagination, electricity, and obsessive technical vision." },
-      { name: "Carl Jung", image: "/images/char/carl-jung-local.jpg", meta: "Psychology | 1875-1961", note: "Symbol, shadow, archetype, inner conflict, and the hidden structure of the psyche." },
-      { name: "Albert Einstein", image: "/images/char/albert-einstein.jpg", meta: "Physics | 1879-1955", note: "Physics, imagination, intuition, and changing the frame of what seemed obvious." },
-      { name: "Pablo Picasso", image: "/images/char/picasso-upload.jpg", meta: "Art | 1881-1973", note: "Reinvention, visual disruption, style, and breaking forms until they say something new." },
-      { name: "Jean-Paul Sartre", image: "/images/char/jean-paul-sartre-upload.jpg", meta: "Philosophy | 1905-1980", note: "Freedom, responsibility, bad faith, and the pressure of choosing what you become." },
-      { name: "Albert Camus", image: "/images/char/albert-camus-upload.jpg", meta: "Philosophy / Literature | 1913-1960", note: "Absurdity, revolt, dignity, and looking for meaning without pretending certainty." },
-      { name: "Richard Feynman", image: "/images/char/feynman-upload.jpg", meta: "Physics | 1918-1988", note: "Curiosity, clarity, irreverence, physics, and explaining complex things without fake depth." },
-      { name: "Steve Jobs", image: "/images/char/steve-jobs-local.jpg", meta: "Technology / Design | 1955-2011", note: "Product taste, narrative control, design pressure, and building culture around tools." },
-      { name: "Mark Zuckerberg", image: "/images/char/mark-zuck-upload.jpg", meta: "Technology / Social Platforms | 1984-present", note: "Social systems, platform power, iteration, and reshaping how people connect online." },
-      { name: "Sam Altman", image: "/images/char/sam-altman-upload.jpg", meta: "AI / Technology | 1985-present", note: "AI, scale, product ambition, and building inside technological uncertainty." },
+      {
+        name: "Socrates",
+        image: "/images/char/socrates-upload.jpg",
+        meta: "Philosophy | c. 470-399 BCE",
+        note: "Questioning, humility, dialogue, and exposing weak certainty through pressure.",
+      },
+      {
+        name: "Diogenes",
+        image: "/images/char/Diogenes.jpeg",
+        meta: "Philosophy | c. 412-323 BCE",
+        note: "Radical simplicity, social defiance, and refusing polite performance.",
+      },
+      {
+        name: "Voltaire",
+        image: "/images/char/voltaire-local.jpg",
+        meta: "Philosophy / Writing | 1694-1778",
+        note: "Wit, criticism, skepticism toward authority, and pressure against dogma.",
+      },
+      {
+        name: "Arthur Schopenhauer",
+        image: "/images/char/arthur-schopenhauer-local.jpg",
+        meta: "Philosophy | 1788-1860",
+        note: "Pessimism, desire, suffering, and the darker structure underneath wanting.",
+      },
+      {
+        name: "Fyodor Dostoevsky",
+        image: "/images/char/fyodor-dostoevsky-local.jpg",
+        meta: "Literature / Psychology | 1821-1881",
+        note: "Guilt, faith, suffering, psychology, and moral contradiction pushed inward.",
+      },
+      {
+        name: "Friedrich Nietzsche",
+        image: "/images/char/friedrich-nietzsche-local.jpg",
+        meta: "Philosophy | 1844-1900",
+        note: "Meaning collapse, self-overcoming, value creation, and suspicion of inherited morality.",
+      },
+      {
+        name: "Nikola Tesla",
+        image: "/images/char/nikola-tesla.jpg",
+        meta: "Engineering / Invention | 1856-1943",
+        note: "Invention, imagination, electricity, and obsessive technical vision.",
+      },
+      {
+        name: "Carl Jung",
+        image: "/images/char/carl-jung-local.jpg",
+        meta: "Psychology | 1875-1961",
+        note: "Symbol, shadow, archetype, inner conflict, and the hidden structure of the psyche.",
+      },
+      {
+        name: "Albert Einstein",
+        image: "/images/char/albert-einstein.jpg",
+        meta: "Physics | 1879-1955",
+        note: "Physics, imagination, intuition, and changing the frame of what seemed obvious.",
+      },
+      {
+        name: "Pablo Picasso",
+        image: "/images/char/picasso-upload.jpg",
+        meta: "Art | 1881-1973",
+        note: "Reinvention, visual disruption, style, and breaking forms until they say something new.",
+      },
+      {
+        name: "Jean-Paul Sartre",
+        image: "/images/char/jean-paul-sartre-upload.jpg",
+        meta: "Philosophy | 1905-1980",
+        note: "Freedom, responsibility, bad faith, and the pressure of choosing what you become.",
+      },
+      {
+        name: "Albert Camus",
+        image: "/images/char/albert-camus-upload.jpg",
+        meta: "Philosophy / Literature | 1913-1960",
+        note: "Absurdity, revolt, dignity, and looking for meaning without pretending certainty.",
+      },
+      {
+        name: "Richard Feynman",
+        image: "/images/char/feynman-upload.jpg",
+        meta: "Physics | 1918-1988",
+        note: "Curiosity, clarity, irreverence, physics, and explaining complex things without fake depth.",
+      },
+      {
+        name: "Steve Jobs",
+        image: "/images/char/steve-jobs-local.jpg",
+        meta: "Technology / Design | 1955-2011",
+        note: "Product taste, narrative control, design pressure, and building culture around tools.",
+      },
+      {
+        name: "Mark Zuckerberg",
+        image: "/images/char/mark-zuck-upload.jpg",
+        meta: "Technology / Social Platforms | 1984-present",
+        note: "Social systems, platform power, iteration, and reshaping how people connect online.",
+      },
+      {
+        name: "Sam Altman",
+        image: "/images/char/sam-altman-upload.jpg",
+        meta: "AI / Technology | 1985-present",
+        note: "AI, scale, product ambition, and building inside technological uncertainty.",
+      },
     ],
   },
   {
     title: "Athletes / Competitors",
     items: [
-      { name: "Anderson Silva", image: "/images/char/Anderson Silva.jpeg", meta: "MMA", note: "Timing, looseness, creativity, and making pressure look casual." },
-      { name: "Vasyl Lomachenko", image: "/images/char/Lomachenko.jpeg", imagePosition: "74% center", meta: "Boxing", note: "Footwork, angles, rhythm, and technical problem-solving under contact." },
-      { name: "Carlos Prates", image: "/images/char/Carlos Prates.jpeg", imagePosition: "74% center", meta: "MMA", note: "Calm violence, timing, countering, and a sharpness that feels controlled." },
-      { name: "Petr Yan", image: "/images/char/Petr Yan.jpeg", meta: "MMA", note: "Structure, reads, boxing layers, and controlled escalation across rounds." },
-      { name: "Fedor Emelianenko", image: "/images/char/fedor-custom.jpg", meta: "MMA", note: "Composure, pressure, sambo, and heavyweight violence made strangely calm." },
-      { name: "Jalen Brunson", image: "/images/char/jalen-brunson-local.jpg", imagePosition: "center 24%", meta: "Basketball", note: "Craft, control, footwork, toughness, and making size less decisive." },
-      { name: "Kobe Bryant", image: "/images/char/kobe-bryant-local.jpg", meta: "Basketball", note: "Obsession, discipline, self-mythology, and extreme commitment to mastery." },
-      { name: "Cooper Flagg", image: "/images/char/cooper-flagg-custom.jpg", meta: "Basketball", note: "Youth, competitiveness, two-way pressure, and the weight of expectation." },
-      { name: "Novak Djokovic", image: "/images/char/novak.jpeg", meta: "Tennis", note: "Adaptation, discipline, pressure tolerance, and turning defense into inevitability." },
-      { name: "Daniil Medvedev", image: "/images/char/daniil medvedev.jpg", meta: "Tennis", note: "Awkward efficiency, problem-solving, patience, and unusual competitive geometry." },
-      { name: "Bobby Fischer", image: "/images/char/Bobby Fischer.jpeg", meta: "Chess", note: "Obsession, calculation, genius, isolation, and the cost of total immersion." },
-      { name: "Mikhail Tal", image: "/images/char/mikhail-tal.jpg", meta: "Chess", note: "Creativity, sacrifice, intuition, and making chaos feel like calculation." },
-      { name: "Henrik Lundqvist", image: "/images/char/Henrik Lundqvist.jpeg", meta: "Hockey", note: "Composure, consistency, style, and carrying pressure from the back." },
-      { name: "Peterbot", image: "/images/char/Peterbot.jpeg", meta: "Fortnite / Esports", note: "Mechanical sharpness, speed, pressure, and modern competitive precision." },
-      { name: "Alex Honnold", image: "/images/char/alex-honnold-custom.jpg", meta: "Rock Climbing", note: "Risk, focus, preparation, and calm inside consequences most people cannot tolerate." },
-      { name: "Phil Ivey", image: "/images/char/phil-ivey.jpg", meta: "Poker", note: "Reading people, risk, patience, and competitive silence under pressure." },
+      {
+        name: "Anderson Silva",
+        image: "/images/char/Anderson Silva.jpeg",
+        meta: "MMA",
+        note: "Timing, looseness, creativity, and making pressure look casual.",
+      },
+      {
+        name: "Vasyl Lomachenko",
+        image: "/images/char/Lomachenko.jpeg",
+        imagePosition: "74% center",
+        meta: "Boxing",
+        note: "Footwork, angles, rhythm, and technical problem-solving under contact.",
+      },
+      {
+        name: "Carlos Prates",
+        image: "/images/char/Carlos Prates.jpeg",
+        imagePosition: "74% center",
+        meta: "MMA",
+        note: "Calm violence, timing, countering, and a sharpness that feels controlled.",
+      },
+      {
+        name: "Petr Yan",
+        image: "/images/char/Petr Yan.jpeg",
+        meta: "MMA",
+        note: "Structure, reads, boxing layers, and controlled escalation across rounds.",
+      },
+      {
+        name: "Fedor Emelianenko",
+        image: "/images/char/fedor-custom.jpg",
+        meta: "MMA",
+        note: "Composure, pressure, sambo, and heavyweight violence made strangely calm.",
+      },
+      {
+        name: "Jalen Brunson",
+        image: "/images/char/jalen-brunson-local.jpg",
+        imagePosition: "center 24%",
+        meta: "Basketball",
+        note: "Craft, control, footwork, toughness, and making size less decisive.",
+      },
+      {
+        name: "Kobe Bryant",
+        image: "/images/char/kobe-bryant-local.jpg",
+        meta: "Basketball",
+        note: "Obsession, discipline, self-mythology, and extreme commitment to mastery.",
+      },
+      {
+        name: "Cooper Flagg",
+        image: "/images/char/cooper-flagg-custom.jpg",
+        meta: "Basketball",
+        note: "Youth, competitiveness, two-way pressure, and the weight of expectation.",
+      },
+      {
+        name: "Novak Djokovic",
+        image: "/images/char/novak.jpeg",
+        meta: "Tennis",
+        note: "Adaptation, discipline, pressure tolerance, and turning defense into inevitability.",
+      },
+      {
+        name: "Daniil Medvedev",
+        image: "/images/char/daniil medvedev.jpg",
+        meta: "Tennis",
+        note: "Awkward efficiency, problem-solving, patience, and unusual competitive geometry.",
+      },
+      {
+        name: "Bobby Fischer",
+        image: "/images/char/Bobby Fischer.jpeg",
+        meta: "Chess",
+        note: "Obsession, calculation, genius, isolation, and the cost of total immersion.",
+      },
+      {
+        name: "Mikhail Tal",
+        image: "/images/char/mikhail-tal.jpg",
+        meta: "Chess",
+        note: "Creativity, sacrifice, intuition, and making chaos feel like calculation.",
+      },
+      {
+        name: "Henrik Lundqvist",
+        image: "/images/char/Henrik Lundqvist.jpeg",
+        meta: "Hockey",
+        note: "Composure, consistency, style, and carrying pressure from the back.",
+      },
+      {
+        name: "Peterbot",
+        image: "/images/char/Peterbot.jpeg",
+        meta: "Fortnite / Esports",
+        note: "Mechanical sharpness, speed, pressure, and modern competitive precision.",
+      },
+      {
+        name: "Alex Honnold",
+        image: "/images/char/alex-honnold-custom.jpg",
+        meta: "Rock Climbing",
+        note: "Risk, focus, preparation, and calm inside consequences most people cannot tolerate.",
+      },
+      {
+        name: "Phil Ivey",
+        image: "/images/char/phil-ivey.jpg",
+        meta: "Poker",
+        note: "Reading people, risk, patience, and competitive silence under pressure.",
+      },
     ],
   },
   {
     title: "Actors / Actresses",
     items: [
-      { name: "Robert Pattinson", image: "/images/char/robert-pattinson-local.jpg", meta: "Acting / Film", note: "Taste, reinvention, restraint, and choosing stranger roles after fame." },
-      { name: "Hugh Jackman", image: "/images/char/hugh-jackman.jpg", meta: "Acting / Film", note: "Range, stage presence, discipline, and carrying iconic roles with sincerity." },
-      { name: "J. K. Simmons", image: "/images/char/j-k-simmons.jpg", meta: "Acting / Film", note: "Intensity, authority, timing, and performances that can dominate a scene fast." },
-      { name: "James Franco", image: "/images/char/james-franco.jpg", meta: "Acting / Film", note: "Comedy, intensity, offbeat roles, and a restless creative presence across film and writing." },
-      { name: "Jennifer Aniston", image: "/images/char/jennifer-aniston-custom.jpg", meta: "Acting / TV", note: "Timing, warmth, familiarity, and making light performances feel effortless." },
-      { name: "Johnny Depp", image: "/images/char/johnny-depp.jpg", meta: "Acting / Film", note: "Eccentricity, stylization, persona, and committing fully to strange character choices." },
-      { name: "Leonardo DiCaprio", image: "/images/char/leonardo-dicaprio.jpg", meta: "Acting / Film", note: "Intensity, ambition, transformation, and roles built around pressure." },
-      { name: "Matt Damon", image: "/images/char/matt-damon-upload.jpg", meta: "Acting / Film", note: "Grounded intelligence, restraint, and making competence feel human." },
-      { name: "Ben Affleck", image: "/images/char/ben-affleck.jpg", meta: "Acting / Film", note: "Fame, reinvention, direction, and characters carrying fatigue and pressure." },
-      { name: "Keanu Reeves", image: "/images/char/keanu-reeves.jpg", meta: "Acting / Film", note: "Stoicism, sincerity, action presence, and quiet myth around restraint." },
-      { name: "Jason Statham", image: "/images/char/jason-statham.jpg", meta: "Acting / Action Film", note: "Controlled intensity, physical presence, dry humor, and action roles built around precision." },
-      { name: "Timothee Chalamet", image: "/images/char/timothee-chalamet-upload.jpg", meta: "Acting / Film", note: "Sensitivity, intensity, modern stardom, and roles built around interior tension." },
+      {
+        name: "Robert Pattinson",
+        image: "/images/char/robert-pattinson-local.jpg",
+        meta: "Acting / Film",
+        note: "Taste, reinvention, restraint, and choosing stranger roles after fame.",
+      },
+      {
+        name: "Hugh Jackman",
+        image: "/images/char/hugh-jackman.jpg",
+        meta: "Acting / Film",
+        note: "Range, stage presence, discipline, and carrying iconic roles with sincerity.",
+      },
+      {
+        name: "J. K. Simmons",
+        image: "/images/char/j-k-simmons.jpg",
+        meta: "Acting / Film",
+        note: "Intensity, authority, timing, and performances that can dominate a scene fast.",
+      },
+      {
+        name: "James Franco",
+        image: "/images/char/james-franco.jpg",
+        meta: "Acting / Film",
+        note: "Comedy, intensity, offbeat roles, and a restless creative presence across film and writing.",
+      },
+      {
+        name: "Jennifer Aniston",
+        image: "/images/char/jennifer-aniston-custom.jpg",
+        meta: "Acting / TV",
+        note: "Timing, warmth, familiarity, and making light performances feel effortless.",
+      },
+      {
+        name: "Johnny Depp",
+        image: "/images/char/johnny-depp.jpg",
+        meta: "Acting / Film",
+        note: "Eccentricity, stylization, persona, and committing fully to strange character choices.",
+      },
+      {
+        name: "Leonardo DiCaprio",
+        image: "/images/char/leonardo-dicaprio.jpg",
+        meta: "Acting / Film",
+        note: "Intensity, ambition, transformation, and roles built around pressure.",
+      },
+      {
+        name: "Matt Damon",
+        image: "/images/char/matt-damon-upload.jpg",
+        meta: "Acting / Film",
+        note: "Grounded intelligence, restraint, and making competence feel human.",
+      },
+      {
+        name: "Ben Affleck",
+        image: "/images/char/ben-affleck.jpg",
+        meta: "Acting / Film",
+        note: "Fame, reinvention, direction, and characters carrying fatigue and pressure.",
+      },
+      {
+        name: "Keanu Reeves",
+        image: "/images/char/keanu-reeves.jpg",
+        meta: "Acting / Film",
+        note: "Stoicism, sincerity, action presence, and quiet myth around restraint.",
+      },
+      {
+        name: "Jason Statham",
+        image: "/images/char/jason-statham.jpg",
+        meta: "Acting / Action Film",
+        note: "Controlled intensity, physical presence, dry humor, and action roles built around precision.",
+      },
+      {
+        name: "Timothee Chalamet",
+        image: "/images/char/timothee-chalamet-upload.jpg",
+        meta: "Acting / Film",
+        note: "Sensitivity, intensity, modern stardom, and roles built around interior tension.",
+      },
     ],
   },
   {
     title: "Fictional Characters",
     items: [
-      { name: "Benoit Blanc", image: "/images/char/Benoit Blanc.jpeg", meta: "Knives Out", note: "Calm intelligence, moral clarity, charm, and noticing what performance hides." },
-      { name: "Omni-Man", image: "/images/char/omniman.jpg", meta: "Invincible", note: "Power, ideology, family conflict, and the horror of detached certainty." },
-      { name: "Conquest", image: "/images/char/conquest.jpeg", meta: "Invincible", note: "Brutality, dominance, and violence stripped of moral hesitation." },
-      { name: "Invincible", image: "/images/char/invincible.jpeg", meta: "Invincible", note: "Idealism under pressure, damage, recovery, and refusing to become numb." },
-      { name: "Dexter Morgan", image: "/images/char/Dexter.jpeg", meta: "Dexter", note: "Routine, secrecy, control, and morality distorted into private code." },
-      { name: "Sandor Clegane", image: "/images/char/Sandor Clegane.jpeg", meta: "Game of Thrones", note: "Trauma, blunt honesty, contempt for false nobility, and buried care." },
-      { name: "Tyrion Lannister", image: "/images/char/Tyrion Lannister.jpeg", imagePosition: "center 20%", meta: "Game of Thrones", note: "Wit, status injury, political intelligence, and survival through language." },
-      { name: "Bronn", image: "/images/char/bronn.jpeg", meta: "Game of Thrones", note: "Pragmatism, self-interest, humor, and refusing romantic political myths." },
-      { name: "Daemon Targaryen", image: "/images/char/daemon.jpeg", meta: "House of the Dragon", note: "Charisma, violence, pride, loyalty, and instability in one person." },
-      { name: "Baelor Targaryen", image: "/images/char/Baelor.jpeg", meta: "A Knight of the Seven Kingdoms", note: "Principle, restraint, honor, and the burden of being better than the system." },
-      { name: "Toph Beifong", image: "/images/char/Toph.jpeg", meta: "Avatar: The Last Airbender", note: "Independence, bluntness, skill, and confidence without needing permission." },
-      { name: "Uncle Iroh", image: "/images/char/uncle-iroh-upload.jpg", meta: "Avatar: The Last Airbender", note: "Wisdom, patience, grief, humor, and strength softened by compassion." },
-      { name: "Marty Mauser", image: "/images/char/marty mauser.jpeeg", meta: "Marty Supreme", note: "Ambition, ego, humiliation, and chasing significance past good sense." },
-      { name: "Michael De Santa", image: "/images/char/michael-de-santa-upload.jpg", imagePosition: "68% center", meta: "Grand Theft Auto V", note: "Retirement, ego, family dysfunction, and trying to escape a life that keeps pulling back." },
-      { name: "Wolverine", image: "/images/char/wolverine.jpeg", meta: "X-Men / Marvel", note: "Damage, endurance, rage, protection, and surviving without becoming soft." },
-      { name: "Robin", image: "/images/char/Robin.jpeg", meta: "Teen Titans / DC", note: "Loyalty, growth, partnership, and becoming capable beside a larger symbol." },
+      {
+        name: "Benoit Blanc",
+        image: "/images/char/Benoit Blanc.jpeg",
+        meta: "Knives Out",
+        note: "Calm intelligence, moral clarity, charm, and noticing what performance hides.",
+      },
+      {
+        name: "Omni-Man",
+        image: "/images/char/omniman.jpg",
+        meta: "Invincible",
+        note: "Power, ideology, family conflict, and the horror of detached certainty.",
+      },
+      {
+        name: "Conquest",
+        image: "/images/char/conquest.jpeg",
+        meta: "Invincible",
+        note: "Brutality, dominance, and violence stripped of moral hesitation.",
+      },
+      {
+        name: "Invincible",
+        image: "/images/char/invincible.jpeg",
+        meta: "Invincible",
+        note: "Idealism under pressure, damage, recovery, and refusing to become numb.",
+      },
+      {
+        name: "Dexter Morgan",
+        image: "/images/char/Dexter.jpeg",
+        meta: "Dexter",
+        note: "Routine, secrecy, control, and morality distorted into private code.",
+      },
+      {
+        name: "Sandor Clegane",
+        image: "/images/char/Sandor Clegane.jpeg",
+        meta: "Game of Thrones",
+        note: "Trauma, blunt honesty, contempt for false nobility, and buried care.",
+      },
+      {
+        name: "Tyrion Lannister",
+        image: "/images/char/Tyrion Lannister.jpeg",
+        imagePosition: "center 20%",
+        meta: "Game of Thrones",
+        note: "Wit, status injury, political intelligence, and survival through language.",
+      },
+      {
+        name: "Bronn",
+        image: "/images/char/bronn.jpeg",
+        meta: "Game of Thrones",
+        note: "Pragmatism, self-interest, humor, and refusing romantic political myths.",
+      },
+      {
+        name: "Daemon Targaryen",
+        image: "/images/char/daemon.jpeg",
+        meta: "House of the Dragon",
+        note: "Charisma, violence, pride, loyalty, and instability in one person.",
+      },
+      {
+        name: "Baelor Targaryen",
+        image: "/images/char/Baelor.jpeg",
+        meta: "A Knight of the Seven Kingdoms",
+        note: "Principle, restraint, honor, and the burden of being better than the system.",
+      },
+      {
+        name: "Toph Beifong",
+        image: "/images/char/Toph.jpeg",
+        meta: "Avatar: The Last Airbender",
+        note: "Independence, bluntness, skill, and confidence without needing permission.",
+      },
+      {
+        name: "Uncle Iroh",
+        image: "/images/char/uncle-iroh-upload.jpg",
+        meta: "Avatar: The Last Airbender",
+        note: "Wisdom, patience, grief, humor, and strength softened by compassion.",
+      },
+      {
+        name: "Marty Mauser",
+        image: "/images/char/marty mauser.jpeeg",
+        meta: "Marty Supreme",
+        note: "Ambition, ego, humiliation, and chasing significance past good sense.",
+      },
+      {
+        name: "Michael De Santa",
+        image: "/images/char/michael-de-santa-upload.jpg",
+        imagePosition: "68% center",
+        meta: "Grand Theft Auto V",
+        note: "Retirement, ego, family dysfunction, and trying to escape a life that keeps pulling back.",
+      },
+      {
+        name: "Wolverine",
+        image: "/images/char/wolverine.jpeg",
+        meta: "X-Men / Marvel",
+        note: "Damage, endurance, rage, protection, and surviving without becoming soft.",
+      },
+      {
+        name: "Robin",
+        image: "/images/char/Robin.jpeg",
+        meta: "Teen Titans / DC",
+        note: "Loyalty, growth, partnership, and becoming capable beside a larger symbol.",
+      },
     ],
   },
 ];
@@ -1807,7 +2510,9 @@ function SectionHeading({
       <h3 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
         {title}
       </h3>
-      <p className="mt-4 max-w-3xl text-base leading-8 text-stone-400">{body}</p>
+      <p className="mt-4 max-w-3xl text-base leading-8 text-stone-400">
+        {body}
+      </p>
     </header>
   );
 }
@@ -1824,10 +2529,7 @@ function FlipCard({
   };
 }) {
   return (
-    <div
-      className="group h-[260px] [perspective:1200px]"
-      tabIndex={0}
-    >
+    <div className="group h-[260px] [perspective:1200px]" tabIndex={0}>
       <div className="relative h-full rounded-lg transition duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus:[transform:rotateY(180deg)]">
         <div className="absolute inset-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.035] [backface-visibility:hidden]">
           <img
@@ -1885,7 +2587,8 @@ const enjoymentCategories: {
     id: "games",
     count: videoGameCards.length,
     image: "/images/start/categories/games-square.png",
-    imageClassName: "scale-[1.2] -translate-x-1.5 -translate-y-2.5 group-hover:scale-[1.2]",
+    imageClassName:
+      "scale-[1.2] -translate-x-1.5 -translate-y-2.5 group-hover:scale-[1.2]",
     imagePosition: "20% 22%",
     label: "Games",
     title: "Gaming",
@@ -1894,7 +2597,8 @@ const enjoymentCategories: {
     id: "movies",
     count: movieCards.length,
     image: "/images/start/categories/movies-square.png",
-    imageClassName: "scale-[1.24] translate-x-2.5 translate-y-2.5 group-hover:scale-[1.24]",
+    imageClassName:
+      "scale-[1.24] translate-x-2.5 translate-y-2.5 group-hover:scale-[1.24]",
     imagePosition: "50% 56%",
     label: "Movies",
     title: "Movies",
@@ -1903,26 +2607,36 @@ const enjoymentCategories: {
     id: "tv",
     count: tvCards.length,
     image: "/images/start/categories/tv-square.png",
-    imageClassName: "scale-[1.24] -translate-x-1.5 translate-y-2.5 group-hover:scale-[1.24]",
+    imageClassName:
+      "scale-[1.24] -translate-x-1.5 translate-y-2.5 group-hover:scale-[1.24]",
     imagePosition: "50% 56%",
     label: "TV Shows",
     title: "TV Shows",
   },
   {
     id: "characters",
-    count: characterGroups.reduce((total, group) => total + group.items.length, 0),
+    count: characterGroups.reduce(
+      (total, group) => total + group.items.length,
+      0,
+    ),
     image: "/images/start/categories/people-square.png",
-    imageClassName: "scale-[1.2] translate-x-2 -translate-y-2.5 group-hover:scale-[1.2]",
+    imageClassName:
+      "scale-[1.2] translate-x-2 -translate-y-2.5 group-hover:scale-[1.2]",
     label: "Characters / People",
     title: "People",
   },
 ];
 
 function EnjoymentArchiveSection() {
-  const [selectedCategory, setSelectedCategory] = useState<EnjoymentCategoryId | null>(null);
-  const [activeCharacterCard, setActiveCharacterCard] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<EnjoymentCategoryId | null>(null);
+  const [activeCharacterCard, setActiveCharacterCard] = useState<string | null>(
+    null,
+  );
   const [activeMediaCard, setActiveMediaCard] = useState<string | null>(null);
-  const activeCategory = enjoymentCategories.find((category) => category.id === selectedCategory);
+  const activeCategory = enjoymentCategories.find(
+    (category) => category.id === selectedCategory,
+  );
 
   useEffect(() => {
     movieCards.forEach((movie) => {
@@ -1939,7 +2653,11 @@ function EnjoymentArchiveSection() {
     let imageIndex = 0;
 
     const preloadTimer = window.setInterval(() => {
-      for (let batchIndex = 0; batchIndex < 4 && imageIndex < characterImages.length; batchIndex += 1) {
+      for (
+        let batchIndex = 0;
+        batchIndex < 4 && imageIndex < characterImages.length;
+        batchIndex += 1
+      ) {
         const image = new window.Image();
         image.decoding = "async";
         image.src = characterImages[imageIndex];
@@ -1996,7 +2714,9 @@ function EnjoymentArchiveSection() {
                 className={[
                   "h-full w-full object-cover transition duration-500 [backface-visibility:hidden] [transform-origin:center] [will-change:transform]",
                   category.imageClassName ??
-                    (isSelected ? "scale-[1.015]" : "group-hover:scale-[1.015]"),
+                    (isSelected
+                      ? "scale-[1.015]"
+                      : "group-hover:scale-[1.015]"),
                 ].join(" ")}
                 decoding="async"
                 loading="lazy"
@@ -2004,7 +2724,8 @@ function EnjoymentArchiveSection() {
                 style={{ objectPosition: category.imagePosition ?? "center" }}
               />
               <span className="sr-only">
-                {category.title}, {category.count} {category.count === 1 ? "entry" : "entries"}
+                {category.title}, {category.count}{" "}
+                {category.count === 1 ? "entry" : "entries"}
               </span>
             </button>
           );
@@ -2267,7 +2988,12 @@ function SocialBubble({
 function SocialIcon({ icon }: { icon: string }) {
   if (icon === "github") {
     return (
-      <svg aria-hidden="true" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
+      <svg
+        aria-hidden="true"
+        className="h-7 w-7"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.52 2.87 8.35 6.84 9.7.5.09.68-.22.68-.49v-1.8c-2.78.62-3.37-1.22-3.37-1.22-.45-1.19-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.85.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.27 9.27 0 0 1 12 7.03c.85 0 1.7.12 2.5.35 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.73c0 .27.18.59.69.49A10.08 10.08 0 0 0 22 12.26C22 6.58 17.52 2 12 2Z" />
       </svg>
     );
@@ -2275,7 +3001,12 @@ function SocialIcon({ icon }: { icon: string }) {
 
   if (icon === "linkedin") {
     return (
-      <svg aria-hidden="true" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
+      <svg
+        aria-hidden="true"
+        className="h-7 w-7"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M6.94 8.98H3.7v11.04h3.24V8.98ZM5.32 3.5a1.88 1.88 0 1 0 0 3.76 1.88 1.88 0 0 0 0-3.76Zm14.98 10.2c0-3.42-1.83-5.02-4.27-5.02-1.97 0-2.85 1.08-3.34 1.84V8.98H9.58v11.04h3.24v-5.46c0-1.46.28-2.88 2.09-2.88 1.78 0 1.8 1.67 1.8 2.97v5.37h3.24l.35-6.32Z" />
       </svg>
     );
@@ -2283,7 +3014,12 @@ function SocialIcon({ icon }: { icon: string }) {
 
   if (icon === "x") {
     return (
-      <svg aria-hidden="true" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+      <svg
+        aria-hidden="true"
+        className="h-6 w-6"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M13.9 10.47 21.35 2h-1.76l-6.47 7.35L7.96 2H2l7.81 11.12L2 22h1.76l6.83-7.76L16.04 22H22l-8.1-11.53Zm-2.42 2.74-.79-1.1L4.4 3.3h2.72l5.08 7.12.79 1.1 6.6 9.24h-2.72l-5.39-7.55Z" />
       </svg>
     );
@@ -2291,7 +3027,12 @@ function SocialIcon({ icon }: { icon: string }) {
 
   if (icon === "youtube") {
     return (
-      <svg aria-hidden="true" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
+      <svg
+        aria-hidden="true"
+        className="h-7 w-7"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M21.58 7.19a2.57 2.57 0 0 0-1.81-1.82C18.17 4.94 12 4.94 12 4.94s-6.17 0-7.77.43A2.57 2.57 0 0 0 2.42 7.2 26.7 26.7 0 0 0 2 12a26.7 26.7 0 0 0 .42 4.81 2.57 2.57 0 0 0 1.81 1.82c1.6.43 7.77.43 7.77.43s6.17 0 7.77-.43a2.57 2.57 0 0 0 1.81-1.82A26.7 26.7 0 0 0 22 12a26.7 26.7 0 0 0-.42-4.81ZM10 15.05v-6.1L15.2 12 10 15.05Z" />
       </svg>
     );
@@ -2299,8 +3040,20 @@ function SocialIcon({ icon }: { icon: string }) {
 
   return (
     <svg aria-hidden="true" className="h-8 w-8" viewBox="0 0 24 24" fill="none">
-      <rect x="4.75" y="6.75" width="14.5" height="10.5" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
-      <path d="m5.25 7.25 6.75 5 6.75-5" stroke="currentColor" strokeWidth="1.7" />
+      <rect
+        x="4.75"
+        y="6.75"
+        width="14.5"
+        height="10.5"
+        rx="2.4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <path
+        d="m5.25 7.25 6.75 5 6.75-5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
     </svg>
   );
 }
@@ -2339,8 +3092,12 @@ function ProjectCard({
           />
         </div>
         <div className="flex flex-1 flex-col border-t border-white/10 px-4 py-4">
-          <p className="text-center text-base font-semibold text-stone-100">{project.title}</p>
-          <p className="mt-2 flex-1 text-center text-sm leading-6 text-stone-400">{project.body}</p>
+          <p className="text-center text-base font-semibold text-stone-100">
+            {project.title}
+          </p>
+          <p className="mt-2 flex-1 text-center text-sm leading-6 text-stone-400">
+            {project.body}
+          </p>
           <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200/70">
             Open live demo
           </p>
@@ -2368,6 +3125,7 @@ function FortniteSection() {
   const playbackActiveRef = useRef(false);
   const [progress, setProgress] = useState(0);
   const [sequenceActive, setSequenceActive] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
   const poweredOn = progress > 0.22;
 
   useEffect(() => {
@@ -2384,15 +3142,22 @@ function FortniteSection() {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const bounds = section.getBoundingClientRect();
-        const travel = Math.max(1, section.offsetHeight - scrollRoot.clientHeight);
-        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const travel = Math.max(
+          1,
+          section.offsetHeight - scrollRoot.clientHeight,
+        );
+        const prefersReducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
 
         setProgress(
           prefersReducedMotion
             ? 0.7
             : Math.max(0, Math.min(1, -bounds.top / travel)),
         );
-        setSequenceActive(bounds.bottom > 0 && bounds.top < scrollRoot.clientHeight);
+        setSequenceActive(
+          bounds.bottom > 0 && bounds.top < scrollRoot.clientHeight,
+        );
       });
     };
 
@@ -2422,13 +3187,40 @@ function FortniteSection() {
       }
 
       playbackActiveRef.current = true;
-      void video.play().catch(() => undefined);
+      video.defaultMuted = false;
+      video.muted = false;
+      video.volume = 0.35;
+      void video
+        .play()
+        .then(() => setAudioBlocked(false))
+        .catch(() => {
+          video.muted = true;
+          setAudioBlocked(true);
+          void video.play().catch(() => undefined);
+        });
       return;
     }
 
     playbackActiveRef.current = false;
+    setAudioBlocked(false);
     video.pause();
   }, [poweredOn, sequenceActive]);
+
+  const enableVideoAudio = () => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    video.defaultMuted = false;
+    video.muted = false;
+    video.volume = 0.35;
+    void video
+      .play()
+      .then(() => setAudioBlocked(false))
+      .catch(() => setAudioBlocked(true));
+  };
 
   const powerProgress = Math.max(0, Math.min(1, (progress - 0.18) / 0.16));
   const zoomProgress = Math.max(0, Math.min(1, (progress - 0.12) / 0.78));
@@ -2440,7 +3232,10 @@ function FortniteSection() {
 
   return (
     <Fragment>
-      <section className="fortnite-scroll-sequence relative mt-28 h-[300vh]" ref={sectionRef}>
+      <section
+        className="fortnite-scroll-sequence relative mt-28 h-[300vh]"
+        ref={sectionRef}
+      >
         <div className="fortnite-pc-scene sticky top-0 flex h-screen items-center justify-center overflow-hidden">
           <div
             className="pointer-events-none absolute inset-x-0 top-[9vh] z-20 text-center transition-opacity duration-100"
@@ -2456,7 +3251,8 @@ function FortniteSection() {
               Fortnite
             </h3>
             <p className="mx-auto mt-4 max-w-xl px-6 text-sm leading-7 text-stone-400 sm:text-base">
-              Combat becomes real-time environment manipulation, pressure, prediction, and adaptation.
+              Combat becomes real-time environment manipulation, pressure,
+              prediction, and adaptation.
             </p>
           </div>
 
@@ -2473,7 +3269,6 @@ function FortniteSection() {
                   className="absolute inset-0 h-full w-full object-cover"
                   controls={playbackControlsAvailable}
                   loop
-                  muted
                   playsInline
                   preload="metadata"
                   ref={videoRef}
@@ -2481,6 +3276,17 @@ function FortniteSection() {
                 >
                   Your browser does not support the video tag.
                 </video>
+                {audioBlocked && poweredOn ? (
+                  <button
+                    aria-label="Enable Fortnite video sound"
+                    className="absolute right-3 top-3 z-20 inline-flex h-9 items-center gap-2 rounded-md border border-white/15 bg-black/70 px-3 text-xs font-medium text-stone-100 backdrop-blur transition hover:border-amber-200/45 hover:bg-black/85 hover:text-amber-100"
+                    onClick={enableVideoAudio}
+                    type="button"
+                  >
+                    <Volume2 aria-hidden="true" className="h-4 w-4" />
+                    Enable sound
+                  </button>
+                ) : null}
                 <div
                   aria-hidden="true"
                   className="fortnite-screen-off pointer-events-none absolute inset-0 bg-[#020303]"
@@ -2489,10 +3295,21 @@ function FortniteSection() {
                 <div
                   aria-hidden="true"
                   className="fortnite-screen-flare pointer-events-none absolute inset-0"
-                  style={{ opacity: Math.max(0, 1 - Math.abs(powerProgress - 0.58) * 4.8) }}
+                  style={{
+                    opacity: Math.max(
+                      0,
+                      1 - Math.abs(powerProgress - 0.58) * 4.8,
+                    ),
+                  }}
                 />
-                <div aria-hidden="true" className="fortnite-scanlines pointer-events-none absolute inset-0" />
-                <div aria-hidden="true" className="fortnite-screen-gloss absolute inset-0" />
+                <div
+                  aria-hidden="true"
+                  className="fortnite-scanlines pointer-events-none absolute inset-0"
+                />
+                <div
+                  aria-hidden="true"
+                  className="fortnite-screen-gloss absolute inset-0"
+                />
               </div>
               <div className="flex h-5 items-center justify-between px-2 pt-2">
                 <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-stone-600">
@@ -2503,13 +3320,21 @@ function FortniteSection() {
                   className="h-1.5 w-1.5 rounded-full transition-shadow duration-300"
                   style={{
                     backgroundColor: poweredOn ? "#fde68a" : "#3f3f46",
-                    boxShadow: poweredOn ? "0 0 12px rgba(253,230,138,.9)" : "none",
+                    boxShadow: poweredOn
+                      ? "0 0 12px rgba(253,230,138,.9)"
+                      : "none",
                   }}
                 />
               </div>
             </div>
-            <div aria-hidden="true" className="fortnite-monitor-neck mx-auto h-12 w-[15%] bg-gradient-to-b from-[#242525] to-[#111212]" />
-            <div aria-hidden="true" className="fortnite-monitor-base mx-auto h-3 w-[42%] rounded-[50%] border-t border-stone-500/25 bg-[#151616] shadow-[0_12px_22px_rgba(0,0,0,0.6)]" />
+            <div
+              aria-hidden="true"
+              className="fortnite-monitor-neck mx-auto h-12 w-[15%] bg-gradient-to-b from-[#242525] to-[#111212]"
+            />
+            <div
+              aria-hidden="true"
+              className="fortnite-monitor-base mx-auto h-3 w-[42%] rounded-[50%] border-t border-stone-500/25 bg-[#151616] shadow-[0_12px_22px_rgba(0,0,0,0.6)]"
+            />
           </div>
 
           <div
@@ -2520,12 +3345,20 @@ function FortniteSection() {
             }}
           >
             <div className="text-center">
-              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">1300+</p>
-              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">Online wins</p>
+              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">
+                1300+
+              </p>
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">
+                Online wins
+              </p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">611th</p>
-              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">Solo Cash Cup</p>
+              <p className="text-3xl font-semibold text-stone-50 sm:text-5xl">
+                611th
+              </p>
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.2em] text-stone-500">
+                Solo Cash Cup
+              </p>
             </div>
           </div>
         </div>
@@ -2537,39 +3370,86 @@ function FortniteSection() {
             Fortnite / Why It Stayed
           </p>
           <div className="mt-7 space-y-6 text-base leading-8 text-stone-300 sm:text-lg sm:leading-9">
-          <p>
-            Fortnite has probably been the game I have spent the most time on over the last few years. Before it, I went through phases with chess, Call of Duty, and a lot of other games in between, but Fortnite was the one that stayed mentally engaging long term. I accumulated over 1300 wins over time playing regular online matches, while also spending a large amount of time in creative 1v1 build fights because that was always the part of the game I found most interesting mechanically.
-          </p>
-          <p>
-            I still competed occasionally, placing 611th in a Solo Cash Cup and 274th in a Duo Contender Hype Cup, but I never fully committed once support shifted away from NA East toward NA Central servers.
-          </p>
-          <p>
-            What kept the game interesting to me was not just that it was fast-paced. The real difference is that Fortnite transforms combat into real-time environment manipulation. In most shooters, the map is mostly static. Cover already exists. Angles are predefined. In Fortnite, players create and destroy the battlefield itself while fighting. The environment continuously changes every second depending on positioning, pressure, edits, movement, and prediction.
-          </p>
-          <p>
-            At higher levels, fights become less about raw aim alone and more about spatial control, timing, momentum, adaptation, psychological pressure, and forcing reactions under uncertainty. A fight can become about taking space, denying space, interrupting tempo, creating right-hand peeks, conditioning expectations, reading habits, predicting movement, and deciding when to overwhelm versus disengage.
-          </p>
-          <p>
-            That overlap between mechanics, strategy, movement, psychology, creativity, and rapid decision-making is what made Fortnite feel fundamentally different from most games I played before it. The interaction density is unusually high. Inputs matter. Positioning matters. Timing matters. Confidence matters. Momentum matters.
-          </p>
-          <p>
-            In a weird way, the game also overlaps with a lot of the broader themes explored throughout this project: adaptation under uncertainty, recursive prediction, real-time model updating, bounded systems, and rapid feedback loops.
-          </p>
-          <p>
-            Below are my stats and a few random clips from creative fights and gameplay over time.
-          </p>
-        </div>
+            <p>
+              Fortnite has probably been the game I have spent the most time on
+              over the last few years. Before it, I went through phases with
+              chess, Call of Duty, and a lot of other games in between, but
+              Fortnite was the one that stayed mentally engaging long term. I
+              accumulated over 1300 wins over time playing regular online
+              matches, while also spending a large amount of time in creative
+              1v1 build fights because that was always the part of the game I
+              found most interesting mechanically.
+            </p>
+            <p>
+              I still competed occasionally, placing 611th in a Solo Cash Cup
+              and 274th in a Duo Contender Hype Cup, but I never fully committed
+              once support shifted away from NA East toward NA Central servers.
+            </p>
+            <p>
+              What kept the game interesting to me was not just that it was
+              fast-paced. The real difference is that Fortnite transforms combat
+              into real-time environment manipulation. In most shooters, the map
+              is mostly static. Cover already exists. Angles are predefined. In
+              Fortnite, players create and destroy the battlefield itself while
+              fighting. The environment continuously changes every second
+              depending on positioning, pressure, edits, movement, and
+              prediction.
+            </p>
+            <p>
+              At higher levels, fights become less about raw aim alone and more
+              about spatial control, timing, momentum, adaptation, psychological
+              pressure, and forcing reactions under uncertainty. A fight can
+              become about taking space, denying space, interrupting tempo,
+              creating right-hand peeks, conditioning expectations, reading
+              habits, predicting movement, and deciding when to overwhelm versus
+              disengage.
+            </p>
+            <p>
+              That overlap between mechanics, strategy, movement, psychology,
+              creativity, and rapid decision-making is what made Fortnite feel
+              fundamentally different from most games I played before it. The
+              interaction density is unusually high. Inputs matter. Positioning
+              matters. Timing matters. Confidence matters. Momentum matters.
+            </p>
+            <p>
+              In a weird way, the game also overlaps with a lot of the broader
+              themes explored throughout this project: adaptation under
+              uncertainty, recursive prediction, real-time model updating,
+              bounded systems, and rapid feedback loops.
+            </p>
+            <p>
+              Below are my stats and a few random clips from creative fights and
+              gameplay over time.
+            </p>
+          </div>
 
-        <div className="mt-10 flex justify-start border-t border-white/10 pt-6">
           <a
-            className="inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-4 py-2 text-sm font-medium text-amber-50 transition hover:border-amber-200/45 hover:bg-amber-200/15"
+            className="group mt-10 flex items-center justify-between gap-5 border-y border-amber-200/20 bg-amber-200/[0.035] px-1 py-5 transition hover:border-amber-200/40 hover:bg-amber-200/[0.065] sm:px-4"
             href="https://fortnitetracker.com/profile/all/StunnersDL"
             rel="noreferrer"
             target="_blank"
           >
-            Fortnite Stat Tracker
+            <span className="flex min-w-0 items-center gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-amber-200/20 bg-amber-200/10 text-amber-100">
+                <BarChart3 aria-hidden="true" className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-amber-200/60">
+                  Competitive record
+                </span>
+                <span className="mt-1 block text-base font-semibold text-stone-100 sm:text-lg">
+                  StunnersDL on Fortnite Tracker
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-stone-400">
+                  Open the full match history, rankings, placements, and account
+                  statistics.
+                </span>
+              </span>
+            </span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-white/10 text-stone-300 transition group-hover:border-amber-200/35 group-hover:bg-amber-200/10 group-hover:text-amber-100">
+              <ArrowUpRight aria-hidden="true" className="h-5 w-5" />
+            </span>
           </a>
-        </div>
         </div>
       </section>
     </Fragment>
@@ -2579,11 +3459,15 @@ function FortniteSection() {
 function PhotographySection() {
   const [photoProgress, setPhotoProgress] = useState(0);
   const photoProgressRef = useRef(0);
-  const activeIndex = wrapIndex(Math.round(photoProgress), photographyImageUrls.length);
+  const activeIndex = wrapIndex(
+    Math.round(photoProgress),
+    photographyImageUrls.length,
+  );
 
   function setPhotoProgressValue(nextProgress: number) {
     const total = photographyImageUrls.length;
-    const normalizedProgress = total > 0 ? ((nextProgress % total) + total) % total : 0;
+    const normalizedProgress =
+      total > 0 ? ((nextProgress % total) + total) % total : 0;
     photoProgressRef.current = normalizedProgress;
     setPhotoProgress(normalizedProgress);
   }
@@ -2624,8 +3508,19 @@ function PhotographySection() {
             onClick={() => cyclePhoto(-1)}
             type="button"
           >
-            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <path d="m15 18-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="m15 18-6-6 6-6"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.2"
+              />
             </svg>
           </button>
 
@@ -2653,12 +3548,14 @@ function PhotographySection() {
               const stagedDistance = Math.abs(stagedOffset);
               const edgeSign = stagedOffset < 0 ? -1 : 1;
               const translateX = stagedOffset * 38;
-              const rotateY = edgeSign * interpolateStops(stagedDistance, [
-                [0, 0],
-                [1, 28],
-                [2, 56],
-                [2.35, 72],
-              ]);
+              const rotateY =
+                edgeSign *
+                interpolateStops(stagedDistance, [
+                  [0, 0],
+                  [1, 28],
+                  [2, 56],
+                  [2.35, 72],
+                ]);
               const scale = interpolateStops(stagedDistance, [
                 [0, 1],
                 [1, 0.84],
@@ -2688,12 +3585,16 @@ function PhotographySection() {
                       : "border-white/10",
                   ].join(" ")}
                   key={imageUrl}
-                  onClick={() => setPhotoProgressValue(photoProgressRef.current + offset)}
+                  onClick={() =>
+                    setPhotoProgressValue(photoProgressRef.current + offset)
+                  }
                   style={{
                     opacity: isVisible ? itemOpacity : 0,
                     pointerEvents: isVisible ? "auto" : "none",
                     transform: `translate(-50%, -50%) translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-                    zIndex: isVisible ? 100 - Math.round(stagedDistance * 10) : 0,
+                    zIndex: isVisible
+                      ? 100 - Math.round(stagedDistance * 10)
+                      : 0,
                   }}
                   type="button"
                 >
@@ -2715,8 +3616,19 @@ function PhotographySection() {
             onClick={() => cyclePhoto(1)}
             type="button"
           >
-            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <path d="m9 6 6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="m9 6 6 6-6 6"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.2"
+              />
             </svg>
           </button>
         </div>
@@ -2791,89 +3703,39 @@ function CategorySections({
   );
 }
 
-function ChapterHeader({
-  eyebrow,
-  title,
-}: {
-  eyebrow: string;
-  title: string;
-}) {
-  return (
-    <header className="mx-auto mb-10 max-w-4xl border-y border-amber-200/15 px-5 py-7 text-center sm:px-7">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-        {eyebrow}
-      </p>
-      <h2 className="mt-3 text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
-        {title}
-      </h2>
-    </header>
-  );
-}
-
 function CategorySectionGroups({
   activeSectionId,
-  eyebrow,
-  groupEyebrow = eyebrow,
   groups,
-  intro,
-  showIntroHeader = true,
-  title,
 }: {
   activeSectionId: string;
-  eyebrow: string;
-  groupEyebrow?: string;
   groups: ReadingSectionGroup[];
-  intro: string;
-  showIntroHeader?: boolean;
-  title: string;
 }) {
   const activeGroupIndex = Math.max(
-    groups.findIndex((group) =>
-      group.id === activeSectionId ||
-      group.firstSectionId === activeSectionId ||
-      group.children.some((section) => section.id === activeSectionId),
+    groups.findIndex(
+      (group) =>
+        group.id === activeSectionId ||
+        group.firstSectionId === activeSectionId ||
+        group.children.some((section) => section.id === activeSectionId),
     ),
     0,
   );
   const activeGroup = groups[activeGroupIndex] ?? groups[0];
+  const activeSection =
+    activeGroup?.children.find((section) => section.id === activeSectionId) ??
+    activeGroup?.children[0];
 
   return (
     <div>
-      {showIntroHeader ? (
-        <header className="mx-auto mb-10 max-w-4xl border-y border-amber-200/15 px-5 py-8 text-center sm:px-7">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-            {eyebrow}
-          </p>
-          <h2 className="mt-3 text-4xl font-semibold leading-tight text-stone-50 sm:text-5xl">
-            {title}
-          </h2>
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-stone-300">
-            {intro}
-          </p>
-        </header>
-      ) : null}
-
       <div className="space-y-24">
         {activeGroup ? (
-          <section id={activeGroup.id} key={activeGroup.id} className="scroll-mt-16">
-            <header className="mb-10 rounded-lg border border-amber-200/15 bg-[linear-gradient(135deg,rgba(253,230,138,0.08),rgba(255,255,255,0.025))] px-5 py-6 shadow-[0_18px_70px_rgba(0,0,0,0.22)] sm:px-7">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-                {groupEyebrow} / Section {activeGroupIndex + 1}
-              </p>
-              <h3 className="mt-3 text-3xl font-semibold leading-tight text-stone-50 sm:text-4xl">
-                {activeGroup.label}
-              </h3>
-              {activeGroup.intro ? (
-                <p className="mt-5 max-w-4xl text-base leading-8 text-stone-300">
-                  {activeGroup.intro}
-                </p>
-              ) : null}
-            </header>
-            <div className="space-y-20">
-              {activeGroup.children.map((section) => (
-                <ReadingSubsection key={section.id} section={section} />
-              ))}
-            </div>
+          <section
+            id={activeGroup.id}
+            key={activeGroup.id}
+            className="scroll-mt-16"
+          >
+            {activeSection ? (
+              <ReadingSubsection section={activeSection} />
+            ) : null}
           </section>
         ) : null}
       </div>
@@ -2882,7 +3744,16 @@ function CategorySectionGroups({
 }
 
 const placeholderContent: Record<
-  Exclude<ContentView, "start" | "current-views" | "notes" | "religion" | "politics" | "economics">,
+  Exclude<
+    ContentView,
+    | "start"
+    | "current-views"
+    | "notes"
+    | "ideas"
+    | "religion"
+    | "politics"
+    | "economics"
+  >,
   {
     eyebrow: string;
     title: string;
@@ -2890,26 +3761,6 @@ const placeholderContent: Record<
     cards: { title: string; body: string }[];
   }
 > = {
-  society: {
-    eyebrow: "Future Category",
-    title: "Society",
-    intro:
-      "This space will cover culture, institutions, social pressure, identity, education, community, and the norms that shape behavior.",
-    cards: [
-      {
-        title: "Culture",
-        body: "How repeated social patterns become normal enough to feel obvious.",
-      },
-      {
-        title: "Institutions",
-        body: "How systems organize behavior and distribute authority.",
-      },
-      {
-        title: "Social Pressure",
-        body: "How belonging can influence what people say, believe, and avoid.",
-      },
-    ],
-  },
   psychology: {
     eyebrow: "Future Category",
     title: "Human Psychology",
@@ -2975,12 +3826,21 @@ const placeholderContent: Record<
 function CategoryPlaceholder({
   activeView,
 }: {
-  activeView: Exclude<ContentView, "start" | "current-views" | "notes" | "religion" | "politics" | "economics">;
+  activeView: Exclude<
+    ContentView,
+    | "start"
+    | "current-views"
+    | "notes"
+    | "ideas"
+    | "religion"
+    | "politics"
+    | "economics"
+  >;
 }) {
   const content = placeholderContent[activeView];
 
   return (
-    <section>
+    <section className="scroll-mt-24" id={activeView}>
       <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
         {content.eyebrow}
       </p>
@@ -2994,7 +3854,9 @@ function CategoryPlaceholder({
             className="rounded-xl border border-white/10 bg-white/[0.025] px-4 py-4"
             key={card.title}
           >
-            <p className="text-base font-semibold text-stone-100">{card.title}</p>
+            <p className="text-base font-semibold text-stone-100">
+              {card.title}
+            </p>
             <p className="mt-3 text-sm leading-6 text-stone-400">{card.body}</p>
           </div>
         ))}
@@ -3004,8 +3866,8 @@ function CategoryPlaceholder({
           Coming Later
         </p>
         <p className="mt-3 text-base leading-8 text-stone-300">
-          This category is separated from Religion now, so it can grow into its own
-          reading space without turning the site into one endless scroll.
+          This category is separated from Religion now, so it can grow into its
+          own reading space without turning the site into one endless scroll.
         </p>
       </section>
     </section>
@@ -3093,7 +3955,9 @@ function ReadingPath() {
             </span>
             <div>
               <p className="text-sm font-medium text-stone-100">{item.label}</p>
-              <p className="mt-1 text-xs leading-5 text-stone-500">{item.detail}</p>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                {item.detail}
+              </p>
             </div>
           </div>
         ))}
@@ -3174,23 +4038,28 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
       },
       {
         title: "Knowledge",
-        detail: "Epistemology asks what confidence the evidence can responsibly carry.",
+        detail:
+          "Epistemology asks what confidence the evidence can responsibly carry.",
       },
       {
         title: "Action",
-        detail: "Ethics asks how to act when values, harm, and uncertainty collide.",
+        detail:
+          "Ethics asks how to act when values, harm, and uncertainty collide.",
       },
       {
         title: "Society",
-        detail: "Political philosophy asks how groups organize power, conflict, and stability.",
+        detail:
+          "Political philosophy asks how groups organize power, conflict, and stability.",
       },
       {
         title: "Mind",
-        detail: "Philosophy of mind asks what kind of conscious system is doing the interpreting.",
+        detail:
+          "Philosophy of mind asks what kind of conscious system is doing the interpreting.",
       },
       {
         title: "Meaning",
-        detail: "Existential sections ask how humans orient themselves without final guarantees.",
+        detail:
+          "Existential sections ask how humans orient themselves without final guarantees.",
       },
     ],
   },
@@ -3205,19 +4074,23 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
       },
       {
         title: "Human Filters",
-        detail: "Embodiment, perception, cognition, memory, and language shape access.",
+        detail:
+          "Embodiment, perception, cognition, memory, and language shape access.",
       },
       {
         title: "Mental Model",
-        detail: "Humans build representations that can be reliable without being total.",
+        detail:
+          "Humans build representations that can be reliable without being total.",
       },
       {
         title: "Operational Truth",
-        detail: "Some models work extremely well inside experience and practical reality.",
+        detail:
+          "Some models work extremely well inside experience and practical reality.",
       },
       {
         title: "Ultimate Unknown",
-        detail: "Deeper metaphysical structure can remain unresolved without making action impossible.",
+        detail:
+          "Deeper metaphysical structure can remain unresolved without making action impossible.",
       },
     ],
   },
@@ -3244,7 +4117,8 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
       },
       {
         title: "Near Certainty",
-        detail: "The support is strong, repeatable, constrained, and hard to replace.",
+        detail:
+          "The support is strong, repeatable, constrained, and hard to replace.",
       },
     ],
   },
@@ -3255,15 +4129,18 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
     items: [
       {
         title: "Too Rigid",
-        detail: "Rules become detached from context, suffering, scale, and human complexity.",
+        detail:
+          "Rules become detached from context, suffering, scale, and human complexity.",
       },
       {
         title: "Constrained Orientation",
-        detail: "Stable principles guide action while remaining open to context, uncertainty, and revision.",
+        detail:
+          "Stable principles guide action while remaining open to context, uncertainty, and revision.",
       },
       {
         title: "Too Flexible",
-        detail: "Judgment dissolves into rationalization, inconsistency, and unstable standards.",
+        detail:
+          "Judgment dissolves into rationalization, inconsistency, and unstable standards.",
       },
     ],
   },
@@ -3274,7 +4151,8 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
     items: [
       {
         title: "Side A From Inside",
-        detail: "Model the fear, history, identity, and justification structure.",
+        detail:
+          "Model the fear, history, identity, and justification structure.",
       },
       {
         title: "Side B From Inside",
@@ -3282,15 +4160,18 @@ const structureDiagramsBySection: Record<string, StructureDiagramConfig> = {
       },
       {
         title: "Structural Forces",
-        detail: "Look at incentives, escalation loops, propaganda, power, and path dependence.",
+        detail:
+          "Look at incentives, escalation loops, propaganda, power, and path dependence.",
       },
       {
         title: "Moral Limits",
-        detail: "Explanation is not endorsement, and complexity is not equivalence.",
+        detail:
+          "Explanation is not endorsement, and complexity is not equivalence.",
       },
       {
         title: "Provisional Stance",
-        detail: "Form a constrained position without pretending the whole conflict is solved.",
+        detail:
+          "Form a constrained position without pretending the whole conflict is solved.",
       },
     ],
   },
@@ -3394,7 +4275,10 @@ function StructureDiagram({ diagram }: { diagram: StructureDiagramConfig }) {
 
   if (isChapterMap) {
     return (
-      <nav className="mt-9 border-t border-white/10 pt-6" aria-label={diagram.label}>
+      <nav
+        className="mt-9 border-t border-white/10 pt-6"
+        aria-label={diagram.label}
+      >
         <div className="mb-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
             {diagram.label}
@@ -3476,7 +4360,8 @@ function ConsciousnessGradientDiagram() {
           Visual Synthesis
         </p>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
-          A compact map of the gradient described above, from embodied responsiveness toward recursive self/world modeling.
+          A compact map of the gradient described above, from embodied
+          responsiveness toward recursive self/world modeling.
         </p>
       </div>
 
@@ -3507,14 +4392,7 @@ type ConsciousnessNodeId =
   | "existential";
 
 type ConsciousnessProfileId =
-  | "bacteria"
-  | "ant"
-  | "fish"
-  | "dog"
-  | "crow"
-  | "chimp"
-  | "human"
-  | "ai";
+  "bacteria" | "ant" | "fish" | "dog" | "crow" | "chimp" | "human" | "ai";
 
 const consciousnessWebNodes: Array<{
   description: string;
@@ -3524,7 +4402,8 @@ const consciousnessWebNodes: Array<{
   y: number;
 }> = [
   {
-    description: "Self-maintenance, bodily constraint, vulnerability, and interaction with a real environment.",
+    description:
+      "Self-maintenance, bodily constraint, vulnerability, and interaction with a real environment.",
     id: "embodiment",
     label: "Embodiment",
     x: 50,
@@ -3538,63 +4417,72 @@ const consciousnessWebNodes: Array<{
     y: 70,
   },
   {
-    description: "Adaptive significance: fear, attachment, pain, reward, and motivational weighting.",
+    description:
+      "Adaptive significance: fear, attachment, pain, reward, and motivational weighting.",
     id: "emotion",
     label: "Emotion",
     x: 76,
     y: 70,
   },
   {
-    description: "Selective focus that determines which signals dominate the system.",
+    description:
+      "Selective focus that determines which signals dominate the system.",
     id: "attention",
     label: "Attention",
     x: 50,
     y: 59,
   },
   {
-    description: "Past experience shaping present interpretation and future expectation.",
+    description:
+      "Past experience shaping present interpretation and future expectation.",
     id: "memory",
     label: "Memory",
     x: 22,
     y: 45,
   },
   {
-    description: "Anticipating future states, risk, opportunity, and likely outcomes.",
+    description:
+      "Anticipating future states, risk, opportunity, and likely outcomes.",
     id: "prediction",
     label: "Prediction",
     x: 78,
     y: 45,
   },
   {
-    description: "Modeling other agents, attachment, status, cooperation, and threat.",
+    description:
+      "Modeling other agents, attachment, status, cooperation, and threat.",
     id: "social",
     label: "Social Model",
     x: 50,
     y: 35,
   },
   {
-    description: "A continuing self-model organized through memory, body, role, and narrative.",
+    description:
+      "A continuing self-model organized through memory, body, role, and narrative.",
     id: "identity",
     label: "Identity",
     x: 27,
     y: 22,
   },
   {
-    description: "Symbolic compression through language, concepts, categories, and shared meaning.",
+    description:
+      "Symbolic compression through language, concepts, categories, and shared meaning.",
     id: "language",
     label: "Language",
     x: 73,
     y: 22,
   },
   {
-    description: "The system modeling itself, its models, and the limits of its models.",
+    description:
+      "The system modeling itself, its models, and the limits of its models.",
     id: "recursion",
     label: "Recursion",
     x: 50,
     y: 12,
   },
   {
-    description: "Mortality, meaning, cosmic uncertainty, and consciousness examining existence.",
+    description:
+      "Mortality, meaning, cosmic uncertainty, and consciousness examining existence.",
     id: "existential",
     label: "Existential",
     x: 50,
@@ -3758,119 +4646,157 @@ const consciousnessLayerOrder: ConsciousnessNodeId[] = [
   "embodiment",
   "sensation",
   "emotion",
-	  "attention",
-	  "memory",
-	  "prediction",
-	  "language",
-	  "social",
-	  "identity",
-	  "recursion",
-	  "existential",
-	];
+  "attention",
+  "memory",
+  "prediction",
+  "language",
+  "social",
+  "identity",
+  "recursion",
+  "existential",
+];
 
 const consciousnessProfileDetails: Record<
   ConsciousnessProfileId,
-	  {
-	    caution: string;
-	    focus: string;
-	    image: string;
-	    imageTransform: string;
-	    reading: string;
-	    stage: string;
-	    unresolved: string;
-	    type: string;
-	    visible: string;
-	  }
-	> = {
-	  ai: {
-	    caution: "High symbolic modeling does not prove felt experience.",
-	    focus: "AI is the inversion case: abstraction and language-like patterning can be strong while the layers most tied to biological vulnerability remain weak or unresolved.",
-	    image: "/images/philosophy/consciousness-pets/ai.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "AI sits strangely in the model: strong in language, memory-like retrieval, prediction, and symbolic patterning, but weak or unresolved in embodiment, vulnerability, sensation, and felt significance.",
-	    stage: "Inverted Abstraction",
-	    unresolved: "The uncertain point is whether symbolic recursion without bodily survival, pain, attachment, and felt stakes should be treated as consciousness or as powerful simulation of conscious language.",
-	    type: "Artificial Pattern System",
-	    visible: "The most visible layers are language, prediction, memory-like retrieval, and recursive pattern manipulation.",
-	  },
-	  ant: {
-	    caution: "Strong coordination does not imply rich reflective awareness.",
-	    focus: "The ant case separates individual organism intelligence from colony-level coordination. Much of what looks complex may belong to distributed social organization rather than private reflection.",
-	    image: "/images/philosophy/consciousness-pets/ant.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "The ant profile emphasizes embodied action, sensation, chemical signaling, and social coordination. The interesting question is how much intelligence belongs to the individual organism versus the colony-scale system.",
-	    stage: "Colony-Level Adaptation",
-	    unresolved: "The thin layers are reflective identity, symbolic language, existential awareness, and individual self-modeling.",
-	    type: "Social Invertebrate",
-	    visible: "The most visible layers are embodied action, chemical response, environmental cue-following, and social coordination.",
-	  },
-	  bacteria: {
-	    caution: "Adaptive responsiveness is not the same as subjective experience.",
-	    focus: "Bacteria show why life and consciousness cannot be treated as identical. The system maintains itself, responds, repairs, and adapts without strong evidence of integrated experience.",
-	    image: "/images/philosophy/consciousness-pets/bacteria.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Bacteria represent the lower edge of the gradient: self-maintenance, environmental response, repair, movement, and survival regulation without much reason to infer integrated felt experience.",
-	    stage: "Embodied Responsiveness",
-	    unresolved: "Almost everything beyond self-maintenance is uncertain or absent: attention, memory, social modeling, identity, language, recursion, and existential awareness remain extremely thin.",
-	    type: "Cellular Life",
-	    visible: "The most visible layers are cellular boundary-maintenance, chemical response, repair, movement, and survival regulation.",
-	  },
-	  chimp: {
-	    caution: "Rich social cognition still differs from human symbolic recursion.",
-	    focus: "The chimp case sits near humans without becoming human. Social intelligence, memory, planning, emotion, and tool use are dense, while explicit symbolic metaphysics remains limited.",
-	    image: "/images/philosophy/consciousness-pets/chimp.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Chimpanzees sit close to the human side of the gradient through memory, emotion, planning, dominance tracking, social intelligence, tool use, and recognizable identity continuity.",
-	    stage: "Primate World-Modeling",
-	    unresolved: "The unresolved boundary is not whether chimps model the world, but how far that modeling becomes symbolic, self-examining, and existential.",
-	    type: "Great Ape",
-	    visible: "The most visible layers are social hierarchy, emotional intelligence, memory, planning, tool behavior, and continuing identity.",
-	  },
-	  crow: {
-	    caution: "Tool use and memory suggest complex modeling without human language.",
-	    focus: "The crow case disrupts a simple mammal ladder. It highlights flexible intelligence, memory, planning, and tool behavior without requiring human-like language or primate embodiment.",
-	    image: "/images/philosophy/consciousness-pets/crow.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Crows make the gradient feel less linear. They show flexible problem-solving, memory, social learning, and tool behavior without looking like a smaller version of human consciousness.",
-	    stage: "Flexible World-Modeling",
-	    unresolved: "The uncertain point is how much flexible problem-solving implies inner experience, self-continuity, or recursion rather than advanced adaptive cognition.",
-	    type: "Corvid Cognition",
-	    visible: "The most visible layers are memory, prediction, social learning, attention, tool use, and adaptive problem-solving.",
-	  },
-	  dog: {
-	    caution: "Attachment and emotion are strong without deep symbolic abstraction.",
-	    focus: "The dog case makes emotional consciousness more visible than abstract consciousness. Attachment, trust, fear, anticipation, and social reading dominate the profile.",
-	    image: "/images/philosophy/consciousness-pets/dog.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Dogs make emotional consciousness easy to notice: attachment, trust, fear, anticipation, social reading, and memory are prominent even without human-style symbolic abstraction.",
-	    stage: "Social-Emotional Modeling",
-	    unresolved: "The thin layers are symbolic language, explicit recursion, and existential reflection; the profile is rich emotionally without becoming philosophical.",
-	    type: "Mammalian Companion",
-	    visible: "The most visible layers are attachment, affect, social recognition, memory, anticipation, and body-centered experience.",
-	  },
-	  fish: {
-	    caution: "Pain, navigation, and memory may exist without reflective identity.",
-	    focus: "The fish case tests the gap between sensation and reflection. Pain response, navigation, memory, and prediction may be real without implying a strong self-narrative.",
-	    image: "/images/philosophy/consciousness-pets/fish.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Fish sit in the middle of the early experiential range: sensation, navigation, pain response, memory, and prediction become more integrated than simple responsiveness alone.",
-	    stage: "Sensorimotor Experience",
-	    unresolved: "The uncertain point is whether integrated sensation and pain response amount to felt experience without reflective identity or symbolic self-modeling.",
-	    type: "Aquatic Vertebrate",
-	    visible: "The most visible layers are sensation, navigation, pain response, memory, prediction, and embodied survival.",
-	  },
-	  human: {
-	    caution: "Recursive self-awareness creates meaning, anxiety, abstraction, and distortion.",
-	    focus: "The human case is not just higher processing. It is the convergence of body, emotion, language, identity, culture, mortality-awareness, and recursion into a self-interpreting world.",
-	    image: "/images/philosophy/consciousness-pets/human.png",
-	    imageTransform: "translate(0px, 0px) scale(1)",
-	    reading: "Humans mark the highest known point in this model because symbolic language, identity, civilization, long-term planning, mortality awareness, and consciousness reflecting on itself converge.",
-	    stage: "Existential Recursion",
-	    unresolved: "The danger is distortion: the same recursion that allows philosophy, science, morality, and identity also produces anxiety, ideology, self-deception, and overconfident models.",
-	    type: "Symbolic Primate",
-	    visible: "The most visible layers are language, identity, social imagination, long-term prediction, symbolic abstraction, and explicit self-reflection.",
-	  },
-	};
+  {
+    caution: string;
+    focus: string;
+    image: string;
+    imageTransform: string;
+    reading: string;
+    stage: string;
+    unresolved: string;
+    type: string;
+    visible: string;
+  }
+> = {
+  ai: {
+    caution: "High symbolic modeling does not prove felt experience.",
+    focus:
+      "AI is the inversion case: abstraction and language-like patterning can be strong while the layers most tied to biological vulnerability remain weak or unresolved.",
+    image: "/images/philosophy/consciousness-pets/ai.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "AI sits strangely in the model: strong in language, memory-like retrieval, prediction, and symbolic patterning, but weak or unresolved in embodiment, vulnerability, sensation, and felt significance.",
+    stage: "Inverted Abstraction",
+    unresolved:
+      "The uncertain point is whether symbolic recursion without bodily survival, pain, attachment, and felt stakes should be treated as consciousness or as powerful simulation of conscious language.",
+    type: "Artificial Pattern System",
+    visible:
+      "The most visible layers are language, prediction, memory-like retrieval, and recursive pattern manipulation.",
+  },
+  ant: {
+    caution: "Strong coordination does not imply rich reflective awareness.",
+    focus:
+      "The ant case separates individual organism intelligence from colony-level coordination. Much of what looks complex may belong to distributed social organization rather than private reflection.",
+    image: "/images/philosophy/consciousness-pets/ant.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "The ant profile emphasizes embodied action, sensation, chemical signaling, and social coordination. The interesting question is how much intelligence belongs to the individual organism versus the colony-scale system.",
+    stage: "Colony-Level Adaptation",
+    unresolved:
+      "The thin layers are reflective identity, symbolic language, existential awareness, and individual self-modeling.",
+    type: "Social Invertebrate",
+    visible:
+      "The most visible layers are embodied action, chemical response, environmental cue-following, and social coordination.",
+  },
+  bacteria: {
+    caution:
+      "Adaptive responsiveness is not the same as subjective experience.",
+    focus:
+      "Bacteria show why life and consciousness cannot be treated as identical. The system maintains itself, responds, repairs, and adapts without strong evidence of integrated experience.",
+    image: "/images/philosophy/consciousness-pets/bacteria.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Bacteria represent the lower edge of the gradient: self-maintenance, environmental response, repair, movement, and survival regulation without much reason to infer integrated felt experience.",
+    stage: "Embodied Responsiveness",
+    unresolved:
+      "Almost everything beyond self-maintenance is uncertain or absent: attention, memory, social modeling, identity, language, recursion, and existential awareness remain extremely thin.",
+    type: "Cellular Life",
+    visible:
+      "The most visible layers are cellular boundary-maintenance, chemical response, repair, movement, and survival regulation.",
+  },
+  chimp: {
+    caution:
+      "Rich social cognition still differs from human symbolic recursion.",
+    focus:
+      "The chimp case sits near humans without becoming human. Social intelligence, memory, planning, emotion, and tool use are dense, while explicit symbolic metaphysics remains limited.",
+    image: "/images/philosophy/consciousness-pets/chimp.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Chimpanzees sit close to the human side of the gradient through memory, emotion, planning, dominance tracking, social intelligence, tool use, and recognizable identity continuity.",
+    stage: "Primate World-Modeling",
+    unresolved:
+      "The unresolved boundary is not whether chimps model the world, but how far that modeling becomes symbolic, self-examining, and existential.",
+    type: "Great Ape",
+    visible:
+      "The most visible layers are social hierarchy, emotional intelligence, memory, planning, tool behavior, and continuing identity.",
+  },
+  crow: {
+    caution:
+      "Tool use and memory suggest complex modeling without human language.",
+    focus:
+      "The crow case disrupts a simple mammal ladder. It highlights flexible intelligence, memory, planning, and tool behavior without requiring human-like language or primate embodiment.",
+    image: "/images/philosophy/consciousness-pets/crow.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Crows make the gradient feel less linear. They show flexible problem-solving, memory, social learning, and tool behavior without looking like a smaller version of human consciousness.",
+    stage: "Flexible World-Modeling",
+    unresolved:
+      "The uncertain point is how much flexible problem-solving implies inner experience, self-continuity, or recursion rather than advanced adaptive cognition.",
+    type: "Corvid Cognition",
+    visible:
+      "The most visible layers are memory, prediction, social learning, attention, tool use, and adaptive problem-solving.",
+  },
+  dog: {
+    caution:
+      "Attachment and emotion are strong without deep symbolic abstraction.",
+    focus:
+      "The dog case makes emotional consciousness more visible than abstract consciousness. Attachment, trust, fear, anticipation, and social reading dominate the profile.",
+    image: "/images/philosophy/consciousness-pets/dog.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Dogs make emotional consciousness easy to notice: attachment, trust, fear, anticipation, social reading, and memory are prominent even without human-style symbolic abstraction.",
+    stage: "Social-Emotional Modeling",
+    unresolved:
+      "The thin layers are symbolic language, explicit recursion, and existential reflection; the profile is rich emotionally without becoming philosophical.",
+    type: "Mammalian Companion",
+    visible:
+      "The most visible layers are attachment, affect, social recognition, memory, anticipation, and body-centered experience.",
+  },
+  fish: {
+    caution:
+      "Pain, navigation, and memory may exist without reflective identity.",
+    focus:
+      "The fish case tests the gap between sensation and reflection. Pain response, navigation, memory, and prediction may be real without implying a strong self-narrative.",
+    image: "/images/philosophy/consciousness-pets/fish.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Fish sit in the middle of the early experiential range: sensation, navigation, pain response, memory, and prediction become more integrated than simple responsiveness alone.",
+    stage: "Sensorimotor Experience",
+    unresolved:
+      "The uncertain point is whether integrated sensation and pain response amount to felt experience without reflective identity or symbolic self-modeling.",
+    type: "Aquatic Vertebrate",
+    visible:
+      "The most visible layers are sensation, navigation, pain response, memory, prediction, and embodied survival.",
+  },
+  human: {
+    caution:
+      "Recursive self-awareness creates meaning, anxiety, abstraction, and distortion.",
+    focus:
+      "The human case is not just higher processing. It is the convergence of body, emotion, language, identity, culture, mortality-awareness, and recursion into a self-interpreting world.",
+    image: "/images/philosophy/consciousness-pets/human.png",
+    imageTransform: "translate(0px, 0px) scale(1)",
+    reading:
+      "Humans mark the highest known point in this model because symbolic language, identity, civilization, long-term planning, mortality awareness, and consciousness reflecting on itself converge.",
+    stage: "Existential Recursion",
+    unresolved:
+      "The danger is distortion: the same recursion that allows philosophy, science, morality, and identity also produces anxiety, ideology, self-deception, and overconfident models.",
+    type: "Symbolic Primate",
+    visible:
+      "The most visible layers are language, identity, social imagination, long-term prediction, symbolic abstraction, and explicit self-reflection.",
+  },
+};
 
 const consciousnessStatGroups: Array<{
   label: string;
@@ -3880,22 +4806,26 @@ const consciousnessStatGroups: Array<{
   {
     label: "Embodied",
     nodeIds: ["embodiment", "sensation", "emotion"],
-    reading: "body, sensation, affect, vulnerability, and survival-facing contact with the world",
+    reading:
+      "body, sensation, affect, vulnerability, and survival-facing contact with the world",
   },
   {
     label: "Modeling",
     nodeIds: ["attention", "memory", "prediction"],
-    reading: "attention, memory, anticipation, environmental learning, and flexible world-modeling",
+    reading:
+      "attention, memory, anticipation, environmental learning, and flexible world-modeling",
   },
   {
     label: "Social Self",
     nodeIds: ["social", "identity"],
-    reading: "attachment, social recognition, group orientation, and continuity of self across interaction",
+    reading:
+      "attachment, social recognition, group orientation, and continuity of self across interaction",
   },
   {
     label: "Symbolic",
     nodeIds: ["language", "recursion", "existential"],
-    reading: "language, abstraction, self-reflection, mortality awareness, and symbolic recursion",
+    reading:
+      "language, abstraction, self-reflection, mortality awareness, and symbolic recursion",
   },
 ];
 
@@ -3907,32 +4837,32 @@ function ConsciousnessSystemsExplorer() {
   const activeProfile =
     consciousnessProfiles.find((profile) => profile.id === activeProfileId) ??
     consciousnessProfiles[0];
-	  const activeNode =
-	    consciousnessWebNodes.find((node) => node.id === activeNodeId) ??
-	    consciousnessWebNodes[0];
-	  const activeStrength = activeProfile.weights[activeNode.id] ?? 0;
-	  const activeProfileDetails = consciousnessProfileDetails[activeProfile.id];
-	  const activeLayerReading = getConsciousnessLayerReading(
-	    activeProfile,
-	    activeNode,
-	    activeStrength,
-	  );
-	  const layerProfile = consciousnessStatGroups.map((group) => ({
-	    label: group.label,
-	    nodeIds: group.nodeIds,
-	    reading: group.reading,
-	    value:
-	      group.nodeIds.reduce(
-	        (total, nodeId) => total + activeProfile.weights[nodeId],
-	        0,
-	      ) / group.nodeIds.length,
-	  }));
-	  const emphasizedGroups = [...layerProfile]
-	    .sort((left, right) => right.value - left.value)
-	    .slice(0, 2);
-	  const lighterGroups = [...layerProfile]
-	    .sort((left, right) => left.value - right.value)
-	    .slice(0, 2);
+  const activeNode =
+    consciousnessWebNodes.find((node) => node.id === activeNodeId) ??
+    consciousnessWebNodes[0];
+  const activeStrength = activeProfile.weights[activeNode.id] ?? 0;
+  const activeProfileDetails = consciousnessProfileDetails[activeProfile.id];
+  const activeLayerReading = getConsciousnessLayerReading(
+    activeProfile,
+    activeNode,
+    activeStrength,
+  );
+  const layerProfile = consciousnessStatGroups.map((group) => ({
+    label: group.label,
+    nodeIds: group.nodeIds,
+    reading: group.reading,
+    value:
+      group.nodeIds.reduce(
+        (total, nodeId) => total + activeProfile.weights[nodeId],
+        0,
+      ) / group.nodeIds.length,
+  }));
+  const emphasizedGroups = [...layerProfile]
+    .sort((left, right) => right.value - left.value)
+    .slice(0, 2);
+  const lighterGroups = [...layerProfile]
+    .sort((left, right) => left.value - right.value)
+    .slice(0, 2);
 
   return (
     <section
@@ -3948,7 +4878,9 @@ function ConsciousnessSystemsExplorer() {
             Consciousness Gradient Explorer
           </h4>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
-            Select a system to compare conceptual layers of embodied adaptation, world-modeling, social cognition, symbolic abstraction, and recursive self-awareness.
+            Select a system to compare conceptual layers of embodied adaptation,
+            world-modeling, social cognition, symbolic abstraction, and
+            recursive self-awareness.
           </p>
         </div>
         <div className="rounded-lg border border-amber-200/15 bg-amber-200/[0.045] px-3 py-2 text-xs leading-5 text-amber-50/85">
@@ -4028,7 +4960,9 @@ function ConsciousnessSystemsExplorer() {
                   Model Reading
                 </h5>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
-                  This is not a scorecard. It is a way to visualize which layers are most visible, which layers remain thin, and where interpretation becomes uncertain.
+                  This is not a scorecard. It is a way to visualize which layers
+                  are most visible, which layers remain thin, and where
+                  interpretation becomes uncertain.
                 </p>
               </div>
               <div className="w-full rounded-md border border-amber-200/15 bg-amber-200/[0.045] px-3 py-2 lg:max-w-[250px]">
@@ -4036,7 +4970,8 @@ function ConsciousnessSystemsExplorer() {
                   Reading Caution
                 </p>
                 <p className="mt-1 text-xs leading-5 text-amber-50/85">
-                  The diagram shows relative emphasis, not proof of inner experience.
+                  The diagram shows relative emphasis, not proof of inner
+                  experience.
                 </p>
               </div>
             </div>
@@ -4126,7 +5061,10 @@ function ConsciousnessSystemsExplorer() {
                     {group.label}
                   </h6>
                   <p className="mt-1 text-xs leading-5 text-stone-400">
-                    {getConsciousnessGroupReading(activeProfile.id, group.label)}
+                    {getConsciousnessGroupReading(
+                      activeProfile.id,
+                      group.label,
+                    )}
                   </p>
                 </button>
               ))}
@@ -4134,9 +5072,9 @@ function ConsciousnessSystemsExplorer() {
           </div>
         </section>
       </div>
-	    </section>
-	  );
-	}
+    </section>
+  );
+}
 
 function MiniSpecimenIcon({
   profileId,
@@ -4238,52 +5176,83 @@ const consciousnessGroupReadings: Record<
   Record<string, string>
 > = {
   ai: {
-    Embodied: "weakest layer: no biological pain, hunger, mortality, or survival-facing body.",
-    Modeling: "strong pattern-tracking, prediction, context handling, and memory-like retrieval.",
-    "Social Self": "can simulate social roles and dialogue without stable lived belonging.",
-    Symbolic: "dominant layer: language, abstraction, recursion, and conceptual compression.",
+    Embodied:
+      "weakest layer: no biological pain, hunger, mortality, or survival-facing body.",
+    Modeling:
+      "strong pattern-tracking, prediction, context handling, and memory-like retrieval.",
+    "Social Self":
+      "can simulate social roles and dialogue without stable lived belonging.",
+    Symbolic:
+      "dominant layer: language, abstraction, recursion, and conceptual compression.",
   },
   ant: {
-    Embodied: "movement, chemical sensing, obstacle response, and survival routines are central.",
-    Modeling: "local cue-following and learned paths matter more than flexible imagination.",
-    "Social Self": "coordination is strong, but much of it belongs to colony structure.",
-    Symbolic: "symbolic reflection is extremely thin; signals are not human-like concepts.",
+    Embodied:
+      "movement, chemical sensing, obstacle response, and survival routines are central.",
+    Modeling:
+      "local cue-following and learned paths matter more than flexible imagination.",
+    "Social Self":
+      "coordination is strong, but much of it belongs to colony structure.",
+    Symbolic:
+      "symbolic reflection is extremely thin; signals are not human-like concepts.",
   },
   bacteria: {
-    Embodied: "cell boundary, repair, movement, and chemical regulation do most of the work.",
-    Modeling: "response patterns exist, but not rich world-modeling or flexible attention.",
-    "Social Self": "interaction can occur without implying a self/other social model.",
+    Embodied:
+      "cell boundary, repair, movement, and chemical regulation do most of the work.",
+    Modeling:
+      "response patterns exist, but not rich world-modeling or flexible attention.",
+    "Social Self":
+      "interaction can occur without implying a self/other social model.",
     Symbolic: "no meaningful symbolic layer; abstraction is not visible here.",
   },
   chimp: {
-    Embodied: "body, emotion, sensation, tool use, and survival pressures are deeply integrated.",
-    Modeling: "planning, memory, threat-tracking, and flexible learning are highly visible.",
-    "Social Self": "dominance, alliance, attachment, and recognition organize much of the profile.",
-    Symbolic: "proto-symbolic capacity appears, but not civilization-scale language recursion.",
+    Embodied:
+      "body, emotion, sensation, tool use, and survival pressures are deeply integrated.",
+    Modeling:
+      "planning, memory, threat-tracking, and flexible learning are highly visible.",
+    "Social Self":
+      "dominance, alliance, attachment, and recognition organize much of the profile.",
+    Symbolic:
+      "proto-symbolic capacity appears, but not civilization-scale language recursion.",
   },
   crow: {
-    Embodied: "flight, tool handling, perception, and environmental contact remain important.",
-    Modeling: "memory, problem-solving, planning, and object manipulation become unusually strong.",
-    "Social Self": "recognition, learning from others, and group behavior are clearly relevant.",
-    Symbolic: "cleverness is visible without needing human-style language or existential concepts.",
+    Embodied:
+      "flight, tool handling, perception, and environmental contact remain important.",
+    Modeling:
+      "memory, problem-solving, planning, and object manipulation become unusually strong.",
+    "Social Self":
+      "recognition, learning from others, and group behavior are clearly relevant.",
+    Symbolic:
+      "cleverness is visible without needing human-style language or existential concepts.",
   },
   dog: {
-    Embodied: "sensation, pain, movement, comfort, and bodily vulnerability are easy to see.",
-    Modeling: "memory and anticipation show up through routines, expectation, and learning.",
-    "Social Self": "attachment, trust, fear, loyalty, and human-reading are the strongest signals.",
-    Symbolic: "language is mostly receptive and practical, not abstract or philosophical.",
+    Embodied:
+      "sensation, pain, movement, comfort, and bodily vulnerability are easy to see.",
+    Modeling:
+      "memory and anticipation show up through routines, expectation, and learning.",
+    "Social Self":
+      "attachment, trust, fear, loyalty, and human-reading are the strongest signals.",
+    Symbolic:
+      "language is mostly receptive and practical, not abstract or philosophical.",
   },
   fish: {
-    Embodied: "navigation, pain response, movement, and sensory orientation dominate the profile.",
-    Modeling: "learning and prediction exist mainly around routes, threat, food, and safety.",
-    "Social Self": "social behavior may exist, but the self/other model remains limited.",
-    Symbolic: "symbolic abstraction and explicit self-reflection are not visible.",
+    Embodied:
+      "navigation, pain response, movement, and sensory orientation dominate the profile.",
+    Modeling:
+      "learning and prediction exist mainly around routes, threat, food, and safety.",
+    "Social Self":
+      "social behavior may exist, but the self/other model remains limited.",
+    Symbolic:
+      "symbolic abstraction and explicit self-reflection are not visible.",
   },
   human: {
-    Embodied: "the body still anchors emotion, pain, vulnerability, identity, and mortality.",
-    Modeling: "memory, attention, prediction, and counterfactual imagination become long-range.",
-    "Social Self": "identity, reputation, morality, politics, family, and culture become recursive.",
-    Symbolic: "language turns experience into concepts, stories, institutions, and philosophy.",
+    Embodied:
+      "the body still anchors emotion, pain, vulnerability, identity, and mortality.",
+    Modeling:
+      "memory, attention, prediction, and counterfactual imagination become long-range.",
+    "Social Self":
+      "identity, reputation, morality, politics, family, and culture become recursive.",
+    Symbolic:
+      "language turns experience into concepts, stories, institutions, and philosophy.",
   },
 };
 
@@ -4300,7 +5269,13 @@ function getConsciousnessLayerReading(
   strength: number,
 ) {
   const tier =
-    strength >= 0.82 ? "peak" : strength >= 0.55 ? "high" : strength >= 0.22 ? "mid" : "low";
+    strength >= 0.82
+      ? "peak"
+      : strength >= 0.55
+        ? "high"
+        : strength >= 0.22
+          ? "mid"
+          : "low";
   const reading = consciousnessLayerReadings[node.id][tier];
 
   return `For ${profile.label}, ${reading}`;
@@ -4311,7 +5286,9 @@ function SpecimenPortrait({
 }: {
   profileId: ConsciousnessProfileId;
 }) {
-  const title = consciousnessProfiles.find((profile) => profile.id === profileId)?.label ?? "";
+  const title =
+    consciousnessProfiles.find((profile) => profile.id === profileId)?.label ??
+    "";
   const profileDetails = consciousnessProfileDetails[profileId];
 
   return (
@@ -4345,29 +5322,46 @@ function SpecimenPortrait({
   );
 }
 
-function SpecimenShape({
-  profileId,
-}: {
-  profileId: ConsciousnessProfileId;
-}) {
+function SpecimenShape({ profileId }: { profileId: ConsciousnessProfileId }) {
   const stroke = "currentColor";
   const fill = "currentColor";
 
   if (profileId === "bacteria") {
     return (
       <g color="rgb(253 230 138)">
-        <ellipse cx="12" cy="12" fill="none" rx="7" ry="4.8" stroke={stroke} strokeWidth="1.8" transform="rotate(-24 12 12)" />
+        <ellipse
+          cx="12"
+          cy="12"
+          fill="none"
+          rx="7"
+          ry="4.8"
+          stroke={stroke}
+          strokeWidth="1.8"
+          transform="rotate(-24 12 12)"
+        />
         <circle cx="9" cy="11" fill={fill} r="0.8" />
         <circle cx="12" cy="13" fill={fill} r="0.7" />
         <circle cx="15" cy="10" fill={fill} r="0.8" />
-        <path d="M4 8 C1 6 1 3 4 2 M20 16 C23 18 23 21 20 22 M6 17 C3 20 1 19 1 16" fill="none" stroke={stroke} strokeLinecap="round" strokeWidth="1.4" />
+        <path
+          d="M4 8 C1 6 1 3 4 2 M20 16 C23 18 23 21 20 22 M6 17 C3 20 1 19 1 16"
+          fill="none"
+          stroke={stroke}
+          strokeLinecap="round"
+          strokeWidth="1.4"
+        />
       </g>
     );
   }
 
   if (profileId === "ant") {
     return (
-      <g color="rgb(253 230 138)" fill="none" stroke={stroke} strokeLinecap="round" strokeWidth="1.7">
+      <g
+        color="rgb(253 230 138)"
+        fill="none"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeWidth="1.7"
+      >
         <circle cx="7" cy="12" r="3" />
         <circle cx="12" cy="12" r="3.2" />
         <circle cx="17.5" cy="12" r="3.6" />
@@ -4379,10 +5373,27 @@ function SpecimenShape({
   if (profileId === "fish") {
     return (
       <g color="rgb(253 230 138)">
-        <path d="M3 12 C7 6 15 6 20 12 C15 18 7 18 3 12Z" fill="none" stroke={stroke} strokeWidth="1.8" />
-        <path d="M20 12 L23 8 L23 16Z" fill="none" stroke={stroke} strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M3 12 C7 6 15 6 20 12 C15 18 7 18 3 12Z"
+          fill="none"
+          stroke={stroke}
+          strokeWidth="1.8"
+        />
+        <path
+          d="M20 12 L23 8 L23 16Z"
+          fill="none"
+          stroke={stroke}
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
         <circle cx="8" cy="11" fill={fill} r="0.9" />
-        <path d="M12 8 C10 11 10 13 12 16" fill="none" stroke={stroke} strokeLinecap="round" strokeWidth="1.2" />
+        <path
+          d="M12 8 C10 11 10 13 12 16"
+          fill="none"
+          stroke={stroke}
+          strokeLinecap="round"
+          strokeWidth="1.2"
+        />
       </g>
     );
   }
@@ -4390,10 +5401,39 @@ function SpecimenShape({
   if (profileId === "dog") {
     return (
       <g color="rgb(253 230 138)">
-        <ellipse cx="12" cy="15.3" fill="none" rx="4.6" ry="3.8" stroke={stroke} strokeWidth="1.8" />
-        <circle cx="6.5" cy="8" fill="none" r="2.4" stroke={stroke} strokeWidth="1.8" />
-        <circle cx="11" cy="6" fill="none" r="2.5" stroke={stroke} strokeWidth="1.8" />
-        <circle cx="17.5" cy="8" fill="none" r="2.4" stroke={stroke} strokeWidth="1.8" />
+        <ellipse
+          cx="12"
+          cy="15.3"
+          fill="none"
+          rx="4.6"
+          ry="3.8"
+          stroke={stroke}
+          strokeWidth="1.8"
+        />
+        <circle
+          cx="6.5"
+          cy="8"
+          fill="none"
+          r="2.4"
+          stroke={stroke}
+          strokeWidth="1.8"
+        />
+        <circle
+          cx="11"
+          cy="6"
+          fill="none"
+          r="2.5"
+          stroke={stroke}
+          strokeWidth="1.8"
+        />
+        <circle
+          cx="17.5"
+          cy="8"
+          fill="none"
+          r="2.4"
+          stroke={stroke}
+          strokeWidth="1.8"
+        />
         <circle cx="12" cy="11" fill={fill} r="1" />
       </g>
     );
@@ -4401,7 +5441,12 @@ function SpecimenShape({
 
   if (profileId === "crow") {
     return (
-      <g color="rgb(253 230 138)" stroke={stroke} strokeLinecap="round" strokeLinejoin="round">
+      <g
+        color="rgb(253 230 138)"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path
           d="M4 15 C7 8 13 5.5 20 8 L15.5 10.5 C18 13.5 16.5 18 12 19 C9.5 20.8 7 18.5 8.2 15.8 C6.7 16.2 5.3 16 4 15Z"
           fill={fill}
@@ -4410,14 +5455,24 @@ function SpecimenShape({
         />
         <path d="M15.5 10.5 L22 9 L17.8 12.5" fill="none" strokeWidth="1.8" />
         <circle cx="13.8" cy="9.7" fill={fill} r="0.65" />
-        <path d="M10.2 18.5 L8.5 22 M12.7 18.2 L14 22" fill="none" strokeWidth="1.5" />
+        <path
+          d="M10.2 18.5 L8.5 22 M12.7 18.2 L14 22"
+          fill="none"
+          strokeWidth="1.5"
+        />
       </g>
     );
   }
 
   if (profileId === "chimp") {
     return (
-      <g color="rgb(253 230 138)" fill="none" stroke={stroke} strokeLinecap="round" strokeWidth="1.8">
+      <g
+        color="rgb(253 230 138)"
+        fill="none"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      >
         <circle cx="5" cy="12" r="2.8" />
         <circle cx="19" cy="12" r="2.8" />
         <circle cx="12" cy="12" r="7" />
@@ -4429,16 +5484,32 @@ function SpecimenShape({
 
   if (profileId === "human") {
     return (
-      <g color="rgb(253 230 138)" fill="none" stroke={stroke} strokeLinecap="round" strokeWidth="1.8">
+      <g
+        color="rgb(253 230 138)"
+        fill="none"
+        stroke={stroke}
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      >
         <circle cx="12" cy="7.8" r="4.2" />
         <path d="M5 22 C5.8 16.5 8.2 14 12 14 C15.8 14 18.2 16.5 19 22" />
-        <path d="M17 6 C20 8.5 20.5 12 18.5 15 M19.5 5 C23 8.5 23.5 13 21 17" opacity="0.7" />
+        <path
+          d="M17 6 C20 8.5 20.5 12 18.5 15 M19.5 5 C23 8.5 23.5 13 21 17"
+          opacity="0.7"
+        />
       </g>
     );
   }
 
   return (
-    <g color="rgb(253 230 138)" fill="none" stroke={stroke} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">
+    <g
+      color="rgb(253 230 138)"
+      fill="none"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
+    >
       <rect height="12" rx="2" width="12" x="6" y="6" />
       <path d="M9 9 H15 V15 H9Z" />
       <path d="M3 9 H6 M3 15 H6 M18 9 H21 M18 15 H21 M9 3 V6 M15 3 V6 M9 18 V21 M15 18 V21" />
@@ -4496,12 +5567,12 @@ function ConsciousnessRadar({
     .join(" ");
 
   return (
-	    <svg
-	      aria-label={`${profile.label} consciousness layer graph`}
-	      className="h-[340px] w-full"
-	      role="img"
-	      viewBox="0 0 100 100"
-	    >
+    <svg
+      aria-label={`${profile.label} consciousness layer graph`}
+      className="h-[340px] w-full"
+      role="img"
+      viewBox="0 0 100 100"
+    >
       {[0.25, 0.5, 0.75, 1].map((level) => (
         <polygon
           fill="none"
@@ -4512,10 +5583,10 @@ function ConsciousnessRadar({
         />
       ))}
 
-	      {axes.map(({ node }, index) => {
-	        const edge = pointFor(index, 1);
-	        const label = pointFor(index, 1.2);
-	        const selected = node.id === activeNodeId;
+      {axes.map(({ node }, index) => {
+        const edge = pointFor(index, 1);
+        const label = pointFor(index, 1.2);
+        const selected = node.id === activeNodeId;
 
         return (
           <g
@@ -4539,14 +5610,14 @@ function ConsciousnessRadar({
               y1={center}
               y2={edge.y}
             />
-	            <text
-	              fill={selected ? "rgb(253 230 138)" : "rgb(168 162 158)"}
-	              fontSize="3.65"
-	              fontWeight={selected ? 700 : 500}
-	              textAnchor="middle"
-	              x={label.x}
-	              y={label.y}
-	            >
+            <text
+              fill={selected ? "rgb(253 230 138)" : "rgb(168 162 158)"}
+              fontSize="3.65"
+              fontWeight={selected ? 700 : 500}
+              textAnchor="middle"
+              x={label.x}
+              y={label.y}
+            >
               {node.label}
             </text>
           </g>
@@ -4604,6 +5675,18 @@ function CoreLine({
   );
 }
 
+function FrameworkSummary({ children }: { children: string }) {
+  return (
+    <aside className="mt-8 rounded-lg border border-amber-200/20 bg-amber-200/[0.045] px-5 py-5 shadow-[0_18px_55px_rgba(0,0,0,0.16)] sm:px-6">
+      <div className="mb-3 h-px w-12 bg-amber-200/55" />
+      <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/75">
+        Framework Summary
+      </h4>
+      <p className="mt-3 text-base leading-8 text-stone-200">{children}</p>
+    </aside>
+  );
+}
+
 function KeyTension({
   children,
   unframed = false,
@@ -4654,7 +5737,9 @@ function ReligionComparisonTable() {
           <tbody>
             {overviewRows.map((row) => (
               <tr className="border-t border-white/10" key={row.religion}>
-                <td className="px-4 py-4 font-medium text-stone-100">{row.religion}</td>
+                <td className="px-4 py-4 font-medium text-stone-100">
+                  {row.religion}
+                </td>
                 <td className="px-4 py-4 text-stone-300">{row.text}</td>
                 <td className="px-4 py-4 text-stone-300">{row.authority}</td>
                 <td className="px-4 py-4 text-stone-300">{row.branches}</td>
@@ -4772,7 +5857,11 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
       {paragraphs.map((block, index) => {
         const originalIndex = offset + index;
 
-        if (groupedParagraphRanges.some(([start, end]) => originalIndex > start && originalIndex < end)) {
+        if (
+          groupedParagraphRanges.some(
+            ([start, end]) => originalIndex > start && originalIndex < end,
+          )
+        ) {
           return null;
         }
 
@@ -4799,9 +5888,7 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
         <h3 className="mt-4 text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
           {study.title}
         </h3>
-        <p className="mt-4 text-base leading-8 text-stone-300">
-          {study.intro}
-        </p>
+        <p className="mt-4 text-base leading-8 text-stone-300">{study.intro}</p>
 
         <div className="mt-5">
           {renderStudyParagraphs(study.body.slice(0, outcomeBreakIndex))}
@@ -4814,7 +5901,10 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
             </h4>
             <ul className="mt-4 space-y-3">
               {study.favorable.map((item) => (
-                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                <li
+                  className="flex gap-3 text-sm leading-6 text-stone-300"
+                  key={item}
+                >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200" />
                   <span>{item}</span>
                 </li>
@@ -4827,7 +5917,10 @@ function EvidentialCaseStudyPanel({ study }: { study: EvidentialCaseStudy }) {
             </h4>
             <ul className="mt-4 space-y-3">
               {study.unfavorable.map((item) => (
-                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                <li
+                  className="flex gap-3 text-sm leading-6 text-stone-300"
+                  key={item}
+                >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-400" />
                   <span>{item}</span>
                 </li>
@@ -4867,10 +5960,7 @@ function TopicSection({ topic }: { topic: NavTopic }) {
 
   return (
     <section
-      className={[
-        "scroll-mt-16",
-        isReligionTopic ? "pt-10" : "",
-      ].join(" ")}
+      className={["scroll-mt-16", isReligionTopic ? "pt-10" : ""].join(" ")}
       id={topic.id}
     >
       <header>
@@ -4904,7 +5994,9 @@ function TopicSection({ topic }: { topic: NavTopic }) {
             <h2 className="text-3xl font-semibold text-stone-50 sm:text-4xl">
               {topic.title}
             </h2>
-            <p className="mt-5 text-lg leading-9 text-stone-300">{topic.intro}</p>
+            <p className="mt-5 text-lg leading-9 text-stone-300">
+              {topic.intro}
+            </p>
           </>
         )}
       </header>
@@ -4948,7 +6040,10 @@ function TopicSection({ topic }: { topic: NavTopic }) {
                 </p>
                 <ul className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                   {layer.examples.map((example) => (
-                    <li className="flex gap-3 text-sm leading-6 text-stone-300" key={example}>
+                    <li
+                      className="flex gap-3 text-sm leading-6 text-stone-300"
+                      key={example}
+                    >
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
                       <span>{example}</span>
                     </li>
@@ -4995,12 +6090,12 @@ function TopicSection({ topic }: { topic: NavTopic }) {
             Core Argument Map
           </h3>
           <p className="mt-4 text-base leading-8 text-stone-300">
-            These arguments appear across multiple religions. While they differ in
-            wording or context, they rely on repeatable structures.
+            These arguments appear across multiple religions. While they differ
+            in wording or context, they rely on repeatable structures.
           </p>
           <p className="mt-4 text-base leading-8 text-stone-300">
-            The map combines general cross-religion arguments and system-specific
-            arguments into one layered reference.
+            The map combines general cross-religion arguments and
+            system-specific arguments into one layered reference.
           </p>
 
           <div className="mt-8 grid gap-3">
@@ -5027,33 +6122,42 @@ function TopicSection({ topic }: { topic: NavTopic }) {
                     {group.intro}
                   </p>
                   <div className="mt-5 divide-y divide-white/10 border-y border-white/10">
-                  {group.patterns.map((pattern, index) => {
-                    const patternNumber =
-                      topic.argumentPatternGroups
-                        ?.slice(0, groupIndex)
-                        .reduce((total, item) => total + item.patterns.length, 0) ?? 0;
+                    {group.patterns.map((pattern, index) => {
+                      const patternNumber =
+                        topic.argumentPatternGroups
+                          ?.slice(0, groupIndex)
+                          .reduce(
+                            (total, item) => total + item.patterns.length,
+                            0,
+                          ) ?? 0;
 
-                    return (
-                      <div className="py-5" key={pattern.title}>
-                        <h5 className="text-base font-semibold text-stone-100">
-                          {patternNumber + index + 1}. {pattern.title}
-                        </h5>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-stone-300">
-                          <p>
-                            <span className="font-medium text-stone-100">Claim:</span>{" "}
-                            {pattern.claim}
-                          </p>
-                          <p>
-                            <span className="font-medium text-stone-100">Issue:</span>{" "}
-                            {pattern.issue}
-                          </p>
-                          <p>
-                            <span className="font-medium text-stone-100">Takeaway:</span>{" "}
-                            {pattern.takeaway}
-                          </p>
+                      return (
+                        <div className="py-5" key={pattern.title}>
+                          <h5 className="text-base font-semibold text-stone-100">
+                            {patternNumber + index + 1}. {pattern.title}
+                          </h5>
+                          <div className="mt-4 space-y-3 text-sm leading-7 text-stone-300">
+                            <p>
+                              <span className="font-medium text-stone-100">
+                                Claim:
+                              </span>{" "}
+                              {pattern.claim}
+                            </p>
+                            <p>
+                              <span className="font-medium text-stone-100">
+                                Issue:
+                              </span>{" "}
+                              {pattern.issue}
+                            </p>
+                            <p>
+                              <span className="font-medium text-stone-100">
+                                Takeaway:
+                              </span>{" "}
+                              {pattern.takeaway}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    );
+                      );
                     })}
                   </div>
                 </div>
@@ -5062,10 +6166,12 @@ function TopicSection({ topic }: { topic: NavTopic }) {
           </div>
 
           <div className="mt-10 border-l-2 border-amber-200/25 py-1 pl-5">
-            <h4 className="text-xl font-semibold text-stone-100">Pattern Summary</h4>
+            <h4 className="text-xl font-semibold text-stone-100">
+              Pattern Summary
+            </h4>
             <p className="mt-4 text-base leading-8 text-stone-300">
-              Across different religions, these arguments tend to follow the same
-              structure:
+              Across different religions, these arguments tend to follow the
+              same structure:
             </p>
             <ul className="mt-4 space-y-2">
               {[
@@ -5073,18 +6179,23 @@ function TopicSection({ topic }: { topic: NavTopic }) {
                 "Narrow into system-specific validation (Layer 2)",
                 "Reinforce internally through experience and interpretation (Layer 3)",
               ].map((item) => (
-                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                <li
+                  className="flex gap-3 text-sm leading-6 text-stone-300"
+                  key={item}
+                >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
             <p className="mt-5 text-base leading-8 text-stone-300">
-              This does not determine whether a belief is true or false, but it shows
-              that many arguments function similarly across different systems.
+              This does not determine whether a belief is true or false, but it
+              shows that many arguments function similarly across different
+              systems.
             </p>
             <p className="mt-4 text-base leading-8 text-stone-300">
-              This separates the argument structure from the specific religion using it.
+              This separates the argument structure from the specific religion
+              using it.
             </p>
           </div>
         </section>
@@ -5093,7 +6204,10 @@ function TopicSection({ topic }: { topic: NavTopic }) {
       {topic.children?.length ? (
         <div className="mt-12 space-y-5">
           <div className="pt-10">
-            <div className="mb-4 h-px w-14 bg-amber-200/35" aria-hidden="true" />
+            <div
+              className="mb-4 h-px w-14 bg-amber-200/35"
+              aria-hidden="true"
+            />
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
               Applications
             </p>
@@ -5101,8 +6215,9 @@ function TopicSection({ topic }: { topic: NavTopic }) {
               Religion-Specific Applications
             </h3>
             <p className="mt-4 max-w-2xl text-base leading-8 text-stone-300">
-              These cards show how the shared argument map appears inside specific
-              religious systems. The full deconstructions remain inside each card.
+              These cards show how the shared argument map appears inside
+              specific religious systems. The full deconstructions remain inside
+              each card.
             </p>
           </div>
           {topic.children.map((section) =>
@@ -5129,10 +6244,7 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
   );
 
   return (
-    <section
-      className="scroll-mt-16 pt-7"
-      id={section.id}
-    >
+    <section className="scroll-mt-16 pt-7" id={section.id}>
       <details className="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] transition hover:border-white/20 hover:bg-white/[0.04]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-5 sm:px-6">
           <span className="min-w-0">
@@ -5140,7 +6252,10 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
               {section.eyebrow}
             </span>
             <span className="mt-3 flex items-center gap-3">
-              <span className="text-2xl leading-none text-amber-100/80" aria-hidden="true">
+              <span
+                className="text-2xl leading-none text-amber-100/80"
+                aria-hidden="true"
+              >
                 {section.visual?.symbol}
               </span>
               <span className="text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
@@ -5174,7 +6289,10 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
               </p>
               <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                 {section.visual.families.map((family) => (
-                  <p className="flex gap-3 text-sm leading-6 text-stone-300" key={family}>
+                  <p
+                    className="flex gap-3 text-sm leading-6 text-stone-300"
+                    key={family}
+                  >
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
                     <span>{family}</span>
                   </p>
@@ -5207,14 +6325,14 @@ function ReligionPanel({ section }: { section: ReadingSection }) {
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
               Argument deconstructions
             </p>
-          {section.arguments.map((argument) => (
-            <Collapsible
-              argument={argument}
-              key={argument.title}
-              responseLabel="Deconstruction"
-              tagClassName={accentClasses.argumentTag}
-            />
-          ))}
+            {section.arguments.map((argument) => (
+              <Collapsible
+                argument={argument}
+                key={argument.title}
+                responseLabel="Deconstruction"
+                tagClassName={accentClasses.argumentTag}
+              />
+            ))}
           </div>
         </div>
       </details>
@@ -5278,11 +6396,17 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
   const isPhilosophySection = section.id.startsWith("philosophy-");
   const isEconomicsSection = section.id.startsWith("economics-");
   const isPoliticsSection = section.id.startsWith("politics-");
-  const isReligionFrameworkSection = religionFrameworkSectionIds.has(section.id);
+  const isPsychologySection = section.id.startsWith("psychology-");
+  const isTechnologySection = section.id.startsWith("technology-");
+  const isReligionFrameworkSection = religionFrameworkSectionIds.has(
+    section.id,
+  );
   const usesReadingStyle =
     isPhilosophySection ||
     isEconomicsSection ||
     isPoliticsSection ||
+    isPsychologySection ||
+    isTechnologySection ||
     isReligionFrameworkSection;
   const isEconomicsSectionTwo = section.id.startsWith("economics-section-2-");
   const hideRepeatedEconomicsIntro =
@@ -5290,7 +6414,7 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
   const sectionPartHeader = usesReadingStyle
     ? getSectionPartHeader(section.title)
     : null;
-  const visibleNotes = (isEssaySection ? [] : section.notes ?? []).filter(
+  const visibleNotes = (isEssaySection ? [] : (section.notes ?? [])).filter(
     (note) =>
       note.title !== "Current Status" &&
       !hiddenNoteTitlesBySection[section.id]?.has(note.title),
@@ -5300,11 +6424,7 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
     <section
       className={[
         "scroll-mt-16",
-        isEconomicsSectionTwo
-          ? "pt-7"
-          : usesReadingStyle
-            ? "pt-10"
-            : "pt-9",
+        isEconomicsSectionTwo ? "pt-7" : usesReadingStyle ? "pt-10" : "pt-9",
         isReligionFrameworkSection ? "" : "border-t border-white/10",
       ].join(" ")}
       id={section.id}
@@ -5354,9 +6474,7 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
             <p
               className={[
                 "mt-5 text-stone-300",
-                usesReadingStyle
-                  ? "text-base leading-8"
-                  : "text-lg leading-9",
+                usesReadingStyle ? "text-base leading-8" : "text-lg leading-9",
               ].join(" ")}
             >
               {section.intro}
@@ -5364,6 +6482,10 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
           ) : null}
         </header>
       )}
+
+      {section.frameworkSummary ? (
+        <FrameworkSummary>{section.frameworkSummary}</FrameworkSummary>
+      ) : null}
 
       {coreLineBySection[section.id] ? (
         <CoreLine unframed>{coreLineBySection[section.id]}</CoreLine>
@@ -5407,7 +6529,9 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
       {visibleNotes.length ? (
         <div
           className={
-            isPhilosophySection || isPoliticsSection || isReligionFrameworkSection
+            isPhilosophySection ||
+            isPoliticsSection ||
+            isReligionFrameworkSection
               ? "mt-10 divide-y divide-white/10 border-y border-white/10"
               : "mt-5 space-y-4"
           }
@@ -5440,7 +6564,9 @@ function getSectionPartHeader(title: string) {
     };
   }
 
-  const partMatch = title.match(/^(?:Section\s+\d+\s*\/\s*)?Part\s+([\d.]+)\s+[-—]\s+(.+)$/);
+  const partMatch = title.match(
+    /^(?:Section\s+\d+\s*\/\s*)?Part\s+([\d.]+)\s+[-—]\s+(.+)$/,
+  );
 
   if (partMatch) {
     return {
@@ -5481,14 +6607,18 @@ function renderContentBlocks(section: ReadingSection) {
 
     if (block.includes("Defining Compounding Escape Velocity")) {
       rendered.push(
-        <CompoundingEscapeVelocitySection key={`${section.id}-escape-velocity`} />,
+        <CompoundingEscapeVelocitySection
+          key={`${section.id}-escape-velocity`}
+        />,
       );
       index += 6;
       continue;
     }
 
     if (block.includes("[ THE CAPITAL-TO-LABOR GRADIENT ]")) {
-      rendered.push(<CapitalLaborGradientDiagram key={`${section.id}-gradient`} />);
+      rendered.push(
+        <CapitalLaborGradientDiagram key={`${section.id}-gradient`} />,
+      );
       index += 4;
       continue;
     }
@@ -5506,37 +6636,53 @@ function renderContentBlocks(section: ReadingSection) {
     }
 
     if (block.includes("[ THE MONOPOLY FORTRESS ]")) {
-      rendered.push(<MonopolyFortressDiagram key={`${section.id}-monopoly-fortress`} />);
+      rendered.push(
+        <MonopolyFortressDiagram key={`${section.id}-monopoly-fortress`} />,
+      );
       index += 1;
       continue;
     }
 
     if (block.includes("[ THE REGULATORY INTERFACE ]")) {
-      rendered.push(<RegulatoryInterfaceDiagram key={`${section.id}-regulatory-interface`} />);
+      rendered.push(
+        <RegulatoryInterfaceDiagram
+          key={`${section.id}-regulatory-interface`}
+        />,
+      );
       index += 1;
       continue;
     }
 
     if (block.includes("[ THE TWO ENGINES OF THE MACROECONOMY ]")) {
-      rendered.push(<MacroeconomicEnginesDiagram key={`${section.id}-two-engines`} />);
+      rendered.push(
+        <MacroeconomicEnginesDiagram key={`${section.id}-two-engines`} />,
+      );
       index += 1;
       continue;
     }
 
     if (block.includes("[ THE MEASUREMENT DIVERGENCE ]")) {
-      rendered.push(<MeasurementDivergenceDiagram key={`${section.id}-measurement-divergence`} />);
+      rendered.push(
+        <MeasurementDivergenceDiagram
+          key={`${section.id}-measurement-divergence`}
+        />,
+      );
       index += 1;
       continue;
     }
 
     if (block.includes("[ THE INTERCONNECTED TRADE LOOP ]")) {
-      rendered.push(<InterconnectedTradeLoopDiagram key={`${section.id}-trade-loop`} />);
+      rendered.push(
+        <InterconnectedTradeLoopDiagram key={`${section.id}-trade-loop`} />,
+      );
       index += 1;
       continue;
     }
 
     if (block.includes("[ THE STRUCTURAL EQUILIBRIUM CODES ]")) {
-      rendered.push(<StructuralEquilibriumCodesDiagram key={`${section.id}-equilibrium`} />);
+      rendered.push(
+        <StructuralEquilibriumCodesDiagram key={`${section.id}-equilibrium`} />,
+      );
       index += 4;
       continue;
     }
@@ -5791,7 +6937,10 @@ function IsraelPalestineArgumentCards({
             ) : null}
 
             {argument.analysisAfterQuestions?.map((paragraph) => (
-              <p className="mt-4 text-base leading-8 text-stone-300" key={paragraph}>
+              <p
+                className="mt-4 text-base leading-8 text-stone-300"
+                key={paragraph}
+              >
                 {paragraph}
               </p>
             ))}
@@ -5940,9 +7089,9 @@ function StructuralStressTestsSection() {
     <div className="space-y-5">
       <div className="max-w-3xl text-base leading-8 text-stone-300">
         <p>
-          No economic policy exists in a vacuum. These tests evaluate the framework
-          by the secondary and tertiary responses it may generate after major actors
-          begin adapting strategically.
+          No economic policy exists in a vacuum. These tests evaluate the
+          framework by the secondary and tertiary responses it may generate
+          after major actors begin adapting strategically.
         </p>
       </div>
 
@@ -5979,12 +7128,14 @@ function StructuralStressTestsSection() {
       </div>
 
       <section className="border-l-2 border-amber-200/30 py-1 pl-5">
-        <h4 className="text-base font-semibold text-stone-100">What the tests establish</h4>
+        <h4 className="text-base font-semibold text-stone-100">
+          What the tests establish
+        </h4>
         <p className="mt-2 max-w-3xl text-base leading-7 text-stone-300">
-          The framework should be judged by whether its remaining vulnerabilities
-          stay manageable after adaptation begins, not by whether every loophole
-          disappears. Economic design is the management of trade-offs, not the
-          elimination of uncertainty.
+          The framework should be judged by whether its remaining
+          vulnerabilities stay manageable after adaptation begins, not by
+          whether every loophole disappears. Economic design is the management
+          of trade-offs, not the elimination of uncertainty.
         </p>
       </section>
     </div>
@@ -6139,7 +7290,8 @@ function SuccessMetricsSection() {
     },
     {
       title: "Metric 6 — Innovation and Productivity",
-      description: "Economic balance must not come at the expense of innovation.",
+      description:
+        "Economic balance must not come at the expense of innovation.",
       questions: [
         "Is research and development increasing?",
         "Are productivity gains continuing?",
@@ -6158,8 +7310,8 @@ function SuccessMetricsSection() {
           stability, opportunity, or mobility.
         </p>
         <p>
-          The Equilibrium Framework therefore evaluates success through a broader
-          collection of indicators.
+          The Equilibrium Framework therefore evaluates success through a
+          broader collection of indicators.
         </p>
       </div>
 
@@ -6199,8 +7351,8 @@ function SuccessMetricsSection() {
 
       <p className="max-w-3xl border-l-2 border-amber-200/30 py-1 pl-5 text-base leading-7 text-stone-200">
         Success means maintaining a productive economy where ownership,
-        opportunity, and stability remain broadly accessible while innovation and
-        wealth creation continue.
+        opportunity, and stability remain broadly accessible while innovation
+        and wealth creation continue.
       </p>
     </div>
   );
@@ -6208,12 +7360,30 @@ function SuccessMetricsSection() {
 
 function KnownLimitationsSection() {
   const limitations = [
-    ["Adaptation Never Stops", "New loopholes, avoidance strategies, and unintended incentives will continue to emerge."],
-    ["Enforcement Capacity", "The framework depends on competent administration; weak institutions may apply it unevenly."],
-    ["Political Resistance", "Existing beneficiaries will oppose reforms, limiting what can be implemented in practice."],
-    ["International Constraints", "National policy cannot control global markets, geopolitical events, foreign governments, or international capital flows."],
-    ["Imperfect Measurement", "No statistical system captures economic reality completely; blind spots will remain."],
-    ["Innovation Trade-Offs", "Reducing concentration can sometimes weaken investment incentives, risk-taking, or entrepreneurial activity."],
+    [
+      "Adaptation Never Stops",
+      "New loopholes, avoidance strategies, and unintended incentives will continue to emerge.",
+    ],
+    [
+      "Enforcement Capacity",
+      "The framework depends on competent administration; weak institutions may apply it unevenly.",
+    ],
+    [
+      "Political Resistance",
+      "Existing beneficiaries will oppose reforms, limiting what can be implemented in practice.",
+    ],
+    [
+      "International Constraints",
+      "National policy cannot control global markets, geopolitical events, foreign governments, or international capital flows.",
+    ],
+    [
+      "Imperfect Measurement",
+      "No statistical system captures economic reality completely; blind spots will remain.",
+    ],
+    [
+      "Innovation Trade-Offs",
+      "Reducing concentration can sometimes weaken investment incentives, risk-taking, or entrepreneurial activity.",
+    ],
   ];
 
   return (
@@ -6234,7 +7404,9 @@ function KnownLimitationsSection() {
               {index + 1}
             </span>
             <div>
-              <h4 className="text-base font-semibold leading-6 text-stone-100">{title}</h4>
+              <h4 className="text-base font-semibold leading-6 text-stone-100">
+                {title}
+              </h4>
               <p className="mt-1.5 text-sm leading-6 text-stone-300">{body}</p>
             </div>
           </article>
@@ -6242,9 +7414,9 @@ function KnownLimitationsSection() {
       </div>
 
       <p className="max-w-3xl border-t border-white/10 pt-5 text-base leading-7 text-stone-300">
-        The framework does not eliminate scarcity, competition, conflict, or power.
-        It attempts to keep them within boundaries compatible with stability,
-        opportunity, and productive growth.
+        The framework does not eliminate scarcity, competition, conflict, or
+        power. It attempts to keep them within boundaries compatible with
+        stability, opportunity, and productive growth.
       </p>
     </div>
   );
@@ -6275,10 +7447,10 @@ function ClosingPositionSection() {
           self-reinforcing concentrations of power.
         </p>
         <p>
-          It accepts that wealth creation is necessary, innovation requires reward,
-          and risk-taking deserves compensation. It also argues that ownership must
-          remain attainable, competition viable, and ordinary citizens capable of
-          reaching stability and upward mobility.
+          It accepts that wealth creation is necessary, innovation requires
+          reward, and risk-taking deserves compensation. It also argues that
+          ownership must remain attainable, competition viable, and ordinary
+          citizens capable of reaching stability and upward mobility.
         </p>
       </div>
 
@@ -6288,9 +7460,14 @@ function ClosingPositionSection() {
         </p>
         <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
           {tensions.map((tension) => (
-            <div className="flex items-center gap-3 border-b border-white/10 pb-3" key={tension}>
+            <div
+              className="flex items-center gap-3 border-b border-white/10 pb-3"
+              key={tension}
+            >
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
-              <span className="text-sm font-medium text-stone-200">{tension}</span>
+              <span className="text-sm font-medium text-stone-200">
+                {tension}
+              </span>
             </div>
           ))}
         </div>
@@ -6298,7 +7475,8 @@ function ClosingPositionSection() {
 
       <p className="max-w-3xl text-lg leading-8 text-stone-100">
         The goal is not to eliminate these tensions. It is to maintain a dynamic
-        equilibrium where none becomes dominant enough to undermine the system itself.
+        equilibrium where none becomes dominant enough to undermine the system
+        itself.
       </p>
     </div>
   );
@@ -6321,13 +7499,13 @@ function ContentBlock({
   const isStandardSubheading =
     fullyStrong && plainText.length <= 80 && !isPoliticsSubheading;
   const shouldUseNumberedPartDivider =
-    sectionId === "politics-analysis-israel-palestine";
+    sectionId.startsWith("politics-analysis-");
   const numberedPartMatch =
     shouldUseNumberedPartDivider &&
     block.includes('data-case-part="true"') &&
     fullyStrong
-    ? plainText.match(/^(\d+)\.\s+(.+)$/)
-    : null;
+      ? plainText.match(/^(\d+)\.\s+(.+)$/)
+      : null;
 
   if (block.includes("$B_n = B_0 \\times 2^n$")) {
     return (
@@ -6436,12 +7614,7 @@ function ContentBlock({
     const [, partNumber, partTitle] = numberedPartMatch;
 
     return (
-      <div
-        className={[
-          "pt-8",
-          partNumber === "1" ? "" : "mt-12",
-        ].join(" ")}
-      >
+      <div className={["pt-8", partNumber === "1" ? "" : "mt-12"].join(" ")}>
         <div
           className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4"
           aria-hidden="true"
@@ -6497,7 +7670,10 @@ function ContentBlock({
         </h4>
         <ul className="mt-4 space-y-2">
           {topics.map((topic) => (
-            <li className="flex gap-3 text-base leading-7 text-stone-300" key={topic}>
+            <li
+              className="flex gap-3 text-base leading-7 text-stone-300"
+              key={topic}
+            >
               <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
               <span>{topic}</span>
             </li>
@@ -6527,7 +7703,10 @@ function ContentBlock({
       return (
         <ul className="grid gap-x-8 gap-y-2 pl-0 sm:grid-cols-2 lg:grid-cols-3">
           {compactItems.map((item) => (
-            <li className="flex gap-3 text-base leading-7 text-stone-300" key={item}>
+            <li
+              className="flex gap-3 text-base leading-7 text-stone-300"
+              key={item}
+            >
               <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
               <span>{item}</span>
             </li>
@@ -6646,7 +7825,10 @@ function MonopolyFortressDiagram() {
 
       <ol className="space-y-0">
         {walls.map((wall, index) => (
-          <li className="relative grid gap-4 border-l-2 border-stone-700/80 pb-6 pl-7 last:border-l-0 last:pb-0 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-6" key={wall.title}>
+          <li
+            className="relative grid gap-4 border-l-2 border-stone-700/80 pb-6 pl-7 last:border-l-0 last:pb-0 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-6"
+            key={wall.title}
+          >
             <span
               aria-hidden="true"
               className="absolute -left-[9px] top-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-200/50 bg-stone-950"
@@ -6654,10 +7836,14 @@ function MonopolyFortressDiagram() {
               <span className="h-1.5 w-1.5 rounded-full bg-amber-200/80" />
             </span>
             <div className="flex items-start gap-2 font-mono text-sm uppercase tracking-[0.08em] text-stone-100">
-              <span className="w-5 shrink-0 text-amber-200/75">{index + 1}.</span>
+              <span className="w-5 shrink-0 text-amber-200/75">
+                {index + 1}.
+              </span>
               <span className="min-w-0">{wall.title}</span>
             </div>
-            <p className="text-base leading-7 text-stone-300">{wall.description}</p>
+            <p className="text-base leading-7 text-stone-300">
+              {wall.description}
+            </p>
           </li>
         ))}
       </ol>
@@ -6667,9 +7853,9 @@ function MonopolyFortressDiagram() {
 
 function formatInlineMath(block: string) {
   return block
-    .replaceAll("$B_n$", "<span class=\"font-serif italic\">B<sub>n</sub></span>")
-    .replaceAll("$B_0$", "<span class=\"font-serif italic\">B<sub>0</sub></span>")
-    .replaceAll("$n$", "<span class=\"font-serif italic\">n</span>");
+    .replaceAll("$B_n$", '<span class="font-serif italic">B<sub>n</sub></span>')
+    .replaceAll("$B_0$", '<span class="font-serif italic">B<sub>0</sub></span>')
+    .replaceAll("$n$", '<span class="font-serif italic">n</span>');
 }
 
 function EconomicsDiagramFrame({
@@ -6766,7 +7952,10 @@ function RegulatoryInterfaceDiagram() {
           </DiagramNode>
         </div>
 
-        <div aria-hidden="true" className="relative mx-auto hidden h-14 md:block">
+        <div
+          aria-hidden="true"
+          className="relative mx-auto hidden h-14 md:block"
+        >
           <span className="absolute left-1/2 top-0 h-7 w-px -translate-x-1/2 bg-amber-200/45" />
           <span className="absolute left-[12.5%] right-[12.5%] top-7 h-px bg-amber-200/45" />
           {[12.5, 37.5, 62.5, 87.5].map((position) => (
@@ -6875,9 +8064,7 @@ function MacroeconomicEnginesDiagram() {
                   <dd
                     className={[
                       "text-sm font-medium leading-6",
-                      label === "Focus"
-                        ? "text-amber-100"
-                        : "text-stone-300",
+                      label === "Focus" ? "text-amber-100" : "text-stone-300",
                     ].join(" ")}
                   >
                     {value}
@@ -6943,7 +8130,10 @@ function MeasurementDivergenceDiagram() {
               </header>
               <ul className="divide-y divide-white/10">
                 {column.items.map((item) => (
-                  <li className="flex gap-3 px-5 py-4 text-sm leading-6 text-stone-300" key={item}>
+                  <li
+                    className="flex gap-3 px-5 py-4 text-sm leading-6 text-stone-300"
+                    key={item}
+                  >
                     <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/65" />
                     <span>{item}</span>
                   </li>
@@ -6969,7 +8159,8 @@ function InterconnectedTradeLoopDiagram() {
       title: "Tariff Action",
     },
     {
-      detail: "Domestic consumers and local builders face immediate cost increases.",
+      detail:
+        "Domestic consumers and local builders face immediate cost increases.",
       title: "Higher-Cost Impulse",
     },
     {
@@ -6977,7 +8168,8 @@ function InterconnectedTradeLoopDiagram() {
       title: "Foreign Retaliation",
     },
     {
-      detail: "Mutual pressure pushes both sides toward a rebalanced agreement.",
+      detail:
+        "Mutual pressure pushes both sides toward a rebalanced agreement.",
       title: "Strategic Truce",
     },
   ];
@@ -6999,7 +8191,9 @@ function InterconnectedTradeLoopDiagram() {
             <h5 className="mt-2 text-base font-semibold leading-6 text-stone-50">
               {stage.title}
             </h5>
-            <p className="mt-3 text-sm leading-6 text-stone-300">{stage.detail}</p>
+            <p className="mt-3 text-sm leading-6 text-stone-300">
+              {stage.detail}
+            </p>
             {index < stages.length - 1 ? (
               <span
                 aria-hidden="true"
@@ -7014,7 +8208,8 @@ function InterconnectedTradeLoopDiagram() {
       <div className="mt-5 flex items-center justify-center gap-3 border-t border-white/10 pt-5 text-center">
         <span className="font-mono text-lg text-amber-200/60">↺</span>
         <p className="text-sm leading-6 text-stone-400">
-          The truce resets the bargaining position; future disputes can restart the cycle.
+          The truce resets the bargaining position; future disputes can restart
+          the cycle.
         </p>
       </div>
     </EconomicsDiagramFrame>
@@ -7110,7 +8305,9 @@ function StructuralTugOfWarDiagram() {
     >
       <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
         <DiagramNode title="The Working Population">
-          <p className="font-semibold text-amber-100/90">Pulls via: Burst Forces</p>
+          <p className="font-semibold text-amber-100/90">
+            Pulls via: Burst Forces
+          </p>
           <ul className="mt-3 space-y-2 text-left">
             <li>Democratic voting</li>
             <li>Labor organization / strikes</li>
@@ -7121,7 +8318,9 @@ function StructuralTugOfWarDiagram() {
           ↔
         </div>
         <DiagramNode title="Institutional Capital Owners">
-          <p className="font-semibold text-amber-100/90">Pulls via: Automated Forces</p>
+          <p className="font-semibold text-amber-100/90">
+            Pulls via: Automated Forces
+          </p>
           <ul className="mt-3 space-y-2 text-left">
             <li>Continuous asset compounding</li>
             <li>High-yield institutional lobbying</li>
@@ -7225,7 +8424,10 @@ function CompoundingEscapeVelocitySection() {
           </thead>
           <tbody>
             {phases.map((phase) => (
-              <tr className="border-b border-white/10 last:border-b-0" key={phase.phase}>
+              <tr
+                className="border-b border-white/10 last:border-b-0"
+                key={phase.phase}
+              >
                 <td className="px-5 py-5 align-top text-base font-semibold leading-7 text-stone-100">
                   {phase.phase}
                 </td>
@@ -7257,7 +8459,9 @@ function CompoundingEscapeVelocitySection() {
           <div className="flex min-w-max items-center gap-3 py-3">
             {loopSteps.map((step, index) => (
               <Fragment key={step}>
-                <span className="font-serif text-lg text-stone-100">{step}</span>
+                <span className="font-serif text-lg text-stone-100">
+                  {step}
+                </span>
                 {index < loopSteps.length - 1 ? (
                   <span className="text-xl text-amber-200/70">→</span>
                 ) : null}
@@ -7305,6 +8509,12 @@ type EssaySegment =
       type: "paragraph";
     }
   | {
+      type: "recursiveAgency";
+    }
+  | {
+      type: "stoicLeverage";
+    }
+  | {
       text: string;
       type: "bubble";
     }
@@ -7319,6 +8529,141 @@ type EssaySectionMarker = {
   title: string;
 };
 
+function RecursiveAgencyDiagram() {
+  const stages = [
+    "Past conditions",
+    "Present self",
+    "Choice",
+    "Consequence",
+    "Changed self",
+    "Future choice",
+  ];
+
+  return (
+    <figure className="my-8 overflow-hidden rounded-lg border border-amber-200/15 bg-amber-200/[0.035] px-4 py-5 shadow-[0_20px_70px_rgba(0,0,0,0.2)] sm:px-5">
+      <figcaption className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200/65">
+        Recursive agency
+      </figcaption>
+      <div className="mt-4 overflow-x-auto pb-1">
+        <div className="min-w-[920px]">
+          <div className="flex items-center">
+            {stages.map((stage, index) => (
+              <Fragment key={stage}>
+                <div className="grid min-h-16 flex-1 place-items-center rounded-md border border-white/10 bg-black/20 px-3 text-center text-sm font-medium leading-5 text-stone-100">
+                  {stage}
+                </div>
+                {index < stages.length - 1 ? (
+                  <span
+                    className="w-8 shrink-0 text-center text-lg text-amber-200/55"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                ) : null}
+              </Fragment>
+            ))}
+          </div>
+          <div className="relative h-16" aria-hidden="true">
+            <svg
+              className="absolute inset-0 h-full w-full"
+              preserveAspectRatio="none"
+              viewBox="0 0 1000 64"
+            >
+              <defs>
+                <marker
+                  id="recursive-agency-arrow"
+                  markerHeight="7"
+                  markerWidth="7"
+                  orient="auto"
+                  refX="5"
+                  refY="3.5"
+                >
+                  <path d="M0,0 L7,3.5 L0,7 Z" fill="rgb(253 230 138 / 0.55)" />
+                </marker>
+              </defs>
+              <path
+                d="M 930 2 V 25 Q 930 45 910 45 H 90 Q 70 45 70 25 V 2"
+                fill="none"
+                markerEnd="url(#recursive-agency-arrow)"
+                stroke="rgb(253 230 138 / 0.42)"
+                strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <span className="absolute left-1/2 top-[31px] -translate-x-1/2 bg-[#17160f] px-3 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-200/60">
+              Continues recursively
+            </span>
+          </div>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+function StoicLeverageTable() {
+  const rows = [
+    {
+      examples:
+        "directing attention, delaying reaction, reasoning, inhibiting impulses, choosing a response",
+      leverage: "Within the moment",
+      outcome: "the immediate trajectory of the situation",
+    },
+    {
+      examples:
+        "leaving, gathering information, asking for help, changing the environment, creating distance",
+      leverage: "Around the moment",
+      outcome: "the conditions under which the situation develops",
+    },
+    {
+      examples:
+        "training habits, building skills, changing expectations, selecting environments, practicing regulation, modifying recurring patterns",
+      leverage: "Across time",
+      outcome:
+        "the future decision-maker and how strongly later events affect them",
+    },
+  ];
+
+  return (
+    <figure className="my-8 overflow-hidden rounded-lg border border-amber-200/15 bg-amber-200/[0.025] shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[780px] table-fixed border-collapse text-left">
+          <thead>
+            <tr className="border-b border-amber-200/15 bg-amber-200/[0.035]">
+              <th className="w-[22%] px-5 py-4 font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
+                Where leverage occurs
+              </th>
+              <th className="w-[45%] px-5 py-4 font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
+                Examples
+              </th>
+              <th className="px-5 py-4 font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
+                What it changes
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                className="border-b border-white/[0.08] last:border-b-0"
+                key={row.leverage}
+              >
+                <td className="px-5 py-5 align-top text-sm font-semibold leading-6 text-stone-100">
+                  {row.leverage}
+                </td>
+                <td className="px-5 py-5 align-top text-sm leading-6 text-stone-300">
+                  {row.examples}
+                </td>
+                <td className="px-5 py-5 align-top text-sm leading-6 text-stone-300">
+                  {row.outcome}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  );
+}
+
 function EssayBody({
   blocks,
   sectionId,
@@ -7331,7 +8676,11 @@ function EssayBody({
   return (
     <div className="space-y-5 text-base leading-8 text-stone-300">
       {segments.map((segment, index) =>
-        segment.type === "bubble" ? (
+        segment.type === "recursiveAgency" ? (
+          <RecursiveAgencyDiagram key={`recursive-agency-${index}`} />
+        ) : segment.type === "stoicLeverage" ? (
+          <StoicLeverageTable key={`stoic-leverage-${index}`} />
+        ) : segment.type === "bubble" ? (
           <div
             className="border-l-2 border-amber-200/35 py-1 pl-5"
             key={`${segment.text}-${index}`}
@@ -7389,6 +8738,35 @@ function groupEssayBlocks(blocks: string[], sectionId: string) {
         title: marker.title,
         type: "heading",
       });
+    }
+
+    if (
+      sectionId === "philosophy-existentialism" &&
+      block === "This also makes agency recursive across time."
+    ) {
+      paragraphBlocks.push(block);
+      paragraphLength += block.length;
+      flushParagraph();
+      segments.push({ type: "recursiveAgency" });
+      return;
+    }
+
+    if (
+      sectionId === "philosophy-stoicism" &&
+      block === "Where leverage occurs | Examples | What it changes"
+    ) {
+      flushParagraph();
+      segments.push({ type: "stoicLeverage" });
+      return;
+    }
+
+    if (
+      sectionId === "philosophy-stoicism" &&
+      (block.startsWith("Within the moment |") ||
+        block.startsWith("Around the moment |") ||
+        block.startsWith("Across time |"))
+    ) {
+      return;
     }
 
     if (useBubbleBlocks && essayBubbleBlocks.has(block)) {
@@ -7460,7 +8838,8 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
     },
     {
       title: "2.2 Categories of Truth",
-      startsWith: "This distinction becomes especially important because humans often treat very different kinds of claims",
+      startsWith:
+        "This distinction becomes especially important because humans often treat very different kinds of claims",
     },
     {
       title: "2.3 Belief Formation",
@@ -7468,7 +8847,8 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
     },
     {
       title: "2.4 Sources of Error",
-      startsWith: "This distinction becomes especially important because human reasoning is vulnerable",
+      startsWith:
+        "This distinction becomes especially important because human reasoning is vulnerable",
     },
     {
       title: "2.5 Social Confidence and Information Systems",
@@ -7476,8 +8856,13 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
     },
     {
       title: "2.6 Revision Capacity",
-      startsWith: "A stronger epistemic framework therefore requires more than confidence",
+      startsWith:
+        "A stronger epistemic framework therefore requires more than confidence",
     },
+    ...epistemologySyncAdditions.map(({ startsWith, title }) => ({
+      startsWith,
+      title,
+    })),
   ],
   "philosophy-ethics": [
     {
@@ -7537,11 +8922,23 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Freedom itself can become",
     },
     {
-      title: "6.5 Mortality and Grounded Uncertainty",
+      title: "6.5 Freedom, Causation, and Agency",
+      startsWith: "Human freedom does not necessarily require",
+    },
+    {
+      title: "6.6 Conflicted Desire and Self-Formation",
+      startsWith: "Human beings do not possess one static set of desires",
+    },
+    {
+      title: "6.7 Mortality and Grounded Uncertainty",
       startsWith: "The existential problem deepens",
     },
     {
-      title: "6.6 Living Before Resolution",
+      title: "6.8 Finitude and the Weight of Meaning",
+      startsWith: "Mortality does not necessarily create meaning",
+    },
+    {
+      title: "6.9 Living Before Resolution",
       startsWith: "Existentialism within this framework",
     },
   ],
@@ -7559,15 +8956,19 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Human beings still experience",
     },
     {
-      title: "7.4 Collapse and Constraint",
+      title: "7.4 Moral Significance Without Cosmic Moral Facts",
+      startsWith: "The same distinction applies to morality",
+    },
+    {
+      title: "7.5 Collapse and Constraint",
       startsWith: "Nihilism also becomes psychologically",
     },
     {
-      title: "7.5 Pressure, Not Final Rest",
+      title: "7.6 Pressure, Not Final Rest",
       startsWith: "Nihilism therefore functions less",
     },
     {
-      title: "7.6 The Framework's Response",
+      title: "7.7 The Framework's Response",
       startsWith: "Meaning may remain",
     },
   ],
@@ -7581,19 +8982,39 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "The central Stoic move",
     },
     {
-      title: "8.3 Emotion and Reactivity",
+      title: "8.3 Distributed Control and Causal Leverage",
+      startsWith:
+        "The Stoic distinction between what is and is not under a person's control",
+    },
+    {
+      title: "8.4 Effort Under Partial Influence",
+      startsWith:
+        "Most situations are not divided cleanly between complete control and no control",
+    },
+    {
+      title: "8.5 Acceptance Without Passivity",
+      startsWith:
+        "Acceptance does not require approval, emotional neutrality, or withdrawal from action",
+    },
+    {
+      title: "8.6 Emotion and Reactivity",
       startsWith: "This does not mean Stoicism rejects",
     },
     {
-      title: "8.4 Grounded Uncertainty",
+      title: "8.7 Grounded Uncertainty",
       startsWith: "This becomes especially relevant",
     },
     {
-      title: "8.5 Tradeoffs and Limits",
+      title: "8.8 Regulation Without Emotional Narrowing",
+      startsWith:
+        "Stoic regulation should not be understood as minimizing emotion itself",
+    },
+    {
+      title: "8.9 Tradeoffs and Limits",
       startsWith: "At the same time, Stoicism",
     },
     {
-      title: "8.6 Adaptive Orientation",
+      title: "8.10 Adaptive Orientation",
       startsWith: "Its strength is therefore best understood",
     },
   ],
@@ -7615,11 +9036,32 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "This reveals one of the central tensions",
     },
     {
-      title: "9.5 Metric Drift",
+      title: "9.5 Aggregation Without False Precision",
+      startsWith:
+        "Utilitarian reasoning requires comparison between consequences",
+    },
+    {
+      title: "9.6 Distribution and Proportionality",
+      startsWith: "Aggregate totals also do not determine",
+    },
+    {
+      title: "9.7 The Limits of Moral Maximization",
+      startsWith: "The fact that one action could produce more total benefit",
+    },
+    {
+      title: "9.8 Impartiality and Special Relationships",
+      startsWith: "Simple aggregate reasoning can imply",
+    },
+    {
+      title: "9.9 Rules, Commitments, and Long-Term Consequences",
+      startsWith: "Rules, promises, norms, and commitments",
+    },
+    {
+      title: "9.10 Metric Drift",
       startsWith: "This creates the recurring danger",
     },
     {
-      title: "9.6 Optimization's Limit",
+      title: "9.11 Optimization's Limit",
       startsWith: "This does not make utilitarian reasoning meaningless",
     },
   ],
@@ -7637,15 +9079,23 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Postmodernism therefore examines",
     },
     {
-      title: "10.4 Recursive Social Systems",
+      title: "10.4 Power, Incentives, and Truth",
+      startsWith: "Discovering that an institution, group, or powerful actor",
+    },
+    {
+      title: "10.5 Recursive Social Systems",
       startsWith: "Political and social systems",
     },
     {
-      title: "10.5 Social Reality Drift",
+      title: "10.6 Social Reality Drift",
       startsWith: "Because of this, social reality",
     },
     {
-      title: "10.6 Insight Without Collapse",
+      title: "10.7 Constructed Reality and External Claims",
+      startsWith: "Some parts of social reality exist partly",
+    },
+    {
+      title: "10.8 Insight Without Collapse",
       startsWith: "At the same time, this framework",
     },
   ],
@@ -7667,13 +9117,25 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Experience is not composed",
     },
     {
-      title: "11.5 Subjective Access",
-      startsWith: "Phenomenology introduces",
+      title: "11.5 Temporal Experience and Reinterpretation",
+      startsWith: "Present experience is not an isolated instantaneous frame",
+    },
+    {
+      title: "11.6 First-Person and Outside Access",
+      startsWith: "First-person access is privileged without being infallible",
+    },
+    {
+      title: "11.7 Persistent First-Person Organization",
+      startsWith: "Human experience appears to be organized around",
+    },
+    {
+      title: "11.8 Subjective Access",
+      startsWith: "Reality can exist independently of human observers",
     },
   ],
   "philosophy-logic": [
     {
-      title: "12.1 Valid Inference",
+      title: "12.1 Validity and Overall Reasoning",
       startsWith: "While philosophy often asks",
     },
     {
@@ -7685,12 +9147,29 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
       startsWith: "Much of human knowledge",
     },
     {
-      title: "12.4 Consistency",
-      startsWith: "Logic requires internal consistency",
+      title: "12.4 Consistency and Contradiction",
+      startsWith: "Logic requires consistency",
     },
     {
-      title: "12.5 Reasoning Failure",
+      title: "12.5 Dependency Structure",
+      startsWith:
+        "Good reasoning must preserve the actual dependency structure",
+    },
+    {
+      title: "12.6 Meaning and Categories",
+      startsWith: "An argument can appear structurally connected",
+    },
+    {
+      title: "12.7 Reasoning Failure",
       startsWith: "Reasoning can fail",
+    },
+    {
+      title: "12.8 Logic and Epistemology",
+      startsWith: "This keeps Logic distinct from Epistemology",
+    },
+    {
+      title: "12.9 Closing Position",
+      startsWith: "Formal validity is necessary for clean reasoning",
     },
   ],
   "philosophy-ontology": [
@@ -7835,9 +9314,15 @@ function NoteCard({
 }) {
   const isPhilosophyNote = sectionId.startsWith("philosophy-");
   const isPoliticsNote = sectionId.startsWith("politics-");
+  const isPsychologyNote = sectionId.startsWith("psychology-");
+  const isTechnologyNote = sectionId.startsWith("technology-");
   const isReligionFrameworkNote = religionFrameworkSectionIds.has(sectionId);
   const isUnframedReadingNote =
-    isPhilosophyNote || isPoliticsNote || isReligionFrameworkNote;
+    isPhilosophyNote ||
+    isPoliticsNote ||
+    isPsychologyNote ||
+    isTechnologyNote ||
+    isReligionFrameworkNote;
   const emphasized = isEmphasisNote(note.title);
   const displayTitle = isPhilosophyNote
     ? cleanPhilosophyLabel(note.title)
@@ -7865,7 +9350,10 @@ function NoteCard({
           {note.items?.length ? (
             <ul className="mt-4 space-y-2">
               {note.items.map((item) => (
-                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                <li
+                  className="flex gap-3 text-sm leading-6 text-stone-300"
+                  key={item}
+                >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
                   <span>{item}</span>
                 </li>
@@ -7900,7 +9388,9 @@ function NoteCard({
               Key Point
             </p>
           ) : null}
-          <h4 className="text-base font-semibold text-stone-100">{displayTitle}</h4>
+          <h4 className="text-base font-semibold text-stone-100">
+            {displayTitle}
+          </h4>
           {note.body ? (
             <NoteBody
               body={note.body}
@@ -7914,7 +9404,10 @@ function NoteCard({
           {note.items?.length ? (
             <ul className="mt-4 space-y-2">
               {note.items.map((item) => (
-                <li className="flex gap-3 text-sm leading-6 text-stone-300" key={item}>
+                <li
+                  className="flex gap-3 text-sm leading-6 text-stone-300"
+                  key={item}
+                >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-200/70" />
                   <span>{item}</span>
                 </li>
@@ -8025,8 +9518,8 @@ function TrailerEmbed() {
       </div>
       <div className="px-4 py-3">
         <p className="text-xs leading-6 text-stone-500">
-          Included here as a cultural example of interpretation, ambiguity, and restraint
-          before certainty.
+          Included here as a cultural example of interpretation, ambiguity, and
+          restraint before certainty.
         </p>
       </div>
     </section>

@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Content } from "@/components/Content";
-import { RightPanel, type ChatMessage } from "@/components/RightPanel";
-import { Sidebar } from "@/components/Sidebar";
+import { ChevronDown, HomeIcon, Lightbulb, Rss } from "lucide-react";
+import { Content, type IdeaSubjectView } from "@/components/Content";
+import {
+  ReadingNavigator,
+  type ReadingNavGroup,
+  type ReadingNavItem,
+} from "@/components/ReadingNavigator";
+import { FloatingRightPanel, type ChatMessage } from "@/components/RightPanel";
 import {
   economicsSectionGroups,
   economicsSections,
@@ -24,10 +29,10 @@ export type ContentView =
   | "start"
   | "current-views"
   | "notes"
+  | "ideas"
   | "religion"
   | "politics"
   | "economics"
-  | "society"
   | "psychology"
   | "technology"
   | "philosophy";
@@ -44,14 +49,14 @@ const viewKeyIdeas: Record<ContentView, string[]> = {
     "The feed preserves ideas that do not need an entire chapter.",
     "Long-form frameworks remain separate from momentary observations.",
   ],
+  ideas: [
+    "Ideas is the visual entry point into the project's long-form subjects and chapters.",
+    "Each chapter opens in the focused reading interface with its original content intact.",
+    "The map organizes the project without flattening it into one continuous document.",
+  ],
   religion: frameworkSections[0].keyIdeas,
   politics: politicsSections[0].keyIdeas,
   economics: economicsSections[0].keyIdeas,
-  society: [
-    "Society will cover culture, institutions, identity, norms, and social pressure.",
-    "This category looks at how groups shape what people treat as normal.",
-    "The focus is structure, not isolated opinions.",
-  ],
   psychology: [
     "Human Psychology will cover belief formation, identity, bias, certainty, and motivation.",
     "This category is the lens behind many other sections.",
@@ -68,11 +73,11 @@ const viewKeyIdeas: Record<ContentView, string[]> = {
 const viewLabels: Record<ContentView, string> = {
   start: startSection.label,
   "current-views": "Current Views",
-  notes: "Notes",
+  notes: "Feed",
+  ideas: "Ideas",
   religion: frameworkSections[0].label,
-  politics: politicsSections[0].label,
+  politics: "Politics",
   economics: "Economics",
-  society: "Society",
   psychology: "Human Psychology",
   technology: "Technology",
   philosophy: "Philosophy",
@@ -90,148 +95,138 @@ const sectionLabelById = new Map(
     ...economicsSections,
     ...philosophySectionGroups,
     ...philosophySections,
+    ...psychologySections,
     ...technologySections,
   ].map((section) => [section.id, section.label]),
 );
 
+function getReadingNavItems(view: ContentView): ReadingNavItem[] {
+  if (view === "religion") {
+    return [
+      frameworkSections[0],
+      frameworkSections[1],
+      topics[0],
+      ...frameworkSections.slice(2),
+    ].map(({ id, label }) => ({ id, label }));
+  }
+
+  if (view === "politics") {
+    return [...politicsSections, ...politicsAnalysisSections].map(
+      ({ id, label }) => ({ id, label }),
+    );
+  }
+
+  if (view === "economics") {
+    return economicsSections.map(({ id, label }) => ({ id, label }));
+  }
+
+  if (view === "philosophy") {
+    return philosophySections.map(({ id, label }) => ({ id, label }));
+  }
+
+  if (view === "psychology") {
+    return psychologySections.map(({ id, label }) => ({ id, label }));
+  }
+
+  if (view === "technology") {
+    return technologySections.map(({ id, label }) => ({ id, label }));
+  }
+
+  return [];
+}
+
+function getReadingNavGroups(view: ContentView): ReadingNavGroup[] | undefined {
+  const groups =
+    view === "politics"
+      ? politicsSectionGroups
+      : view === "economics"
+        ? economicsSectionGroups
+        : view === "philosophy"
+          ? philosophySectionGroups
+          : undefined;
+
+  if (!groups) return undefined;
+
+  return groups.map((group) => ({
+    id: group.id,
+    items: group.children.map(({ id, label }) => ({ id, label })),
+    label: group.label,
+  }));
+}
+
 export default function Home() {
   const scrollContainerRef = useRef<HTMLElement | null>(null);
   const [activeView, setActiveView] = useState<ContentView>("start");
-  const [danielDisplayMode, setDanielDisplayMode] = useState<
-    "classic" | "immersive"
-  >("immersive");
   const [activeSectionId, setActiveSectionId] = useState(startSection.id);
-  const [openDrawer, setOpenDrawer] = useState<"contents" | "ideas" | null>(null);
   const [rightPanelInput, setRightPanelInput] = useState("");
-  const [rightPanelMessages, setRightPanelMessages] = useState<ChatMessage[]>([]);
+  const [rightPanelMessages, setRightPanelMessages] = useState<ChatMessage[]>(
+    [],
+  );
   const [rightPanelSummary, setRightPanelSummary] = useState("");
   const [rightPanelIsLoading, setRightPanelIsLoading] = useState(false);
   const [rightPanelShowIdeas, setRightPanelShowIdeas] = useState(false);
 
   useEffect(() => {
-    const savedMode = window.localStorage.getItem("daniel-display-mode");
-
-    if (savedMode === "classic" || savedMode === "immersive") {
-      setDanielDisplayMode(savedMode);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("view") === "notes") {
+      setActiveView("notes");
+      setActiveSectionId("notes");
+      url.searchParams.delete("view");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
     }
   }, []);
 
-  const handleDanielDisplayModeChange = useCallback(
-    (mode: "classic" | "immersive") => {
-      setDanielDisplayMode(mode);
-      window.localStorage.setItem("daniel-display-mode", mode);
+  const handleSelectView = useCallback(
+    (view: ContentView, sectionId?: string) => {
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      setActiveView(view);
+
+      if (
+        (view === "religion" ||
+          view === "politics" ||
+          view === "economics" ||
+          view === "philosophy" ||
+          view === "psychology" ||
+          view === "technology") &&
+        sectionId
+      ) {
+        setActiveSectionId(sectionId);
+        return;
+      }
+
+      const nextSectionId = view === "start" ? startSection.id : view;
+      setActiveSectionId(nextSectionId);
     },
     [],
   );
 
-  const scrollToSection = useCallback((sectionId: string) => {
-    requestAnimationFrame(() => {
-      document.getElementById(sectionId)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-  }, []);
-
-  const handleSelectView = useCallback((view: ContentView, sectionId?: string) => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-    setActiveView(view);
-    setOpenDrawer(null);
-
-    if ((view === "religion" || view === "politics" || view === "economics" || view === "philosophy" || view === "psychology" || view === "technology") && sectionId) {
+  const handleSelectSection = useCallback(
+    (view: ContentView, sectionId: string) => {
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      setActiveView(view);
       setActiveSectionId(sectionId);
-      return;
-    }
+    },
+    [],
+  );
 
-    const nextSectionId = view === "start" ? startSection.id : view;
-    setActiveSectionId(nextSectionId);
-  }, [scrollToSection]);
-
-  const handleSelectSection = useCallback((view: ContentView, sectionId: string) => {
+  const handleOpenIdeaSubject = useCallback((view: IdeaSubjectView) => {
+    const firstSectionId = getReadingNavItems(view)[0]?.id ?? view;
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    setActiveSectionId(firstSectionId);
     setActiveView(view);
-    setOpenDrawer(null);
-    setActiveSectionId(sectionId);
-    scrollToSection(sectionId);
-  }, [scrollToSection]);
-
-  const handleSelectSectionGroup = useCallback((view: ContentView, sectionId: string) => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    setActiveView(view);
-    setOpenDrawer(null);
-    setActiveSectionId(sectionId);
-  }, []);
-
-  useEffect(() => {
-    if (activeView !== "religion" && activeView !== "politics" && activeView !== "economics" && activeView !== "philosophy" && activeView !== "psychology" && activeView !== "technology") {
-      return;
-    }
-
-    const sectionIds =
-      activeView === "religion"
-        ? [
-            frameworkSections[0],
-            frameworkSections[1],
-            topics[0],
-            ...frameworkSections.slice(2),
-          ].map((section) => section.id)
-        : activeView === "politics"
-          ? [
-              ...politicsSectionGroups.map((group) => group.id),
-              ...politicsSections.map((section) => section.id),
-              ...politicsAnalysisSections.map((section) => section.id),
-            ]
-          : activeView === "economics"
-            ? [
-                ...economicsSectionGroups.map((group) => group.id),
-                ...economicsSections.map((section) => section.id),
-              ]
-            : activeView === "philosophy"
-              ? [
-                  ...philosophySectionGroups.map((group) => group.id),
-                  ...philosophySections.map((section) => section.id),
-                ]
-              : activeView === "psychology"
-                ? psychologySections.map((section) => section.id)
-                : technologySections.map((section) => section.id);
-
-    const updateActiveSection = () => {
-      const current = sectionIds
-        .map((id) => {
-          const element = document.getElementById(id);
-          return element ? { id, top: element.getBoundingClientRect().top } : null;
-        })
-        .filter((item): item is { id: string; top: number } => Boolean(item))
-        .filter((item) => item.top <= 180)
-        .at(-1);
-
-      if (current) {
-        setActiveSectionId(current.id);
-      }
-    };
-
-    updateActiveSection();
-    const scrollContainer = scrollContainerRef.current;
-    scrollContainer?.addEventListener("scroll", updateActiveSection, { passive: true });
-    return () => scrollContainer?.removeEventListener("scroll", updateActiveSection);
-  }, [activeView]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenDrawer(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
   }, []);
 
   const usesSectionIdeas =
-    activeView === "religion" || activeView === "politics" || activeView === "economics" || activeView === "philosophy";
+    activeView === "religion" ||
+    activeView === "politics" ||
+    activeView === "economics" ||
+    activeView === "philosophy";
   const rightPanelContextLabel = usesSectionIdeas
-    ? sectionLabelById.get(activeSectionId) ?? viewLabels[activeView]
+    ? (sectionLabelById.get(activeSectionId) ?? viewLabels[activeView])
     : viewLabels[activeView];
   const rightPanelIdeas = usesSectionIdeas
     ? getKeyIdeas(activeSectionId)
@@ -249,161 +244,162 @@ export default function Home() {
     summary: rightPanelSummary,
   };
 
+  const isDestinationView =
+    activeView === "start" || activeView === "notes" || activeView === "ideas";
+
+  if (isDestinationView) {
+    return (
+      <main
+        className="relative h-screen overflow-y-auto overscroll-none"
+        ref={scrollContainerRef}
+      >
+        <PrimaryDestinationNav
+          activeView={activeView}
+          onSelectView={handleSelectView}
+        />
+        <Content
+          activeSectionId={activeSectionId}
+          activeView={activeView}
+          frameworkSections={frameworkSections}
+          key={activeView}
+          onOpenIdeaSubject={handleOpenIdeaSubject}
+          topics={topics}
+        />
+      </main>
+    );
+  }
+
+  const readingNavItems = getReadingNavItems(activeView);
+
   return (
     <main
-      className="relative h-screen overflow-y-auto overscroll-none"
+      className="reading-page-shell relative h-screen overflow-y-auto overscroll-none"
       ref={scrollContainerRef}
     >
-      <div
-        aria-hidden="true"
-        className={[
-          "fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition duration-300 2xl:hidden",
-          openDrawer ? "opacity-100" : "pointer-events-none opacity-0",
-        ].join(" ")}
-        onClick={() => setOpenDrawer(null)}
-      />
-
-      <button
-        aria-label="Open contents"
-        className={[
-          "fixed left-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-r-md border border-l-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 2xl:hidden",
-          openDrawer === "contents" ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100",
-        ].join(" ")}
-        onClick={() => setOpenDrawer("contents")}
-        type="button"
-      >
-        <span aria-hidden="true" className="flex flex-col gap-1">
-          <span className="block h-px w-4 bg-current" />
-          <span className="block h-px w-4 bg-current" />
-          <span className="block h-px w-4 bg-current" />
-        </span>
-      </button>
-
-      <button
-        aria-label="Open ideas panel"
-        className={[
-          "fixed right-0 top-[28vh] z-50 grid h-11 w-9 -translate-y-1/2 place-items-center rounded-l-md border border-r-0 border-white/10 bg-[#151411]/90 text-amber-100/80 shadow-[0_16px_50px_rgba(0,0,0,0.34)] backdrop-blur transition hover:border-amber-200/30 hover:text-amber-50 2xl:hidden",
-          openDrawer === "ideas" ? "translate-x-full opacity-0" : "translate-x-0 opacity-100",
-        ].join(" ")}
-        onClick={() => setOpenDrawer("ideas")}
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
-          viewBox="0 0 24 24"
-        >
-          <path d="M5 6.5A4.5 4.5 0 0 1 9.5 2h5A4.5 4.5 0 0 1 19 6.5v4A4.5 4.5 0 0 1 14.5 15H11l-5 4v-4.4A4.5 4.5 0 0 1 5 10.5z" />
-        </svg>
-      </button>
-
-      <div className="grid w-full grid-cols-1 2xl:grid-cols-[330px_minmax(0,1fr)_360px]">
-        <div className="hidden min-w-0 2xl:block">
-          <div className="sticky top-0 h-screen overflow-y-auto border-r border-white/10 bg-[#11110f]/95 shadow-[18px_0_70px_rgba(0,0,0,0.28)]">
-            <Sidebar
-              activeSectionId={activeSectionId}
-              activeView={activeView}
-              onSelectView={handleSelectView}
-              onSelectSection={handleSelectSection}
-              onSelectSectionGroup={handleSelectSectionGroup}
-              topics={topics}
-              frameworkSections={frameworkSections}
-            />
-          </div>
-        </div>
-
-        <div
-          className={[
-            "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(86vw,360px)] flex-col overflow-hidden bg-[#11110f]/98 shadow-[28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] 2xl:hidden",
-            openDrawer === "contents" ? "translate-x-0" : "-translate-x-full",
-          ].join(" ")}
-        >
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-              Contents
-            </p>
-            <button
-              aria-label="Close contents"
-              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-stone-400 transition hover:border-white/20 hover:text-stone-100"
-              onClick={() => setOpenDrawer(null)}
-              type="button"
-            >
-              ×
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <Sidebar
-              activeSectionId={activeSectionId}
-              activeView={activeView}
-              onSelectView={handleSelectView}
-              onSelectSection={handleSelectSection}
-              onSelectSectionGroup={handleSelectSectionGroup}
-              topics={topics}
-              frameworkSections={frameworkSections}
-            />
-          </div>
-        </div>
-
-        <div className="min-w-0">
-          <Content
-            activeSectionId={activeSectionId}
+      <ReadingNavigator
+        activeId={activeSectionId}
+        destinationNav={
+          <PrimaryDestinationNav
             activeView={activeView}
-            danielDisplayMode={danielDisplayMode}
-            frameworkSections={frameworkSections}
-            key={activeView}
-            topics={topics}
+            embedded
+            onSelectView={handleSelectView}
           />
-        </div>
+        }
+        groups={getReadingNavGroups(activeView)}
+        items={readingNavItems}
+        onBack={() => handleSelectView("ideas")}
+        onSelect={(sectionId) => handleSelectSection(activeView, sectionId)}
+        title={viewLabels[activeView]}
+      />
+      <Content
+        activeSectionId={activeSectionId}
+        activeView={activeView}
+        frameworkSections={frameworkSections}
+        key={`${activeView}:${activeSectionId}`}
+        onOpenIdeaSubject={handleOpenIdeaSubject}
+        topics={topics}
+      />
+      <FloatingRightPanel
+        chatState={rightPanelChatState}
+        contextLabel={rightPanelContextLabel}
+        ideas={rightPanelIdeas}
+      />
+    </main>
+  );
+}
 
-        <div
-          className={[
-            "fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(92vw,410px)] flex-col overflow-hidden bg-[#11110f]/98 shadow-[-28px_0_90px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] 2xl:hidden",
-            openDrawer === "ideas" ? "translate-x-0" : "translate-x-full",
-          ].join(" ")}
-        >
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-              Ideas
-            </p>
+const primaryDestinations = [
+  { icon: HomeIcon, label: "Home", view: "start" as const },
+  { icon: Rss, label: "Feed", view: "notes" as const },
+  { icon: Lightbulb, label: "Ideas", view: "ideas" as const },
+];
+
+function PrimaryDestinationNav({
+  activeView,
+  embedded = false,
+  onSelectView,
+}: {
+  activeView: ContentView;
+  embedded?: boolean;
+  onSelectView: (view: ContentView) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const activeDestination =
+    primaryDestinations.find(({ view }) => view === activeView) ??
+    primaryDestinations[2];
+  const ActiveIcon = activeDestination.icon;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [open]);
+
+  return (
+    <div
+      aria-label="Primary pages"
+      className={
+        embedded ? "relative" : "fixed right-4 top-4 z-[70] sm:right-6 sm:top-6"
+      }
+      ref={navRef}
+    >
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="primary-destination-trigger"
+        onClick={() => setOpen((current) => !current)}
+        type="button"
+      >
+        <ActiveIcon
+          aria-hidden="true"
+          className="h-3.5 w-3.5"
+          strokeWidth={1.8}
+        />
+        <span className={embedded ? "hidden sm:inline" : undefined}>
+          {activeDestination.label}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          strokeWidth={1.8}
+        />
+      </button>
+
+      <div
+        aria-label="Choose a primary page"
+        className={`primary-destination-menu ${open ? "open" : ""}`}
+        role="menu"
+      >
+        {primaryDestinations.map(({ icon: Icon, label, view }) => {
+          const active = activeDestination.view === view;
+
+          return (
             <button
-              aria-label="Close ideas panel"
-              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-stone-400 transition hover:border-white/20 hover:text-stone-100"
-              onClick={() => setOpenDrawer(null)}
+              aria-current={active ? "page" : undefined}
+              className={active ? "active" : undefined}
+              key={view}
+              onClick={() => {
+                setOpen(false);
+                onSelectView(view);
+              }}
+              role="menuitem"
               type="button"
             >
-              ×
+              <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+              <span>{label}</span>
             </button>
-          </div>
-          <div className="min-h-0 flex-1">
-            <RightPanel
-              chatState={rightPanelChatState}
-              contextLabel={rightPanelContextLabel}
-              danielDisplayMode={danielDisplayMode}
-              ideas={rightPanelIdeas}
-              onDanielDisplayModeChange={handleDanielDisplayModeChange}
-              showDanielDisplayToggle={activeView === "start"}
-            />
-          </div>
-        </div>
-
-        <div className="hidden min-w-0 2xl:block">
-          <div className="sticky top-0 h-screen overflow-y-auto border-l border-white/10 bg-[#11110f]/95 shadow-[-18px_0_70px_rgba(0,0,0,0.28)]">
-            <RightPanel
-              chatState={rightPanelChatState}
-              contextLabel={rightPanelContextLabel}
-              danielDisplayMode={danielDisplayMode}
-              ideas={rightPanelIdeas}
-              onDanielDisplayModeChange={handleDanielDisplayModeChange}
-              showDanielDisplayToggle={activeView === "start"}
-            />
-          </div>
-        </div>
+          );
+        })}
       </div>
-    </main>
+    </div>
   );
 }

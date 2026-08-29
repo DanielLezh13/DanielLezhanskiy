@@ -7,15 +7,22 @@ import {
   useEffect,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  GripHorizontal,
+  Maximize2,
+  MessageCircle,
+  Minimize2,
+  Trash2,
+  X,
+} from "lucide-react";
 
 type RightPanelProps = {
   chatState: RightPanelChatState;
   ideas: string[];
   contextLabel: string;
-  danielDisplayMode: "classic" | "immersive";
-  onDanielDisplayModeChange: (mode: "classic" | "immersive") => void;
-  showDanielDisplayToggle: boolean;
+  showHeader?: boolean;
 };
 
 export type ChatMessage = {
@@ -41,10 +48,8 @@ export type RightPanelChatState = {
 export function RightPanel({
   chatState,
   contextLabel,
-  danielDisplayMode,
   ideas,
-  onDanielDisplayModeChange,
-  showDanielDisplayToggle,
+  showHeader = true,
 }: RightPanelProps) {
   const {
     input,
@@ -205,40 +210,13 @@ export function RightPanel({
   return (
     <aside className="flex h-full min-h-0 overscroll-contain">
       <div className="flex min-h-0 flex-1 flex-col px-6 py-7">
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 pb-5">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
-            Engage With My Ideas
-          </p>
-          {showDanielDisplayToggle ? (
-            <div
-              aria-label="Daniel page display"
-              className="inline-flex shrink-0 rounded border border-amber-200/20 bg-amber-100/[0.045] p-0.5 shadow-[0_0_18px_rgba(253,230,138,0.1)]"
-              role="group"
-            >
-              {(["classic", "immersive"] as const).map((mode) => {
-                const isActive = danielDisplayMode === mode;
-
-                return (
-                  <button
-                    aria-pressed={isActive}
-                    className={[
-                      "rounded-sm px-1.5 py-1 font-mono text-[8px] uppercase tracking-[0.08em] transition",
-                      isActive
-                        ? "bg-amber-100 text-[#11110f] shadow-[0_0_12px_rgba(253,230,138,0.22)]"
-                        : "text-stone-500 hover:bg-white/[0.045] hover:text-stone-200",
-                    ].join(" ")}
-                    key={mode}
-                    onClick={() => onDanielDisplayModeChange(mode)}
-                    title={mode === "classic" ? "Classic view" : "Immersive view"}
-                    type="button"
-                  >
-                    {mode === "classic" ? "C" : "I"}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </header>
+        {showHeader ? (
+          <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 pb-5">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-200/70">
+              Engage With My Ideas
+            </p>
+          </header>
+        ) : null}
 
         <div className="relative min-h-0 flex-1">
           <div
@@ -365,6 +343,162 @@ export function RightPanel({
         </form>
       </div>
     </aside>
+  );
+}
+
+export function FloatingRightPanel({
+  chatState,
+  contextLabel,
+  ideas,
+}: RightPanelProps) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const dragRef = useRef<{
+    originX: number;
+    originY: number;
+    pointerId: number;
+    rect: DOMRect;
+    startX: number;
+    startY: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!open) setPosition({ x: 0, y: 0 });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
+  function beginDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (window.innerWidth < 700 || (event.target as HTMLElement).closest("button")) {
+      return;
+    }
+
+    const rect = drawerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    dragRef.current = {
+      originX: position.x,
+      originY: position.y,
+      pointerId: event.pointerId,
+      rect,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragging(true);
+  }
+
+  function moveDrag(event: ReactPointerEvent<HTMLElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const padding = 12;
+    const deltaX = Math.min(
+      window.innerWidth - padding - drag.rect.right,
+      Math.max(padding - drag.rect.left, event.clientX - drag.startX),
+    );
+    const deltaY = Math.min(
+      window.innerHeight - padding - drag.rect.bottom,
+      Math.max(padding - drag.rect.top, event.clientY - drag.startY),
+    );
+    setPosition({ x: drag.originX + deltaX, y: drag.originY + deltaY });
+  }
+
+  function endDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragging(false);
+  }
+
+  function clearChat() {
+    chatState.setMessages([]);
+    chatState.setSummary("");
+    chatState.setInput("");
+    chatState.setShowIdeas(false);
+  }
+
+  return (
+    <div className={open ? "framework-chat-shell open" : "framework-chat-shell"}>
+      {open ? (
+        <section
+          aria-label="Engage with my ideas"
+          className={[
+            "framework-chat-drawer",
+            expanded ? "expanded" : "",
+            dragging ? "dragging" : "",
+          ].join(" ")}
+          ref={drawerRef}
+          style={{ translate: `${position.x}px ${position.y}px` }}
+        >
+          <header
+            className="framework-chat-header"
+            onPointerCancel={endDrag}
+            onPointerDown={beginDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+          >
+            <div className="framework-chat-identity">
+              <span><MessageCircle aria-hidden="true" size={17} /></span>
+              <p>
+                <strong>Engage With My Ideas</strong>
+                <small>{contextLabel}</small>
+              </p>
+            </div>
+            <GripHorizontal aria-hidden="true" className="framework-chat-grip" size={18} />
+            <div className="framework-chat-actions">
+              <button
+                aria-label={expanded ? "Restore chat size" : "Expand chat"}
+                onClick={() => {
+                  setPosition({ x: 0, y: 0 });
+                  setExpanded((current) => !current);
+                }}
+                title={expanded ? "Restore size" : "Expand chat"}
+                type="button"
+              >
+                {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button aria-label="Clear chat" onClick={clearChat} title="Clear chat" type="button">
+                <Trash2 size={16} />
+              </button>
+              <button aria-label="Close chat" onClick={() => setOpen(false)} title="Close chat" type="button">
+                <X size={18} />
+              </button>
+            </div>
+          </header>
+          <div className="min-h-0">
+            <RightPanel
+              chatState={chatState}
+              contextLabel={contextLabel}
+              ideas={ideas}
+              showHeader={false}
+            />
+          </div>
+        </section>
+      ) : null}
+      <button
+        aria-expanded={open}
+        aria-label={open ? "Close ideas chat" : "Open ideas chat"}
+        className="framework-chat-launcher"
+        onClick={() => setOpen((current) => !current)}
+        title={open ? "Close chat" : "Engage with my ideas"}
+        type="button"
+      >
+        {open ? <X size={19} /> : <MessageCircle size={22} strokeWidth={2} />}
+      </button>
+    </div>
   );
 }
 
