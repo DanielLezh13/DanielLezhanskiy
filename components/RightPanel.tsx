@@ -65,59 +65,18 @@ export function RightPanel({
     showIdeas,
     summary,
   } = chatState;
-  const [bottomSpacerHeight, setBottomSpacerHeight] = useState(0);
   const scrollPanelRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const latestUserMessageRef = useRef<HTMLDivElement | null>(null);
-  const bottomSpacerRef = useRef<HTMLDivElement | null>(null);
   const hasConversation = messages.length > 0;
 
   useEffect(() => {
-    if (!messages.length) {
-      return;
-    }
-
-    requestAnimationFrame(() => {
+    if (!hasConversation) return;
+    const frame = requestAnimationFrame(() => {
       const panel = scrollPanelRef.current;
-      const message = latestUserMessageRef.current;
-      const spacer = bottomSpacerRef.current;
-
-      if (!panel || !message) {
-        return;
-      }
-
-      const panelRect = panel.getBoundingClientRect();
-      const messageRect = message.getBoundingClientRect();
-      const currentSpacerHeight = spacer?.getBoundingClientRect().height ?? 0;
-      const latestContentBottom =
-        spacer?.previousElementSibling?.getBoundingClientRect().bottom ??
-        messageRect.bottom;
-      const latestExchangeHeight = Math.max(
-        messageRect.height,
-        latestContentBottom - messageRect.top,
-      );
-      const messageGap = 10;
-      const contentHeightWithoutSpacer = panel.scrollHeight - currentSpacerHeight;
-      const targetTop = panel.scrollTop + messageRect.top - panelRect.top - messageGap;
-      const shouldAnchorLatestMessage =
-        messages.length > 2 || latestExchangeHeight > panelRect.height * 0.62;
-      const nextSpacerHeight = shouldAnchorLatestMessage
-        ? Math.max(0, targetTop + panelRect.height - contentHeightWithoutSpacer + messageGap)
-        : 0;
-
-      setBottomSpacerHeight(nextSpacerHeight);
-      if (spacer) {
-        spacer.style.height = `${nextSpacerHeight}px`;
-      }
-
-      requestAnimationFrame(() => {
-        panel.scrollTo({
-          behavior: messages.at(-1)?.role === "user" ? "smooth" : "auto",
-          top: shouldAnchorLatestMessage ? targetTop : panel.scrollHeight,
-        });
-      });
+      panel?.scrollTo({ top: panel.scrollHeight, behavior: "auto" });
     });
-  }, [isLoading, messages]);
+    return () => cancelAnimationFrame(frame);
+  }, [hasConversation, isLoading, messages]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,59 +180,34 @@ export function RightPanel({
           </header>
         ) : null}
 
-        <div className="relative min-h-0 flex-1">
-          <div
-            className="h-full overflow-y-auto overscroll-contain pb-5 pt-2.5"
-            ref={scrollPanelRef}
-          >
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {hasConversation ? (
             <div
-              className={[
-                "min-h-full transition duration-300 ease-out",
-                hasConversation ? "flex flex-col justify-end gap-2.5" : "",
-                showIdeas && hasConversation
-                  ? "pointer-events-none scale-[0.99] opacity-0"
-                  : "scale-100 opacity-100",
-              ].join(" ")}
+              className="h-full overflow-y-auto overscroll-contain pb-5 pt-2.5"
+              ref={scrollPanelRef}
             >
-              {hasConversation ? (
-                messages.map((message, index) => {
-                  const isLatestUserMessage =
-                    message.role === "user" &&
-                    !messages.slice(index + 1).some((item) => item.role === "user");
-
-                  return (
-                    <div
-                      key={`${message.role}-${index}`}
-                      ref={isLatestUserMessage ? latestUserMessageRef : undefined}
-                    >
-                      <ChatBubble message={message} />
-                    </div>
-                  );
-                })
-              ) : (
-                <EmptyPanelState
-                  contextLabel={contextLabel}
-                  ideas={ideas}
-                  onCloseIdeas={() => setShowIdeas(false)}
-                  showIdeas={showIdeas}
-                />
-              )}
-              {isLoading ? (
-                <p className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3 text-xs text-stone-400">
-                  Searching the framework...
-                </p>
-              ) : null}
-              {hasConversation ? (
-                <div
-                  aria-hidden="true"
-                  ref={bottomSpacerRef}
-                  style={{ height: bottomSpacerHeight }}
-                />
-              ) : null}
+              <div className="flex min-h-full flex-col gap-2.5">
+                {messages.map((message, index) => (
+                  <div className={index === 0 ? "mt-auto" : undefined} key={`${message.role}-${index}`}>
+                    <ChatBubble message={message} />
+                  </div>
+                ))}
+                {isLoading ? (
+                  <p className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3 text-xs text-stone-400">
+                    Searching the framework...
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex h-full overflow-y-auto overscroll-contain py-3">
+              <div className="my-auto w-full">
+                <EmptyChatState />
+              </div>
+            </div>
+          )}
 
-          {showIdeas && hasConversation ? (
+          {showIdeas ? (
             <KeyIdeasOverlay
               contextLabel={contextLabel}
               ideas={ideas}
@@ -572,48 +506,6 @@ function parseErrorMessage(text?: string) {
   return trimmed.length > 180 ? `${trimmed.slice(0, 180).trim()}...` : trimmed;
 }
 
-function EmptyPanelState({
-  contextLabel,
-  ideas,
-  onCloseIdeas,
-  showIdeas,
-}: {
-  contextLabel: string;
-  ideas: string[];
-  onCloseIdeas: () => void;
-  showIdeas: boolean;
-}) {
-  return (
-    <div className="relative flex min-h-[calc(100vh-330px)] items-center">
-      <div
-        className={[
-          "w-full transition duration-300 ease-out",
-          showIdeas
-            ? "pointer-events-none scale-[0.98] opacity-0"
-            : "scale-100 opacity-100",
-        ].join(" ")}
-      >
-        <EmptyChatState />
-      </div>
-
-      <div
-        className={[
-          "absolute inset-x-0 top-1/2 -translate-y-1/2 transition duration-300 ease-out",
-          showIdeas
-            ? "scale-100 opacity-100"
-            : "pointer-events-none scale-[0.98] opacity-0",
-        ].join(" ")}
-      >
-        <KeyIdeasCard
-          contextLabel={contextLabel}
-          ideas={ideas}
-          onClose={onCloseIdeas}
-        />
-      </div>
-    </div>
-  );
-}
-
 function KeyIdeasOverlay({
   contextLabel,
   ideas,
@@ -624,8 +516,10 @@ function KeyIdeasOverlay({
   onClose: () => void;
 }) {
   return (
-    <div className="absolute inset-x-0 top-1/2 z-10 -translate-y-1/2">
-      <KeyIdeasCard contextLabel={contextLabel} ideas={ideas} onClose={onClose} />
+    <div className="absolute inset-0 z-10 flex overflow-y-auto overscroll-contain bg-[#100f0c]/85 sm:p-1">
+      <div className="my-auto w-full">
+        <KeyIdeasCard contextLabel={contextLabel} ideas={ideas} onClose={onClose} />
+      </div>
     </div>
   );
 }
@@ -640,7 +534,7 @@ function KeyIdeasCard({
   onClose: () => void;
 }) {
   return (
-    <section className="rounded-xl border border-amber-200/20 bg-[#171613]/95 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+    <section className="rounded-xl border border-amber-200/20 bg-[#171613]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur sm:p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
@@ -659,7 +553,7 @@ function KeyIdeasCard({
           ×
         </button>
       </div>
-      <div className="max-h-60 overflow-y-auto overscroll-contain pr-1">
+      <div>
         <KeyIdeasList ideas={ideas} compact />
       </div>
     </section>
@@ -674,7 +568,7 @@ function KeyIdeasList({
   ideas: string[];
 }) {
   return (
-    <ul className={compact ? "mt-3 space-y-2" : "space-y-3"}>
+    <ul className={compact ? "mt-2 space-y-1.5 sm:mt-3 sm:space-y-2" : "space-y-3"}>
       {ideas.map((idea) => (
         <li
           className={[
