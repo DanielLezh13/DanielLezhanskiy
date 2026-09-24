@@ -106,7 +106,9 @@ export default function StudioPage() {
       </h1>
       <p className="mt-4 max-w-xl leading-7 text-stone-400">
         You are signed in as {user?.email}. The composer and post controls now
-        appear inside the same Feed that visitors read.
+        appear inside the same Feed that visitors read. This sign-in also lets
+        you open unfinished chapters throughout the site. Sign out here to see
+        what visitors can open.
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <a

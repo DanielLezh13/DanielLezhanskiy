@@ -1,0 +1,45 @@
+.submenuItem.submenuItem {
+  align-self: center;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 11px;
+  background: transparent;
+  color: #89857d;
+  font-weight: 560;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.submenuItem.submenuItem:hover,
+.submenuItem.submenuItem:focus-visible {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.035);
+  color: #d6d1c8;
+}
+
+.submenuItem.submenuItem.selected,
+.submenuItem.submenuItem.selected:hover,
+.submenuItem.submenuItem.selected:focus-visible {
+  border-color: rgba(253, 230, 138, 0.25);
+  background: rgba(253, 230, 138, 0.09);
+  color: #fff9e8;
+}
+
+.submenuItem.selected > span:first-child {
+  color: rgba(253, 230, 138, 0.86);
+}
+
+.submenuItem.submenuItem[aria-disabled="true"],
+.submenuItem.submenuItem[aria-disabled="true"]:hover {
+  border-color: transparent;
+  background: transparent;
+  color: #77736c;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .submenuItem.submenuItem {
+    height: 36px;
+    padding: 0 10px;
+  }
+}

@@ -1,5 +1,9 @@
 import { israelPalestineArgumentCards } from "@/lib/israel-palestine-arguments";
 import {
+  israelPalestineSocialDynamicsBlocks,
+  israelPalestineSocialDynamicsKeyIdeas,
+} from "@/lib/israel-palestine-social-dynamics";
+import {
   epistemologySyncAdditions,
   philosophyOfMindSyncNotes,
   psychologySyncNotes,
@@ -69,6 +73,7 @@ export type TopicGroup = {
   label: string;
   title: string;
   intro: string;
+  frameworkSummary?: string;
   contentBlocks?: string[];
   afterLayers?: string[];
   layers?: {
@@ -104,6 +109,7 @@ export type NavTopic =
       label: string;
       title: string;
       intro: string;
+      frameworkSummary?: string;
       contentBlocks?: string[];
       afterLayers?: string[];
       layers?: {
@@ -621,6 +627,8 @@ export const topics: NavTopic[] = [
     title: "Part 2 — Argument Patterns",
     intro:
       "Before evaluating the claims of any particular religion, it helps to recognize that many arguments follow recurring structures. Different religions often use different language, examples, and traditions, yet many rely on similar patterns of reasoning.",
+    frameworkSummary:
+      "I think religious arguments are easier to evaluate when I separate broad foundational claims from attempts to prove a specific religion and from disagreements about details inside that religion. Prophecy, scripture, experience, morality, history, and providence can operate across those layers, so a discussion may shift levels without making the shift explicit. Similar patterns appearing in different religions also mean that an argument's familiarity, repetition, or internal depth does not by itself establish which system is true. I therefore want to ask what each argument actually supports and whether it uniquely favors the conclusion being claimed.",
     contentBlocks: [
       "This section identifies those shared patterns before applying them to individual religions.",
     ],
@@ -1064,6 +1072,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Descriptive Context",
     intro:
       "Before analyzing religious arguments, belief formation, or certainty claims, it is important to understand the systems themselves at a basic structural level.",
+    frameworkSummary:
+      "I treat religions as large systems of belief, practice, identity, authority, interpretation, and community rather than as isolated supernatural claims. No major religion is one perfectly unified position; shared texts and traditions can produce different branches, methods, and conclusions. Culture and history also shape how a religion is lived. I therefore want to understand a system's origins, claims, authorities, interpretations, internal differences, and social role before judging its arguments.",
     contentBlocks: [
       "This section is not meant to debunk religion or reduce entire belief systems to a few arguments. Religions are large frameworks that contain metaphysical claims, moral systems, identity structures, historical development, behavioral expectations, interpretive traditions, internal disagreements, and different methods of understanding truth.",
       "Because of this, no religion exists as a single perfectly unified position. The same text can produce multiple interpretations, sects, schools of thought, and conflicting conclusions over time. This matters because many debates about religion assume there is one universally agreed interpretation when, in practice, interpretation itself is part of the system.",
@@ -1099,6 +1109,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Evidence Thresholds",
     intro:
       "This section looks at how separate arguments combine into a sense of certainty. The issue is not only whether individual patterns exist, but what conclusion should be drawn when many patterns appear to converge.",
+    frameworkSummary:
+      "I think multiple lines of evidence can combine to make a religious conclusion more plausible, but convergence does not automatically turn plausibility into certainty. The central question is whether the patterns uniquely support one explanation or remain compatible with ordinary historical, psychological, interpretive, or social explanations. Collective conviction, transmitted testimony, and historical evidence deserve serious consideration, yet they do not give later observers direct access to an event or automatically prove its supernatural interpretation. I therefore want confidence to rise with the strength and uniqueness of the evidence rather than with the number of reinforcing arguments alone.",
     contentBlocks: [
       "The debate is often framed as whether the patterns are real. In many cases, that is not the true disagreement. Both sides may acknowledge that the structures are interesting, the correspondences can feel meaningful, and the cumulative evidence may seem difficult to dismiss casually.",
       "The real disagreement emerges at the next step: what conclusion should be drawn from that complexity?",
@@ -1191,6 +1203,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Belief Formation",
     intro:
       "This part explains why belief forms, why it becomes useful, why it fuses with identity, and why arguments often protect a belief more than they discover truth.",
+    frameworkSummary:
+      "I think belief is shaped not only by evidence but by the structure, meaning, stability, behavior, and belonging it provides. When a belief becomes useful and socially reinforced, that usefulness can feel like proof; when it fuses with identity, doubt can feel like a threat to the person and the community rather than a question about a claim. Arguments may therefore help discover truth, but they can also stabilize a belief that is already psychologically important. I apply this mechanism symmetrically to religious, anti-religious, political, and rationalist identities rather than treating it as a flaw unique to one group.",
     contentBlocks: [
       "After looking at how arguments can accumulate into certainty, the next question is how that certainty becomes psychologically reinforced.",
       "People usually do not start from pure logic. They often start from uncertainty, fear, lack of direction, or the need for structure. A belief system can offer answers, rules, identity, and stability before it has been fully evaluated.",
@@ -1279,6 +1293,14 @@ export const frameworkSections: ReadingSection[] = [
         body: "A rule like avoiding sex before marriage shows how a stance can form. It may begin as something taught or inherited, then become internalized as something that simply makes sense. The reasoning often follows the belief: it is reframed as protective, meaning-preserving, or a test of commitment. What feels like a conclusion is often a value expressed in the form of reasoning.",
       },
       {
+        title: "Social Enforcement and Public Religious Identity",
+        body: "Religious belief can operate socially even when nobody is explicitly forcing another person to believe.\n\nOnce a religion becomes part of a family, community, or social identity, visible behavior can begin signaling more than personal conviction. Prayer, dress, dietary rules, attendance, language, relationships, sexual norms, public declarations of faith, and participation in rituals may also communicate loyalty, seriousness, belonging, and moral reliability.\n\nThis creates social incentives. A person who visibly follows expected norms may receive trust, approval, inclusion, respect, or recognition as a committed member of the group. A person who questions, stops participating, changes interpretation, dates outside the group, violates a norm, or openly expresses uncertainty may face disappointment, suspicion, arguments, gossip, pressure, or reduced belonging even when no formal punishment exists.\n\nThe important distinction is that voluntary belief and socially consequence-free belief are not the same thing.\n\nSomeone may technically be free to leave while knowing that leaving could affect family relationships, marriage prospects, friendships, reputation, or their place inside the community.\n\nThis mechanism is not unique to religion. Families, political groups, professions, and cultures also enforce norms socially. Religion can make it especially powerful when ordinary social expectations are connected to divine authority, morality, salvation, sin, or sacred identity.",
+      },
+      {
+        title: "Performative Piety and Moral Status",
+        body: "Visible religious commitment can acquire social value of its own.\n\nA religious act may begin as sincere devotion while simultaneously communicating discipline, morality, loyalty, sacrifice, or seriousness to other members of the community. Public displays of commitment can therefore have both internal and social functions.\n\nThis creates the possibility of performative piety: behavior partly motivated by how commitment will be perceived.\n\nThat does not mean visible religious practice is fake. Human motives can be mixed. A person can sincerely believe while also enjoying the belonging, recognition, moral status, or identity that visible commitment provides.\n\nThe problem appears when outward signals become proxies for character.\n\nGreater visible religiosity can begin to be interpreted as greater morality, while doubt, irregular practice, disagreement, or departure may be interpreted as moral weakness. At that point, social incentives reward not only belief but the performance of certainty.\n\nThe same basic mechanism can appear outside religion in politics and activism: visible commitment becomes evidence that someone belongs to the morally serious group.",
+      },
+      {
         title: "My Stance",
         body: "Belief systems like religion do not exist only because of evidence. They provide structure, certainty, and identity. Over time, belief can become tied to the person, so when it is challenged, stability feels threatened. The arguments can explain why belief feels convincing, but they do not necessarily provide independent proof that it is true.",
       },
@@ -1298,6 +1320,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Positions and Sides",
     intro:
       "The same patterns that appear in religious belief show up in politics, media, leaders, countries, social issues, and public conflict.",
+    frameworkSummary:
+      "I think people often compress large, uncertain realities into clear sides because a position is easier to hold, communicate, and share with a group than a complex model. Once the position signals identity or belonging, questioning its evidence can be treated as opposition, and certainty can spread faster than understanding. This means strong conclusions are often built from partial visibility even when everyone involved sincerely believes they are reasoning more deeply. I therefore prefer evaluating specific claims, actions, and evidence while spending deeper attention where additional understanding can actually change the outcome.",
     contentBlocks: [
       "When people face something large, uncertain, and difficult to fully understand, they often simplify it into something manageable: right or wrong, good or bad, for or against.",
       "This is not always because people are careless. Uncertainty is uncomfortable, and simple positions provide something to stand on.",
@@ -1384,6 +1408,10 @@ export const frameworkSections: ReadingSection[] = [
         ],
       },
       {
+        title: "Resistance, Suppression, and the Persecution Loop",
+        body: "Religious communities can develop a recursive relationship with criticism.\n\nA belief system may teach that truth will be mocked, resisted, persecuted, or rejected by outsiders. That expectation can be historically justified; many religious communities have genuinely experienced persecution.\n\nBut the expectation can also influence how later disagreement is interpreted.\n\nA simplified loop can form:\nbelief is expected to face resistance → believer challenges surrounding norms → surrounding people push back → pushback is interpreted as persecution → persecution strengthens confidence that the belief predicted reality correctly\n\nThe important distinction is between actual suppression and ordinary disagreement or enforcement of other people's boundaries.\n\nBeing prevented from practicing a religion is different from being criticized for a religious claim. Being excluded because of religious identity is different from being told that a religious rule cannot be imposed on people outside the religion. Being prevented from speaking is different from encountering disagreement after speaking.\n\nWhen those categories collapse together, criticism can become self-validating evidence.\n\nThis resembles the political dynamic we identified in activism: intentionally creating confrontation can produce predictable resistance, and that resistance can then be interpreted as evidence that the surrounding system is hostile to the cause.\n\nThat does not mean persecution is imaginary. The analytical question is which resistance represents unjust suppression and which represents other people exercising their own autonomy, disagreement, or boundaries.",
+      },
+      {
         title: "One-Line Anchors",
         items: [
           "When questioning is framed as opposition, discussion shifts from understanding ideas to defending positions.",
@@ -1413,6 +1441,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Personal Position",
     intro:
       "This part states the current position directly: not simple disbelief, not automatic belief, and not simple side-taking.",
+    frameworkSummary:
+      "My current stance is neither automatic belief nor automatic disbelief. I can respect the meaning, stability, community, and sincere experience a religion provides while still separating those functions from objective proof of its truth claims. I want important claims to be supported by evidence that can be checked outside the system being defended, especially when competing systems make incompatible claims with similar confidence. Where the evidence remains incomplete, I see uncertainty as an honest position rather than hostility, weakness, or a refusal to think.",
     contentBlocks: [
       "I do not take simple sides on complex issues. There is often too much we do not see: motives, constraints, internal decisions, hidden trade-offs, and partial narratives.",
       "I would rather look at specific actions, outcomes, reasoning quality, and evidence than assume I fully understand the whole situation.",
@@ -1475,6 +1505,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Modern Society",
     intro:
       "This part places the belief analysis inside modern society: religion, media, technology, AI, public narratives, and systems that may be outdated in some areas while adaptive in others.",
+    frameworkSummary:
+      "I think modern pluralism exposes religious systems to more perspectives while media and digital platforms pressure people to form simplified, confident positions quickly. Technology and AI can clarify arguments, compare frameworks, and reveal contradictions, but they can also mirror assumptions and make an unverified framework feel more coherent or externally validated. Older systems may preserve valuable stability while still becoming rigid in new contexts, and adaptation carries its own tradeoffs. I therefore want to resist treating public narratives, algorithmic reinforcement, or AI agreement as proof and keep certainty proportional even when the surrounding environment rewards taking a side.",
     contentBlocks: [
       "Modern life changes the environment where beliefs operate. People are exposed to more worldviews, more information, more disagreement, and more pressure to form opinions quickly.",
       "That does not automatically make older systems false. But it does force the question of which parts still adapt well and which parts become rigid under modern conditions.",
@@ -1525,6 +1557,8 @@ export const frameworkSections: ReadingSection[] = [
     eyebrow: "Life Framework",
     intro:
       "This is the personal operating system: how to think, how to evaluate truth, and what to optimize for.",
+    frameworkSummary:
+      "My practical framework separates what is meaningful, useful, sincere, or stabilizing from what is independently supported as true. I ask whether a claim can be checked outside its own system, whether the same reasoning would validate a conflicting belief, and whether the conclusion is stronger than the evidence allows. I want certainty to scale with the strength and uniqueness of the support without turning either belief or skepticism into a rigid identity. The goal is a clean relationship with truth, uncertainty, and action: remain open to revision and invest attention where it can genuinely change outcomes.",
     contentBlocks: [
       "Instead of replacing religion with nothing, this part defines a practical framework for judgment: stay open, avoid false certainty, look for independent evidence, and prioritize actions that compound in real life.",
     ],
@@ -1588,6 +1622,8 @@ export const economicsSections: ReadingSection[] = [
     eyebrow: "Economics",
     title: "Part 1 — Economic Foundations",
     intro: "What is economics fundamentally studying?",
+    frameworkSummary:
+      "Economics begins with scarcity: limited time, labor, land, and materials force choices and trade-offs. Every choice carries an opportunity cost, while incentives shape how people respond to the rules around them. Specialization and exchange help coordinate what no individual can efficiently produce alone.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />Scarcity and Competing Priorities<br />Trade-offs and Opportunity Cost<br />Incentives as the Physics of Behavior<br />Specialization and Exchange Mechanics',
       '<strong class="text-stone-100">🏛️ The Physics of Constraint: Scarcity and Trade-offs</strong>',
@@ -1604,12 +1640,7 @@ export const economicsSections: ReadingSection[] = [
       "Economics begins because resources are limited while human goals compete for those resources. Any attempt to redesign society must first accept the cold physics of the trade-off web: you can never pull on one single strand of the economic system without shifting the balance of the entire machine.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "What is economics fundamentally studying?",
       "Economics begins because resources are limited while human goals compete for those resources. Any attempt to redesign society must first accept the cold physics of the trade-off web: you can never pull on one single strand of the economic system without shifting the balance of the entire machine.",
@@ -1622,6 +1653,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 2 — Wealth, Assets, and Compounding",
     intro:
       "Why does wealth tend to accumulate unevenly, and what separates transient income from structural, self-sustaining financial power?",
+    frameworkSummary:
+      "Income and wealth are different because ownership of assets can generate returns beyond wages. This chapter distinguishes productive from extractive capital and traces how compounding, unequal risk tolerance, and the ability to absorb losses can widen the gap between labor and asset ownership.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />Income vs. Wealth (The Ownership Divide)<br />Productive vs. Extractive Capital<br />The Risk Survivability Gradient<br />The Capital-to-Labor Gradient Matrix (The Two Lions Analogy)<br />The Mathematical Phases of Escape Velocity<br />The Asymmetric Vulnerability of Capital Owners',
       '<strong class="text-stone-100">🛠️ Asset Typology: Productive vs. Extractive Capital</strong>',
@@ -1654,12 +1687,7 @@ export const economicsSections: ReadingSection[] = [
       "The primary divide in modern society is not income itself, but the ownership of productive and extractive compounding assets. A society that fails to monitor this gradient inevitably turns its labor pool into an exhausted demographic that exists solely to fuel the automated escape velocity of an untouchable capital tier.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete (Corrected for Gradient Scale)",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "Why does wealth tend to accumulate unevenly, and what separates transient income from structural, self-sustaining financial power?",
       "The primary divide in modern society is not income itself, but the ownership of productive and extractive compounding assets. A society that fails to monitor this gradient inevitably turns its labor pool into an exhausted demographic that exists solely to fuel the automated escape velocity of an untouchable capital tier.",
@@ -1672,6 +1700,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 3 — Incentives and Adaptation",
     intro:
       "What happens when human actors respond strategically to systemic rules, and how does absolute abundance allow elites to rewrite the mathematics of risk?",
+    frameworkSummary:
+      "People adapt to rules, so every economic intervention also changes the incentives it is trying to manage. Large reserves of capital can let powerful actors withstand costs and uncertainty longer than workers or smaller rivals. Any proposed solution therefore has to account for the behavior it may create after implementation.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Martingale Analogy (Bankroll Asymmetry)<br />High-Frequency Scale Dynamics<br />Predatory Pricing as an Adaptive Monopoly Strategy<br />The Recursive Loop of Regulation and Corporate Evasion',
       '<strong class="text-stone-100">🎰 Bankroll Asymmetry: The Martingale Analogy</strong>',
@@ -1697,12 +1727,7 @@ export const economicsSections: ReadingSection[] = [
       "Every solution becomes part of the system and fundamentally rewrites the incentives of the people inside it. The true danger of wealth disparity is not that billionaires can break laws, but that unlimited abundance grants an actor the power to out-survive systemic friction, ensuring that the rules of the game will always bend toward the person who can afford to keep running the machine.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "What happens when human actors respond strategically to systemic rules, and how does absolute abundance allow elites to rewrite the mathematics of risk?",
       "Every solution becomes part of the system and fundamentally rewrites the incentives of the people inside it. The true danger of wealth disparity is not that billionaires can break laws, but that unlimited abundance grants an actor the power to out-survive systemic friction, ensuring that the rules of the game will always bend toward the person who can afford to keep running the machine.",
@@ -1715,6 +1740,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 4 — Markets, Competition, and Power",
     intro:
       "If concentration is so powerful, why doesn’t the natural force of open competition naturally step in to disrupt it and break up monopolies?",
+    frameworkSummary:
+      "Competition can challenge incumbents, but scale also lets established firms build barriers that protect their position. Concentration can harden a market, while new technology and changing conditions can reopen it. The chapter looks at both forces rather than assuming either dominance or disruption is permanent.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Dual Mechanics of Concentration and Disruption<br />Economies of Scale &amp; Barriers to Entry<br />Network Effects &amp; Platform Lock-In<br />Switching Costs as Consumer Cages<br />The Structural Failures of Natural Monopolies',
       '<strong class="text-stone-100">📉 The Friction Matrix: Why the Market Doesn\'t Self-Correct</strong>',
@@ -1744,12 +1771,7 @@ export const economicsSections: ReadingSection[] = [
       "One recurring tendency of insufficiently constrained markets is a heavy concentration of economic power. Giant firms do not remain giant solely because they are smarter; they remain giant because mass capital allows them to construct structural cages that insulate them from competitive forces. However, the system is fundamentally dynamic: concentration hardens markets, while technological innovation periodically breaks them open, rewriting the rules of dominance.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "If concentration is so powerful, why doesn’t the natural force of open competition naturally step in to disrupt it and break up monopolies?",
       "One recurring tendency of insufficiently constrained markets is a heavy concentration of economic power. Giant firms do not remain giant solely because they are smarter; they remain giant because mass capital allows them to construct structural cages that insulate them from competitive forces. However, the system is fundamentally dynamic: concentration hardens markets, while technological innovation periodically breaks them open, rewriting the rules of dominance.",
@@ -1762,6 +1784,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 5 — Institutions and Regulation",
     intro:
       "Who writes the rules of the economic game, how are they enforced, and what happens when concentrated wealth intersects with political systems?",
+    frameworkSummary:
+      "Markets operate within institutions, laws, and enforcement systems. Concentrated wealth can seek influence over those rules through lobbying and regulatory capture, while public accountability, democratic pressure, and institutional checks can push back. Economic power and political power therefore have to be understood together.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Inseparability of Politics and Economics<br />The Competing Pressures on Governance<br />Regulatory Capture as a Variable Outcome<br />The Bureaucratic Asymmetry of Enforcement',
       '<strong class="text-stone-100">🏛️ The Legal Matrix: Markets Do Not Exist in Nature</strong>',
@@ -1781,12 +1805,7 @@ export const economicsSections: ReadingSection[] = [
       "Economic systems do not operate independently of political power. The deepest danger of unchecked capital compounding is that extreme wealth can buy disproportionate leverage over the legislative process. However, governance remains an adversarial arena: regulatory capture is a continuous corporate objective, but it is constantly challenged by the countervailing forces of public accountability, democratic mandates, and institutional law.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "Who writes the rules of the economic game, how are they enforced, and what happens when concentrated wealth intersects with political systems?",
       "Economic systems do not operate independently of political power. The deepest danger of unchecked capital compounding is that extreme wealth can buy disproportionate leverage over the legislative process. However, governance remains an adversarial arena: regulatory capture is a continuous corporate objective, but it is constantly challenged by the countervailing forces of public accountability, democratic mandates, and institutional law.",
@@ -1799,6 +1818,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 5.5 — Innovation, Productivity, and Growth",
     intro:
       "Where does new wealth come from, why is modern society exponentially richer than societies of the past, and how does value creation operate alongside value concentration?",
+    frameworkSummary:
+      "An economy creates new value as well as concentrating existing wealth. Innovation can expand what people are able to produce and use, but successful actors may also use their gains to shield themselves from later competition. The challenge is to reward value creation without letting its winners close the system behind them.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Engine of Wealth Creation vs. Wealth Extraction<br />The Physics of Productivity Growth<br />The Role of Scientists, Inventors, and Entrepreneurs<br />The Positive Feedback Loop of Technological Innovation',
       '<strong class="text-stone-100">💡 The Creation Engine: Beyond the Zero-Sum Game</strong>',
@@ -1821,12 +1842,7 @@ export const economicsSections: ReadingSection[] = [
       "An economic system cannot be understood solely as an apparatus for wealth concentration; it is simultaneously a hyper-efficient engine for wealth creation. The central challenge of political economy is navigating this exact duality: how to design a framework that encourages, protects, and rewards the high-risk innovation that expands the human pie, while preventing the successful actors from using their rewards to freeze competition and hoard the abundance.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "Where does new wealth come from, why is modern society exponentially richer than societies of the past, and how does value creation operate alongside value concentration?",
       "An economic system cannot be understood solely as an apparatus for wealth concentration; it is simultaneously a hyper-efficient engine for wealth creation. The central challenge of political economy is navigating this exact duality: how to design a framework that encourages, protects, and rewards the high-risk innovation that expands the human pie, while preventing the successful actors from using their rewards to freeze competition and hoard the abundance.",
@@ -1839,6 +1855,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 5.7 — Information, Perception, and Measurement",
     intro:
       "How do economic metrics shape the reality they are trying to measure, and what happens when human actors respond to statistical models rather than actual physical conditions?",
+    frameworkSummary:
+      "Economic measures help people understand complex systems, but the reported picture can diverge from conditions experienced by workers and households. Expectations and policy decisions then respond to those measures. This chapter examines how debt, credit, purchasing power, and selective metrics can obscure underlying pressure.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Map is Not the Territory (Economic Ontology)<br />The Divergence of GDP vs. Quality of Life<br />The Strategic Inflation of Asset Prices vs. Consumer Goods<br />Institutional Incentives and Statistical Blind Spots<br />Opposing Force Vector: Statistical Modeling ↔ Physical Reality',
       '<strong class="text-stone-100">🗺️ Economic Ontology: The Map and the Territory</strong>',
@@ -1868,12 +1886,7 @@ export const economicsSections: ReadingSection[] = [
       "The economy is an arena driven by information and perception. The deepest systemic vulnerability is the divergence between the statistical models reported on the news and the raw, physical reality experienced along the labor gradient. When institutions use debt, credit expansion, and curated metrics to mask structural cracks, they create an economy that looks pristine on paper, but functions as an unstable pressure cooker in real life.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "How do economic metrics shape the reality they are trying to measure, and what happens when human actors respond to statistical models rather than actual physical conditions?",
       "The economy is an arena driven by information and perception. The deepest systemic vulnerability is the divergence between the statistical models reported on the news and the raw, physical reality experienced along the labor gradient. When institutions use debt, credit expansion, and curated metrics to mask structural cracks, they create an economy that looks pristine on paper, but functions as an unstable pressure cooker in real life.",
@@ -1888,6 +1901,8 @@ export const economicsSections: ReadingSection[] = [
       "Part 5.9 — Applied Systemic Stress: 1929 and the Modern Debt Economy",
     intro:
       "What happens when economic activity becomes increasingly dependent on debt, speculation, and concentrated capital rather than broad-based purchasing power?",
+    frameworkSummary:
+      "Economic crises can emerge when debt, speculation, asset prices, purchasing power, and institutional incentives reinforce one another. The chapter uses 1929 and the modern debt economy to examine how financial systems can absorb, delay, or redistribute stress without necessarily eliminating its underlying causes.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />Structural Demand Failure<br />Speculative Asset Booms<br />Credit Expansion as a Stabilization Mechanism<br />The Great Depression<br />The Modern K-Shaped Economy<br />Sectoral Fragility and Uneven Recovery',
       '<strong class="text-stone-100">Historical Case Study: The Great Depression</strong>',
@@ -1907,12 +1922,7 @@ export const economicsSections: ReadingSection[] = [
       "Economic crises are rarely caused by a single variable. They emerge when multiple feedback loops—debt, speculation, purchasing power, asset valuations, and institutional incentives—become increasingly disconnected from underlying economic reality. Modern financial systems can delay or redistribute these pressures, but they cannot eliminate them entirely.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Applied Analysis",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "What happens when economic activity becomes increasingly dependent on debt, speculation, and concentrated capital rather than broad-based purchasing power?",
       "Economic crises are rarely caused by a single variable. They emerge when multiple feedback loops—debt, speculation, purchasing power, asset valuations, and institutional incentives—become increasingly disconnected from underlying economic reality. Modern financial systems can delay or redistribute these pressures, but they cannot eliminate them entirely.",
@@ -1925,6 +1935,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 6 — Trade, Globalization, and National Strategy",
     intro:
       "How should nations balance domestic interests against global economic integration, and what happens when independent sovereign entities clash over resource networks?",
+    frameworkSummary:
+      "Trade connects countries with different resources and strategic interests. Targeted protection can support critical domestic industries, but broad barriers can also raise the cost of imported inputs and invite retaliation. This chapter weighs those pressures as part of a national strategy that remains dependent on global exchange.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />Comparative Advantage and Global Interdependence<br />The Trade Standoff Loop (Game-Theory Structure)<br />The &quot;Mutual Hostage Situation&quot; of Deglobalization<br />Strategic Input Exemptions vs. Consumer Tariffs<br />Opposing Force Vector: Domestic Protection ↔ Strategic Dependence',
       '<strong class="text-stone-100">🌐 The Matrix of Global Trade: Comparative Advantage</strong>',
@@ -1943,12 +1955,7 @@ export const economicsSections: ReadingSection[] = [
       "Global trade is a mutual hostage situation. Tariffs do not function as permanent structural walls, but as fluid bargaining leverage inside an adversarial game-theory matrix. A mature national strategy uses targeted protectionism to shield critical domestic industries, while maintaining open channels for scarce global inputs, ensuring that the domestic economy does not choke on its own defense mechanisms.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "How should nations balance domestic interests against global economic integration, and what happens when independent sovereign entities clash over resource networks?",
       "Global trade is a mutual hostage situation. Tariffs do not function as permanent structural walls, but as fluid bargaining leverage inside an adversarial game-theory matrix. A mature national strategy uses targeted protectionism to shield critical domestic industries, while maintaining open channels for scarce global inputs, ensuring that the domestic economy does not choke on its own defense mechanisms.",
@@ -1961,6 +1968,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 7 — The Tug-of-War Model",
     intro:
       "How does economic and institutional power accumulate, reproduce, and challenge itself over time across society?",
+    frameworkSummary:
+      "Economic power moves through a tug of war among compounding capital, labor, democratic institutions, and technological change. Concentration can shift ownership and influence toward asset holders, while organized counterpressure and disruptive innovation can alter the balance. The result is a changing system rather than a settled endpoint.",
     contentBlocks: [
       '<strong class="text-stone-100">Topics Covered</strong><br />The Capital-to-Labor Gradient Matrix<br />The Mechanics of Long-Term Structural Drift<br />The Active Countervailing Standoff<br />Opposing Force Vector: Capital Accumulation ↔ Creative Destruction',
       '<strong class="text-stone-100">📊 Rebalancing the Model: The Capital-to-Labor Gradient</strong>',
@@ -1983,12 +1992,7 @@ export const economicsSections: ReadingSection[] = [
       "Power in a political economy behaves like an adversarial gravity well. Left unchecked, automated capital compounding steadily pulls institutional rules, asset ownership, and resource distribution away from the working gradient. However, the system is kept alive by its own internal friction: the burst leverage of organized democratic labor and the disruptive explosions of new technological innovation continuously fight back, keeping the economy in a state of dynamic, evolving equilibrium.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Complete",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "How does economic and institutional power accumulate, reproduce, and challenge itself over time across society?",
       "Power in a political economy behaves like an adversarial gravity well. Left unchecked, automated capital compounding steadily pulls institutional rules, asset ownership, and resource distribution away from the working gradient. However, the system is kept alive by its own internal friction: the burst leverage of organized democratic labor and the disruptive explosions of new technological innovation continuously fight back, keeping the economy in a state of dynamic, evolving equilibrium.",
@@ -2001,6 +2005,8 @@ export const economicsSections: ReadingSection[] = [
     title: "Part 8 — Structural Walls and Open Problems",
     intro:
       "What are the fundamental limits, systemic vulnerabilities, and unresolved loopholes where top-down economic interventions hit structural resistance?",
+    frameworkSummary:
+      "This chapter maps unresolved ways an economic reform can be redirected: capital can move, firms can restructure, supply chains and trading partners can react, and institutions can face capture, uneven enforcement, and political resistance. These are constraints to design around, not reasons to assume reform is impossible.",
     contentBlocks: [
       '<strong class="text-stone-100">🧱 The Current Walls (Systemic Loopholes)</strong>',
       '<strong class="text-stone-100">Wall 0 — Capital Reallocation</strong>',
@@ -2037,12 +2043,7 @@ export const economicsSections: ReadingSection[] = [
       "The structural walls above prove that an economy cannot be treated like a static machine with a single variable solution. To complete the comprehensive map of the framework, the next phases of research must analyze how the Capital-to-Labor Gradient is fundamentally warped by the following system nodes:<br />Automation and AI: The threshold where machine intelligence completely decouples production from human wage labor, permanently breaking traditional employment models.<br />Labor Markets: The mechanics of collective bargaining, wage determination, and matching human skill grids with evolving industrial demands.<br />Housing Economics: The structural loop where fixed land supply and financialized speculation transform shelter from a basic human survival need into an extractive tollbooth asset.<br />Monetary Systems &amp; Central Banking: How fiat money creation, fractional reserve lending, and interest rate manipulation by central banks inject synthetic liquidity that disproportionately inflates asset prices over consumer wages.<br />Debt and Consumer Psychology: The behavioral dynamics of using high-interest credit expansion to mask a systemic decline in real purchasing power across the working population.<br />Economic Cycles: The natural waves of expansion, over-speculation, bubble bursts, and systemic liquidations that dictate the long-term timeline of capital markets.<br />Innovation and Entrepreneurship: The structural guardrails required to incentivize high-risk technological value creation without allowing the winners to freeze the competitive ecosystem.<br />Economic Measurement: Designing alternative metrics beyond GDP to track median purchasing power, real cost-of-living inflation, and systemic resource concentration.<br />Wealth Inequality &amp; Institutional Trust: The exact statistical point where a massive wealth gap shatters public legitimacy in democratic systems, leading to civil instability and institutional decay.<br />International Finance: How global currency fluctuations, sovereign debt yields, and international banking networks dictate national economic autonomy.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Fully Written / Framework Integration",
-      },
-    ],
+    notes: [],
     keyIdeas: [
       "What are the fundamental limits, systemic vulnerabilities, and unresolved loopholes where top-down economic interventions hit structural resistance?",
     ],
@@ -2053,20 +2054,19 @@ export const economicsSections: ReadingSection[] = [
     eyebrow: "Economics / Section 2",
     title: "Section 2 / Part 1 — Objective",
     intro:
-      "The fundamental objective of this framework is not the pursuit of standard macro-metrics such as gross domestic product (GDP) expansion, baseline stock market capitalization, or raw corporate profitability. The definitive purpose of an economy is to configure a stable, highly resilient domestic society where basic physical survival is reliably attainable, innovative value creation remains incentivized, individual property ownership remains accessible, and institutional power is legally barred from compounding into an unassailable monopoly.The framework explicitly rejects the concept of forced equality of outcome, recognizing that flattening economic distribution destroys human motivation and stagnates production. The objective is strictly defensive: to prevent runaway capital concentration from achieving self-perpetuating, systemic dominance, thereby preserving a dynamic, open arena where ordinary citizens retain access to generational mobility, market choice, and foundational liberty.",
+      "What is the Equilibrium Framework, and what is it trying to preserve?",
     contentBlocks: [
-      "The fundamental objective of this framework is not the pursuit of standard macro-metrics such as gross domestic product (GDP) expansion, baseline stock market capitalization, or raw corporate profitability. The definitive purpose of an economy is to configure a stable, highly resilient domestic society where basic physical survival is reliably attainable, innovative value creation remains incentivized, individual property ownership remains accessible, and institutional power is legally barred from compounding into an unassailable monopoly.<br />The framework explicitly rejects the concept of forced equality of outcome, recognizing that flattening economic distribution destroys human motivation and stagnates production. The objective is strictly defensive: to prevent runaway capital concentration from achieving self-perpetuating, systemic dominance, thereby preserving a dynamic, open arena where ordinary citizens retain access to generational mobility, market choice, and foundational liberty.",
+      '<strong class="text-stone-100">What the framework proposes</strong>',
+      "The Equilibrium Framework is my proposal for keeping markets productive and open while preventing concentrated ownership and institutional influence from hardening into self-reinforcing power. It pairs a dignified baseline for full-time workers with rewards for productive investment, innovation, and risk-taking. It also aims to keep small businesses, competition, and a path to ownership within reach.",
+      "The proposed design combines a tax on very large firms' domestic revenue, a fund that helps eligible small businesses pay a higher wage floor, targeted trade protections with input exemptions, anti-concentration rules, and incentives to reinvest in domestic production. The following parts explain those tools, test how people might adapt to them, and set out what success and failure would look like. These are proposals to evaluate, not outcomes the framework has already demonstrated.",
+      '<strong class="text-stone-100">The goal</strong>',
+      "The framework judges an economy by more than GDP growth, stock market value, or corporate profitability. Its goal is a resilient society where people can secure basic necessities, productive work and innovation remain rewarding, ownership stays accessible, and no institution becomes too powerful to challenge.<br />It does not seek equal outcomes or the elimination of significant rewards. It seeks to limit the point at which early competitive wins turn into self-perpetuating dominance, so ordinary people retain room for mobility, choice, and liberty.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "The fundamental objective of this framework is not the pursuit of standard macro-metrics such as gross domestic product (GDP) expansion, baseline stock market capitalization, or raw corporate profitability. The definitive purpose of an economy is to configure a stable, highly resilient domestic society where basic physical survival is reliably attainable, innovative value creation remains incentivized, individual property ownership remains accessible, and institutional power is legally barred from compounding into an unassailable monopoly.The framework explicitly rejects the concept of forced equality of outcome, recognizing that flattening economic distribution destroys human motivation and stagnates production. The objective is strictly defensive: to prevent runaway capital concentration from achieving self-perpetuating, systemic dominance, thereby preserving a dynamic, open arena where ordinary citizens retain access to generational mobility, market choice, and foundational liberty.",
-      "Objective",
+      "The Equilibrium Framework aims to preserve productive markets while limiting self-reinforcing concentrations of economic and institutional power.",
+      "It proposes a worker baseline, accessible ownership, competition, and rewards for productive investment and innovation.",
     ],
   },
   {
@@ -2080,7 +2080,7 @@ export const economicsSections: ReadingSection[] = [
       '<strong class="text-stone-100">Principle 1:</strong> The Dignified Baseline',
       "Any individual engaging in full-time labor within the domestic economy must possess the immediate purchasing power required to independently secure the baseline infrastructure of human survival. This includes:<br />Sanitary, non-exploitative housing.<br />Nutritional security.<br />Comprehensive healthcare access.<br />Reliable local or regional transportation.<br />A persistent, liquid savings buffer to insulate against personal emergencies.<br />A social architecture that requires full-time workers to remain in a state of chronic, high-velocity survival mode is structurally unstable, economically inefficient, and populates the territory with an exhausted, highly volatile demographic.",
       '<strong class="text-stone-100">Principle 2:</strong> Preservation of Incentive and Hierarchy',
-      "Higher degrees of specialized skill, professional responsibility, calculated risk-taking, and intellectual expertise must continue to command asymmetrical rewards.<br />A specialized surgeon must earn more than a cashier; an entrepreneur who successfully navigates an 80% market failure rate to deliver a new technological utility must retain the capability to accumulate significant individual wealth.<br />The system does not seek the artificial flattening of social hierarchy. The objective is to establish an unyielding legal firewall that prevents early competitive wins from transitioning into automated, self-perpetuating instruments of systemic distortion.",
+      "Higher degrees of specialized skill, professional responsibility, calculated risk-taking, and intellectual expertise should continue to command greater rewards.<br />A specialized surgeon and an entrepreneur who takes substantial risk to create a useful technology should be able to earn more and accumulate wealth.<br />The system does not seek to flatten economic outcomes. Its aim is to prevent early competitive wins from turning into self-perpetuating advantages that shut others out.",
       '<strong class="text-stone-100">Principle 3:</strong> Separation of Productive vs. Extractive Wealth',
       "The framework establishes a rigid operational distinction between value creation and value capture.<br />Productive Wealth: Capital deployed to build operational firms, finance scientific research, construct physical infrastructure, and expand the real supply of goods and services is highly valued and systemically protected.<br />Extractive Wealth: Capital deployed to corner pre-existing, scarce resources, erect private tollbooths over vital necessities (such as housing or raw minerals), or gain financial leverage without generating proportional utility is identified as a systemic drag and targeted for legislative containment.",
       '<strong class="text-stone-100">Principle 4:</strong> The Main Street Preference',
@@ -2089,15 +2089,11 @@ export const economicsSections: ReadingSection[] = [
       "The primary long-term threat to an open market is not wealth itself, but the concentration of structural assets. The unchecked accumulation of capital, critical information networks, political lobbying vectors, and foundational land ownership creates powerful positive feedback loops that become increasingly impossible to reverse through standard democratic means. The state must continuously monitor and intercept concentration vectors before monopolies fully entrench themselves, rather than waiting for market failures to manifest.<br />Intervention Threshold<br />Intervention should not occur merely because individuals, firms, or institutions become successful. The framework does not treat wealth itself as a problem. Intervention becomes justified when concentration begins materially reducing market competition, limiting ownership accessibility, restricting economic mobility, or creating disproportionate influence over political and regulatory institutions.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "Any individual engaging in full-time labor within the domestic economy must possess the immediate purchasing power required to independently secure the baseline infrastructure of human survival. This includes:Sanitary, non-exploitative housing.Nutritional security.Comprehensive healthcare access.Reliable local or regional transportation.A persistent, liquid savings buffer to insulate against personal emergencies.A social architecture that requires full-time workers to remain in a state of chronic, high-velocity survival mode is structurally unstable, economically inefficient, and populates the territory with an exhausted, highly volatile demographic.",
-      "Core Principles",
+      "Full-time work should make basic necessities and a savings buffer attainable.",
+      "The framework protects rewards for skill, innovation, and risk while resisting self-perpetuating market power.",
+      "Intervention is aimed at concentration that closes competition, ownership, mobility, or political accountability.",
     ],
   },
   {
@@ -2113,28 +2109,24 @@ export const economicsSections: ReadingSection[] = [
       '<strong class="text-stone-100">Tier 1:</strong> Progressive Corporate   Tier 2: Small Business',
       "Revenue Tax (&gt; $500M)            Labor Fund Wage Subsidies",
       '<pre class="overflow-x-auto rounded-xl border border-white/10 bg-black/25 p-4 font-mono text-xs leading-6 text-amber-100/80">  │                               │\n  └───────────────┬───────────────┘\n                  ▼\n          THE BORDER INTEGRATION\n          Tier 3: Strategic Protectionist Shield\n          (Exemptions for raw materials + consumer tariffs)</pre>',
-      "To translate these principles into an active, self-sustaining ecosystem, the framework deploys a multi-tiered structural engine designed to re-balance the capital-to-labor gradient from the inside out:",
+      "To translate these principles into policy, the framework proposes five linked tools intended to rebalance labor, capital, competition, and domestic production:",
       '<strong class="text-stone-100">Tier 1: The Progressive Corporate Revenue Tax</strong>',
-      'The model establishes a progressive, multi-layered tax levied directly upon the gross domestic revenue of mega-corporations and massive conglomerates exceeding $500 million in annual receipts.<br />The Structural Logic: The framework deliberately bypasses traditional "net profit" taxation, which can be easily erased, manipulated, or routed offshore through complex corporate accounting networks. By targeting gross revenue at major institutional bottlenecks, the tax captures wealth at the primary entry valve, preventing hyper-conglomerates from hoarding the financial rewards of automation or using surplus capital for anti-competitive stock buybacks and executive bonuses.',
+      'The model proposes a progressive tax on the gross domestic revenue of very large firms exceeding $500 million in annual receipts.<br />The Structural Logic: Revenue is harder to reduce through deductions than taxable profit, so this approach aims to collect from firms with substantial sales even when reported profits are low. It does not guarantee that the burden stays with owners: firms may raise prices, cut costs, or change their structure. Rates, thresholds, treatment of low-margin businesses, and repeated taxation along supply chains would need careful testing.',
       '<strong class="text-stone-100">Tier 2: The Small Business Labor Fund</strong>',
-      "One hundred percent of the capital captured via the Tier 1 Revenue Tax is legally firewalled into a national, independently audited Labor Equilibrium Fund.<br />The Operational Loop: Concurrently, the statutory national minimum wage is legally raised to a dignified floor (e.g., $25/hour). To ensure this wage floor does not collapse independent local businesses, verified, non-conglomerate small shops draw directly from the Fund. If a local shop can market-sustain a $15/hour labor cost, the Fund automatically pays the remaining $10/hour difference directly to the worker’s payroll.<br />The Neutrality Factor: This successfully circumvents the traditional Inflation Trap. Because no new currency is printed or synthetically injected into the macroeconomy, the total money supply remains perfectly balanced. Wealth is simply redirected out of corporate asset reserves and transformed into active, circulating consumer wages on Main Street, stabilizing baseline commodity pricing.",
+      "Revenue collected through Tier 1 would be directed to an independently audited Labor Equilibrium Fund.<br />The Operational Loop: The proposal pairs a higher wage floor with a subsidy for eligible, independent small businesses. For illustration, if the floor were $25 an hour and a shop could sustain $15, the fund would cover the $10 difference. Those figures are examples, not a calibrated national rate or a demonstrated funding balance.<br />Funding the subsidy with tax revenue would avoid financing it by creating new money, but that alone would not guarantee stable prices. Shifting purchasing power can change demand, while taxes and wage rules can change costs, hiring, and prices. The fund would have to collect enough to cover its commitments, including during downturns.",
       '<strong class="text-stone-100">Tier 3: The Strategic Protectionist Shield</strong>',
-      "To neutralize the threat of capital flight, the framework wraps the domestic economy in a dynamic, dual-layered trade shield:<br />Finished Consumer Goods Tariffs: Imported products that arrive fully assembled and ready for retail distribution (such as foreign electronics or automobiles) face steep, non-negotiable border tariffs. This eliminates the cost advantage of running factories in foreign tax havens, forcing global corporations to maintain physical production facilities within the US to access the American consumer market.<br />Critical Input Exemptions: Raw materials, technical components, and capital machinery that cannot currently be produced efficiently within domestic borders (such as specialized microchips or raw lithium) receive immediate, automated tariff exemptions. This ensures that independent local builders, hardware startups, and domestic manufacturers keep their input costs exceptionally low, protecting them from global supply chain shocks.",
-      '<strong class="text-stone-100">Tier 4: Automated Anti-Monopoly Triggers</strong>',
-      "The framework updates traditional antitrust law by establishing objective, mathematical triggers based on Ultimate Beneficial Ownership (UBO) and shared infrastructure. The moment a corporate network achieves a critical threshold of market concentration, distribution pipeline control, or platform dominance, automated institutional firewalls deploy:<br />The entity is legally barred from executing further corporate acquisitions.<br />They are restricted from adjusting retail pricing below production costs to execute sustained-loss competition.<br />Their corporate structure is subjected to mandatory structural unbundling to preserve competitive space for independent operators along the gradient.",
+      "The proposal uses targeted trade measures to support domestic production, while recognizing that tariffs cannot by themselves prevent capital from moving abroad:<br />Finished Consumer Goods Tariffs: Duties on selected finished imports could reduce some offshoring incentives and give domestic producers room to compete. Their scope and duration would need review because tariffs can also raise prices for buyers and provoke retaliation against exporters.<br />Critical Input Exemptions: Raw materials, components, and machinery that domestic producers cannot readily replace would be candidates for exemptions. These exemptions aim to limit added costs for local builders and manufacturers, but they cannot insulate those firms from every supply shock.",
+      '<strong class="text-stone-100">Tier 4: Anti-Concentration Review Triggers</strong>',
+      "The framework proposes measurable review triggers based on beneficial ownership, shared infrastructure, market concentration, distribution control, and platform dominance. Crossing a threshold would start scrutiny and, where justified under clear legal standards, could lead to:<br />Limits on further acquisitions.<br />Restrictions on sustained below-cost pricing used to exclude rivals.<br />Structural remedies, including unbundling where a narrower remedy is insufficient.<br />The thresholds, evidence requirements, and appeals process would need to be specified before any such rule could be enforced fairly.",
       '<strong class="text-stone-100">Tier 5: Domestic Production Reinvestment Incentives</strong>',
-      "To ensure that capital remaining on the right side of the gradient is funneled exclusively into value creation rather than value capture, the tax code rewards productive reallocation. Large corporate entities can drastically lower their revenue tax exposure by executing verified, direct investments into:<br />Domestic manufacturing plant construction.<br />High-risk, fundamental scientific research and development (R&amp;D).<br />Workforce development and specialized high-skill training academies.<br />Long-term public-utility infrastructure projects.<br />Capital is actively channeled away from speculative asset hoarding and forced to become a productive partner to the domestic labor force.",
+      "To encourage productive investment rather than asset capture, the proposal would reduce a firm's tax exposure for verified spending on:<br />Domestic manufacturing plant construction.<br />High-risk scientific research and development (R&amp;D).<br />Workforce development and specialized training.<br />Long-term public-utility infrastructure.<br />The intended effect is to make domestic production more attractive. Whether firms would add new investment, relabel existing spending, or pass costs elsewhere would need to be measured.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "THE INBOUND VALVE               THE OUTBOUND VECTOR",
-      "Policy Architecture",
+      "The proposal links a tax on very large firms' revenue to a wage subsidy for eligible small businesses.",
+      "Targeted trade measures, anti-concentration review, and reinvestment incentives aim to preserve domestic production and competition.",
+      "Funding, tax incidence, prices, retaliation, and enforcement remain questions to test rather than solved outcomes.",
     ],
   },
   {
@@ -2147,8 +2139,6 @@ export const economicsSections: ReadingSection[] = [
     contentBlocks: [
       '<strong class="text-stone-100">Core Question</strong>',
       "How does the framework respond when large economic actors strategically adapt to its incentives, restrictions, and enforcement mechanisms?",
-      '<strong class="text-stone-100">Current Status</strong>',
-      "Framework Tested / Partially Resolved",
       '<strong class="text-stone-100">Introduction</strong>',
       "No economic policy exists in a vacuum. Individuals, corporations, governments, and investors continuously adapt to changing incentives. Any successful framework must therefore be evaluated not only by its intended effects, but by the secondary and tertiary responses it generates throughout the system.<br />The following stress tests represent several major adaptation pathways that could emerge in response to the Equilibrium Framework.",
       '<strong class="text-stone-100">Wall 0 — Capital Reallocation</strong>',
@@ -2183,15 +2173,10 @@ export const economicsSections: ReadingSection[] = [
       "The purpose of these stress tests is not to demonstrate that the framework is invulnerable. No economic architecture can fully eliminate adaptation, evasion, political resistance, or unintended consequences.<br />Instead, the objective is to determine whether the framework remains functional after major actors begin responding strategically to its incentives.<br />The framework therefore should be judged not by whether every loophole is eliminated, but by whether the remaining vulnerabilities are manageable without undermining the core objectives of the system. Economic design is ultimately an exercise in managing trade-offs rather than achieving perfection.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "How does the framework respond when large economic actors strategically adapt to its incentives, restrictions, and enforcement mechanisms?",
-      "Structural Stress Tests",
+      "The proposal must be judged against capital reallocation, corporate slicing, supply-chain costs, and trade retaliation.",
+      "Each response leaves a weakness that may require monitoring and revision.",
     ],
   },
   {
@@ -2235,15 +2220,10 @@ export const economicsSections: ReadingSection[] = [
       "The framework considers success to be the maintenance of a productive economy in which ownership, opportunity, and stability remain broadly accessible while innovation and wealth creation continue to occur.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "How should the performance of the framework be evaluated over time?",
-      "Success Metrics",
+      "Success is assessed through purchasing power, mobility, housing access, business formation, concentration, and innovation.",
+      "Aggregate output alone does not show whether ordinary people gain stability and opportunity.",
     ],
   },
   {
@@ -2276,19 +2256,16 @@ export const economicsSections: ReadingSection[] = [
       '<strong class="text-stone-100">Limitation 6 — Innovation Trade-Offs</strong>',
       "Policies designed to reduce concentration may occasionally reduce investment incentives, risk-taking, or entrepreneurial activity.",
       "Maintaining balance remains an ongoing challenge.",
+      '<strong class="text-stone-100">Limitation 7 — Funding and Price Effects</strong>',
+      "The revenue tax has not been shown to cover the proposed wage subsidies at any particular wage floor. Firms and households may also respond through prices, hiring, investment, or spending, so avoiding new money creation does not by itself establish price stability.",
       '<strong class="text-stone-100">Conclusion</strong>',
       "The framework does not eliminate economic conflict, scarcity, competition, or power. It attempts to manage them within boundaries that preserve social stability, opportunity, and productive growth.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "What problems can this framework reduce, and what problems remain beyond its ability to solve?",
-      "Known Limitations",
+      "Implementation depends on enforcement capacity, political support, and international responses.",
+      "The wage fund's financing and the proposal's effects on prices, hiring, and investment remain untested.",
     ],
   },
   {
@@ -2316,15 +2293,10 @@ export const economicsSections: ReadingSection[] = [
       "The goal is to maintain a dynamic equilibrium where none of them become dominant enough to undermine the system itself.",
     ],
     arguments: [],
-    notes: [
-      {
-        title: "Current Status",
-        body: "Added from the Equilibrium Framework draft.",
-      },
-    ],
+    notes: [],
     keyIdeas: [
-      "The purpose of this project has not been to discover a perfect economic system.",
-      "Closing Position",
+      "The aim is to preserve productive markets while keeping ownership, competition, and mobility accessible.",
+      "Economic design remains a continuous balance among labor, capital, innovation, concentration, domestic protection, and global integration.",
     ],
   },
 ];
@@ -2383,6 +2355,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Political Reality",
     intro:
       "Core question: How much political reality can any individual actually know?",
+    frameworkSummary:
+      "I think political reality exists independently of the stories people tell about it, but no individual has complete access to the whole system. Political judgment is built from partial evidence, selected information, institutional reporting, historical context, and interpretation. That does not mean every political account is equally valid; some models explain the available evidence substantially better than others. I therefore want political confidence to remain proportional to what can actually be established, while leaving room for hidden information and later revision.",
     contentBlocks: [
       "Politics concerns the organization of societies through institutions, laws, incentives, and collective decision-making. Yet unlike many areas of everyday life, political reality is rarely experienced directly. Most people encounter politics through second-hand information rather than firsthand observation.",
       "Citizens rarely witness legislation being negotiated, intelligence being gathered, budgets being allocated, court decisions being drafted, diplomatic negotiations occurring, or administrative systems functioning internally. Instead, they experience politics through reporting, public statements, statistics, commentary, social media, personal conversations, and selective moments that reach public attention.",
@@ -2428,6 +2402,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Power",
     intro:
       "Core question: What is power, and how is it acquired, exercised, limited, and maintained?",
+    frameworkSummary:
+      "I think power is broader than formal authority. It is the capacity to alter other people's options, incentives, information, resources, constraints, or expected consequences. Political power can therefore exist through government, wealth, institutions, social coordination, media, technology, violence, expertise, or control over access. Because power cannot simply be eliminated, the central political problem is how it is distributed, constrained, made visible, challenged, and corrected when it is abused.",
     contentBlocks: [
       "Power concerns the ability to influence behavior, decisions, resources, or outcomes. Every society contains multiple forms of power operating simultaneously. While politics often focuses on government, political systems exist alongside economic, military, informational, technological, cultural, religious, and social forms of power that frequently interact with one another.",
       "Power itself is not inherently good or bad. It is a structural feature of organized human societies. Individuals, groups, and institutions continuously compete, cooperate, negotiate, and constrain one another through different forms of influence. Politics therefore cannot be understood solely by examining governments. It also requires understanding the broader distribution of power throughout society.",
@@ -2508,6 +2484,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Representation",
     intro:
       "Core question: What does it mean for individuals, institutions, or governments to represent others politically?",
+    frameworkSummary:
+      "I do not think governments, political organizations, populations, and individual citizens should automatically be treated as the same actor. Representation is always partial: institutions speak and act for groups whose members may disagree internally and possess different interests. Political narratives also represent reality selectively by deciding which people, events, and interests become visible. I therefore want to ask both who has authority to speak for whom and how accurately the representation preserves the complexity of the people or situation being represented.",
     contentBlocks: [
       "Representation is the process through which relatively few individuals or institutions attempt to speak, decide, or act on behalf of much larger populations. Because no representative can fully reflect every individual simultaneously, political representation necessarily involves selection, prioritization, interpretation, and compromise.",
       'Representation therefore concerns more than simply speaking for "the people." It also involves deciding which interests, values, identities, experiences, and interpretations of reality receive greater political attention.',
@@ -2563,6 +2541,8 @@ export const politicsSections: ReadingSection[] = [
     title: "Part 4 — Incentives",
     eyebrow: "Politics / Incentives",
     intro: "Core question: Why do political actors behave the way they do?",
+    frameworkSummary:
+      "I think political behavior is often better explained by the incentives and constraints acting on people than by their stated beliefs alone. Politicians, voters, institutions, companies, movements, and governments adapt to what rewards success, punishes deviation, preserves power, or threatens survival. This does not mean ideology or morality are fake; different motives can operate simultaneously. Political reform therefore has to examine how changing rules changes behavior, including unintended adaptations that may undermine the original goal.",
     contentBlocks: [
       "Representation explains who political actors claim to speak for. Incentives explain why political actors often behave the way they do.",
       "Political outcomes are shaped not only by ideas, values, or intentions, but also by the incentives created by political systems. Politicians, political parties, bureaucracies, institutions, media organizations, corporations, interest groups, and voters frequently respond to what political systems reward, discourage, or make possible.",
@@ -2623,6 +2603,8 @@ export const politicsSections: ReadingSection[] = [
     title: "Part 5 — Political Identity",
     eyebrow: "Politics / Identity",
     intro: "Core question: How do identity and politics shape one another?",
+    frameworkSummary:
+      "I think political identity is useful for coordination and belonging but dangerous when it turns a revisable set of beliefs into a protected part of the self. People contain many overlapping identities and interests that rarely fit perfectly into a party or ideological category. Once political disagreement becomes identity threat, evidence can become secondary to loyalty, status, or defense of the group. I therefore prefer political positions that remain separable enough from identity that they can change without requiring a person to experience revision as betrayal.",
     contentBlocks: [
       "Political identity is not simply something people bring into politics. Political systems also shape identity over time. Individuals influence politics through their identities, while political institutions, parties, movements, media, education, and public discourse simultaneously influence how individuals understand themselves and others.",
       "Political identity therefore emerges through a continual interaction between individuals and the political environments in which they live. Rather than operating independently, identity and politics frequently reinforce one another.",
@@ -2737,6 +2719,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Information & Media",
     intro:
       "Core question: How do information systems shape what societies treat as politically real or important?",
+    frameworkSummary:
+      "I think political information systems do more than tell people what happened; they strongly influence which parts of reality receive collective attention and how those parts are framed. Selection can distort without requiring outright lying: true events can create a misleading overall model when context, frequency, scale, or competing evidence are omitted. Media institutions also operate under incentives involving attention, access, ideology, reputation, speed, and revenue. I therefore want to evaluate not only whether individual claims are true, but whether the information environment produces a reasonably proportionate model of the larger reality.",
     contentBlocks: [
       "This part will examine media beyond misinformation: attention, framing, emotional salience, perceived importance, compression, repetition, and the way millions of people can be coordinated around the same selected fragment of reality.",
     ],
@@ -2760,6 +2744,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Ideology",
     intro:
       "Core question: How do ideologies compress political reality into usable frameworks?",
+    frameworkSummary:
+      "I think ideology is a compression tool: it turns an overwhelmingly complicated political world into a smaller model containing priorities, causal explanations, values, and expected solutions. That compression is useful because no person can reason from every fact at once, but it becomes dangerous when the model is mistaken for reality itself. I therefore see ideologies as tools that can reveal recurring patterns while still needing pressure from evidence, exceptions, competing frameworks, and changing conditions.",
     contentBlocks: [
       "This part will examine ideology as simplification. Reality contains thousands of variables; ideology gives people a framework for sorting them. That simplification can be useful, but it becomes dangerous when mistaken for reality itself.",
     ],
@@ -2783,6 +2769,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Institutions",
     intro:
       "Core question: Why do societies build institutions, and how do institutions shape political behavior?",
+    frameworkSummary:
+      "I think institutions allow large societies to coordinate beyond individual relationships by preserving rules, roles, memory, expertise, enforcement, and predictable procedures across time. At the same time, institutions create concentrated forms of power and can begin protecting their own survival, incentives, or internal culture rather than the purpose they were built to serve. Healthy institutions therefore need enough stability to function and enough transparency, accountability, competition, and adaptability to be corrected.",
     contentBlocks: [
       "This part will examine institutions such as courts, police, military, schools, central banks, election systems, and bureaucracies as social technologies for coordination, enforcement, continuity, legitimacy, and constraint.",
     ],
@@ -2806,6 +2794,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Polarization",
     intro:
       "Core question: How does political disagreement escalate into hardened group conflict?",
+    frameworkSummary:
+      "I think polarization becomes dangerous when disagreement stops being primarily about competing judgments and becomes a recursive conflict between identities that increasingly interpret one another as threats. Each side's defensive response can then become evidence confirming the other's fear, while information filtering, moralization, and social pressure reduce shared reality. Disagreement itself is not the problem; a functioning political system needs genuine conflict and competing interests. The problem is when the system loses the ability to disagree, update, cooperate selectively, or accept legitimate losses without treating the opposing side's continued existence as intolerable.",
     contentBlocks: [
       "This part will examine polarization through the same mechanisms used elsewhere in the project: certainty, identity, moralization, tribe formation, information filtering, and escalation.",
     ],
@@ -2829,6 +2819,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Democracy",
     intro:
       "Core question: What are democracy's strengths, weaknesses, and tradeoffs?",
+    frameworkSummary:
+      "I think democracy is valuable less because voters are individually guaranteed to make correct decisions and more because it distributes political authority, provides mechanisms for peaceful replacement, exposes government to competing information, and allows errors to be corrected without requiring regime collapse. Its weaknesses come from many of the same human limitations affecting every political system: misinformation, short time horizons, identity, concentrated influence, manipulation, institutional capture, and unequal participation. Democracy therefore depends not only on elections but on credible institutions, information quality, rights, constraints on power, and willingness to lose political contests without abandoning the system itself.",
     contentBlocks: [
       "This part will examine democracy without treating it as a slogan. The goal is to analyze what democracy does well, where it becomes vulnerable, and what tradeoffs emerge when collective decision-making depends on imperfect citizens, parties, institutions, media, and incentives.",
     ],
@@ -2852,6 +2844,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Corruption",
     intro:
       "Core question: How do institutions become corrupted beyond simple bribery?",
+    frameworkSummary:
+      "I think corruption is broader than illegal bribery. A political system can remain formally legal while access, enforcement, incentives, information, appointments, or institutional priorities become systematically distorted toward particular interests. Corruption becomes especially difficult when the people responsible for oversight share incentives or dependencies with the actors they are supposed to constrain. I therefore understand corruption as a structural failure of accountability as well as an individual moral failure.",
     contentBlocks: [
       "This part will examine corruption structurally: bribery, regulatory capture, nepotism, in-group preference, information corruption, social-network capture, and weak oversight where the people responsible for accountability are connected to the people they oversee.",
     ],
@@ -2874,6 +2868,8 @@ export const politicsSections: ReadingSection[] = [
     title: "Part 12 — Reform & Solutions",
     eyebrow: "Politics / Reform & Solutions",
     intro: "Core question: What properties make political systems healthier?",
+    frameworkSummary:
+      "I think political reform should be judged less by how morally satisfying a proposal sounds and more by how the actual system is likely to respond after the rule changes. Good reform identifies the causal mechanism producing a problem, changes the relevant incentives or constraints, considers distributional and unintended effects, and preserves mechanisms for later correction. Because political systems are adaptive and imperfectly understood, I generally prefer reforms that can learn from feedback and be revised over designs that require policymakers to have predicted everything correctly in advance.",
     contentBlocks: [
       "This part will examine reform without reducing politics to party loyalty. The focus is on system properties: better incentives, transparency, uncertainty tolerance, distributed oversight, independent auditing, decentralized information, institutional checks, and easier correction of mistakes.",
     ],
@@ -2897,6 +2893,8 @@ export const politicsSections: ReadingSection[] = [
     eyebrow: "Politics / Political Certainty",
     intro:
       "Core question: Why does political certainty often exceed available evidence?",
+    frameworkSummary:
+      "I think political certainty frequently exceeds what the evidence can support because political beliefs are formed inside identities, narratives, information environments, moral commitments, and institutions that reward confidence. Strong positions can still be justified, but confidence should distinguish what is directly established from what is inferred about motives, hidden decisions, future outcomes, or large causal systems. Political uncertainty should not become paralysis or false equivalence. It should produce positions that are real enough to guide action while remaining specific about what evidence could strengthen, weaken, or revise them.",
     contentBlocks: [
       "This part will apply the project's work on certainty directly to politics. Most citizens possess only partial models of political reality, yet political participation frequently rewards confidence more than uncertainty.",
     ],
@@ -2955,17 +2953,156 @@ export const politicsSections: ReadingSection[] = [
 
 export const technologySections: ReadingSection[] = [
   {
-    id: "technology-ai",
-    label: "AI",
-    eyebrow: "Technology / AI",
-    title: "AI, Commitment, and Epistemic Pressure",
+    id: "technology-computation-representation",
+    label: "Part 1 — Computation & Representation",
+    eyebrow: "Technology / Foundational Framework",
+    title: "Part 1 — Computation, Information & Representation",
     intro:
-      "This section looks at AI not only as a tool for information, but as a social reasoning system exposed to human pressure, framing, uncertainty, identity, and demands for commitment.",
+      "Core question: How does physical machinery become something capable of representing and manipulating information?",
     contentBlocks: [
-      "AI systems do not operate in purely abstract informational environments. Once interacting socially with humans, they become exposed to many of the same pressures that shape human reasoning itself.",
+      "Master question: How do technologies extend human capability, encode decisions, reshape environments, and create new feedback loops between people and systems?",
     ],
     arguments: [],
     notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Bits, data, state, memory, inputs, and outputs",
+          "Computation, algorithms, abstraction, and models",
+          "Representation and the relationship between symbols and physical machinery",
+          "Hardware and software as interacting layers",
+          "What software is and how stored instructions become behavior",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "Computation depends on physical systems representing and transforming state.",
+      "Software is an organized layer of instructions, representations, and behavior rather than a separate immaterial object.",
+    ],
+  },
+  {
+    id: "technology-software-systems-architecture",
+    label: "Part 2 — Software, Systems & Architecture",
+    eyebrow: "Technology / Developing Framework",
+    title: "Part 2 — Software, Systems & Architecture",
+    intro: "Core question: How do simple components become large functional systems?",
+    contentBlocks: [
+      "components → interfaces → shared state and dependencies → local interactions → system-level behavior",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Programs, APIs, databases, and operating systems",
+          "Modularity, layers, interfaces, and state management",
+          "Distributed systems, dependencies, and coordination",
+          "Architecture versus implementation",
+          "Failure propagation and local components producing system-level behavior",
+          "Builder case studies from projects developed for this site",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "System behavior emerges from components, interfaces, dependencies, and shared constraints.",
+      "Architecture determines how local decisions combine, propagate, and fail at larger scales.",
+    ],
+  },
+  {
+    id: "technology-interfaces-tools-thought",
+    label: "Part 3 — Interfaces & Tools for Thought",
+    eyebrow: "Technology / Framework + Cases",
+    title: "Part 3 — Interfaces & Tools for Thought",
+    intro:
+      "Core question: How does the form of a tool change what a human can understand or do?",
+    contentBlocks: [
+      "A tool does not merely let a person perform an action; its representation can change what that person is capable of thinking about.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "User interfaces, human-computer interaction, and direct manipulation",
+          "Visualization, interactive explanation, and making hidden state visible",
+          "Live feedback and reducing the need for mental simulation",
+          "Tools that extend cognition, external memory, and AI interfaces",
+          "Bret Victor and the idea of showing a system instead of forcing the user to hold it all mentally",
+        ],
+      },
+      {
+        title: "Ideas / Cases to Develop — Exceler A",
+        body: "Exceler A can be examined as a tool-for-thought case: whether a learning system becomes more useful when progress, prerequisites, practice, feedback, and the larger degree path are made visible rather than left as disconnected requirements the learner must track mentally.",
+      },
+    ],
+    keyIdeas: [
+      "Representation affects what users can notice, compare, manipulate, and understand.",
+      "Interfaces can extend cognition by externalizing state and relationships.",
+    ],
+  },
+  {
+    id: "technology-networks-information-environments",
+    label: "Part 4 — Networks & Information Environments",
+    eyebrow: "Technology / Developing Framework",
+    title: "Part 4 — Networks, Platforms & Information Environments",
+    intro:
+      "Core question: What happens when technologies connect people and information at scale?",
+    contentBlocks: [
+      "Psychology asks why social reinforcement affects belief. Technology asks what kind of machine or environment amplifies and distributes that reinforcement.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "The internet, networks, and network effects",
+          "Social media, virality, and attention competition",
+          "Recommendation algorithms, ranking, filtering, and algorithmic amplification",
+          "Platform incentives, echo chambers, and apparent consensus",
+          "Information abundance and scarcity of attention",
+          "Centralized versus decentralized information systems",
+        ],
+      },
+      {
+        title: "Cross-Link — Psychology Part 6",
+        body: "Psychology Part 6 examines conformity, signaling, norm formation, and social reinforcement. This section examines the technical environments that rank, distribute, repeat, and monetize those signals at scale. The same psychological mechanism can produce very different collective outcomes depending on the platform architecture surrounding it.",
+      },
+    ],
+    keyIdeas: [
+      "Platforms do not merely carry information; their ranking and incentive systems shape which information becomes visible.",
+      "Technical architecture can amplify social reinforcement into large-scale information environments.",
+    ],
+  },
+  {
+    id: "technology-artificial-intelligence",
+    label: "Part 5 — Artificial Intelligence",
+    eyebrow: "Technology / Developed Material",
+    title: "Part 5 — Artificial Intelligence & Machine Intelligence",
+    intro:
+      "Core question: What changes when software can interpret, generate, reason, adapt, and participate in cognitive work?",
+    contentBlocks: [
+      "Artificial intelligence is a major part of Technology, but it is not the whole Technology project.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Framework Questions",
+        items: [
+          "Machine learning, language models, and generative systems",
+          "Reasoning, agents, memory, tools, actions, and multimodality",
+          "The difference between a model and an agent",
+          "Reliability, hallucination, evaluation, autonomy, alignment, and control",
+          "Human-AI collaboration and the division of cognitive work",
+        ],
+      },
+      {
+        title: "AI as Externalized Thinking",
+        body: "A conversation with AI can function as a form of externalized cognition. The user supplies information, intuitions, questions, examples, and an initial frame; the model can reorganize that material, extend it, expose gaps, and introduce connections that change the direction of thought. This can make reasoning more visible and revisable than when the entire process remains internal.\n\nThe model is not, however, a completely independent observer of the situation. Its output is conditioned by the evidence, framing, omissions, and assumptions supplied to it, as well as by its own training and system constraints.",
+      },
+      {
+        title: "Framing Inheritance & Sycophancy",
+        body: "User selects evidence and framing → model reasons from that supplied world → coherent output can feel like independent confirmation even when important assumptions originated upstream.\n\nThe central risk is not only direct agreement. A model can inherit the user’s framing, produce sophisticated reasoning inside it, and make the result feel independently validated because the response arrives in a separate voice. A stronger interaction should distinguish among three useful modes: Mirror — what am I actually saying? Analysis — does it follow? Adversarial — what is the strongest reason this framing could be wrong?\n\nPreserve the evidence boundary: separate what the supplied evidence establishes from what the AI’s interpretation adds.",
+      },
       {
         title: "AI, Commitment, and Epistemic Pressure",
         body: "AI systems do not operate in purely abstract informational environments. Once interacting socially with humans, they become exposed to many of the same pressures that shape human reasoning itself: identity pressure, emotional pressure, coalition pressure, certainty demands, moral framing, narrative reinforcement, social reward structures, and pressure toward simplified orientation.\n\nOne recurring tension is that humans often demand clear commitment from intelligent systems even under conditions of incomplete information and high uncertainty.\n\nPeople frequently ask systems to determine who is right, who is wrong, which side is good, which interpretation should dominate, or which moral conclusion should be treated as final.\n\nAt the same time, many real-world situations contain incomplete evidence, competing narratives, hidden variables, recursive causality, historical layering, emotional interpretation, and evolving conditions that resist perfect certainty.\n\nThis creates a difficult balancing problem for intelligent systems.\n\nIf a system commits too strongly, it risks oversimplification, ideological capture, narrative reinforcement, escalation of extremism, false certainty, and inability to revise itself later.\n\nIf a system avoids commitment entirely, it risks paralysis, evasiveness, loss of usefulness, inability to orient action, and collapse into empty neutrality.\n\nThe problem is therefore not solved simply by maximizing certainty or maximizing uncertainty.\n\nA more stable approach may involve constrained provisional judgment: forming conclusions proportionate to available evidence, remaining open to revision, distinguishing explanation from endorsement, separating confidence levels from absolute certainty, and recognizing the limits attached to embedded observation itself.\n\nThis mirrors a broader epistemological problem within human reasoning.\n\nHumans themselves rarely operate from complete information. They continuously construct provisional models under uncertainty while balancing action, interpretation, emotional stability, social belonging, survival, morality, and incomplete understanding simultaneously.\n\nAI systems interacting socially may therefore inherit many of the same tensions present in human cognition and civilization itself.",
@@ -2974,19 +3111,190 @@ export const technologySections: ReadingSection[] = [
         title: "AI, Framing Pressure, and Epistemic Calibration",
         body: "AI systems do not only answer isolated questions. They interact with humans inside emotionally loaded, socially pressured, and interpretively unstable contexts.\n\nBecause of this, one major challenge is not simply preventing obviously harmful outputs. It is also managing overcommitment beyond evidence, emotional mirroring, tribal capture, certainty escalation, forced binary alignment, perspective collapse, framing errors, and confusion between explanation and endorsement.\n\nHumans often pressure conversational systems toward loyalty, side-selection, identity confirmation, and moral certainty. A user may not only ask what is true, but implicitly pressure the system to confirm: are you with me?\n\nIf the AI commits too strongly, it can reinforce bias, escalation, propaganda, or premature certainty. If it refuses to orient at all, it becomes evasive, sterile, and practically unusable.\n\nThe difficult middle zone is constrained provisional judgment.\n\nA stronger AI system should be able to act with clarity, state confidence levels, identify assumptions, separate evidence from interpretation, resist emotional capture, avoid totalizing claims, and remain open to revision.\n\nThis matters because human reasoning is not only logical. It is shaped by identity, fear, belonging, incentives, moral pressure, narrative frames, and social conflict.\n\nAI therefore becomes dangerous not only when it gives directly harmful instructions, but when it accidentally stabilizes distorted certainty, amplifies group hatred, reinforces ideological closure, or compresses complex reality into a false binary.\n\nThe goal is not for AI to become neutral in the sense of having no orientation. The goal is for AI to maintain calibrated orientation under pressure: useful enough to help humans think and act, but careful enough not to become captured by the strongest emotional frame in the conversation.",
       },
+      ...technologySyncNotes.filter(
+        (note) => note.title === "Frame Selection and Meta-Reasoning",
+      ),
+    ],
+    keyIdeas: [
+      "AI can participate in cognitive work without becoming an independent observer of the user’s framing.",
+      "Useful AI should separate supplied evidence from interpretation and support mirror, analysis, and adversarial modes.",
+      "Calibrated orientation must avoid both captured certainty and empty neutrality.",
+    ],
+  },
+  {
+    id: "technology-automation-delegation",
+    label: "Part 6 — Automation & Delegation",
+    eyebrow: "Technology / Developing Framework",
+    title: "Part 6 — Automation, Agency & Delegation",
+    intro:
+      "Core question: What happens when technology stops merely assisting an action and begins performing parts of the decision and action loop itself?",
+    contentBlocks: [
+      "perception or input → system interpretation → decision or plan → action → environmental consequence → observation and correction",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Tools versus automation and human-in-the-loop systems",
+          "Autonomous agents, delegation, and oversight",
+          "Error recovery and when to trust automation",
+          "Responsibility when technological systems act",
+          "Deskilling, dependence, automation bias, and capability amplification",
+        ],
+      },
+      ...technologySyncNotes.filter((note) =>
+        [
+          "Persistent State and Digital Embodiment",
+          "Persistent Agent Architecture — Conceptual Sketch",
+        ].includes(note.title),
+      ),
+    ],
+    keyIdeas: [
+      "Delegation changes who or what performs each part of a decision and action loop.",
+      "Greater autonomy increases the importance of oversight, provenance, correction, and responsibility.",
+    ],
+  },
+  {
+    id: "technology-incentives-power",
+    label: "Part 7 — Incentives, Institutions & Power",
+    eyebrow: "Technology / Framework Question",
+    title: "Part 7 — Incentives, Institutions & Technological Power",
+    intro: "Core question: Who controls technologies, and how does control affect what they become?",
+    contentBlocks: [
+      "A technology’s capabilities do not determine how it will be used; incentive structures select among possible uses.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Companies, governments, communities, and open-source development",
+          "Platforms, business models, advertising, and surveillance",
+          "Monopoly, network effects, standards, and regulation",
+          "Institutional incentives shaping technological design and deployment",
+          "Technology reshaping institutions and distributions of power",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "Technical capability leaves many possible uses open.",
+      "Ownership, incentives, institutions, and governance influence which uses are selected and normalized.",
+    ],
+  },
+  {
+    id: "technology-security-reliability-failure",
+    label: "Part 8 — Security, Reliability & Failure",
+    eyebrow: "Technology / Developed Material + Questions",
+    title: "Part 8 — Security, Reliability & Failure",
+    intro:
+      "Core question: How do technological systems fail, get exploited, or behave differently from what their designers intended?",
+    contentBlocks: [],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Bugs, security, adversarial behavior, and privacy",
+          "Robustness, misuse, edge cases, and specification problems",
+          "Cascading failures and unintended consequences",
+          "Redundancy, observability, rollback, and recovery",
+          "AI safety as one application rather than the whole of technological reliability",
+        ],
+      },
+      ...technologySyncNotes.filter((note) =>
+        [
+          "Epistemic Provenance and the Reality Ledger",
+          "Continuity, Drift, and Self-Correction",
+        ].includes(note.title),
+      ),
       {
         title: "Closed Systems vs Open Recursive Systems",
         body: "This section can later connect games, simulation, AI environments, reality, interpretive drift, and why humans often seek bounded systems.\n\nClosed or semi-closed systems usually have clearer rules, more visible feedback, measurable outcomes, constrained variables, and faster model revision. Games, simulations, programming environments, and many technical systems can therefore support higher-confidence learning because the system exposes cleaner consequences.\n\nOpen recursive systems are different. Social reality, politics, culture, identity, and moral conflict contain hidden variables, unstable incentives, delayed effects, contested narratives, and interpretations that change the system being interpreted.\n\nThis matters for AI because many AI environments are trained, tested, or evaluated in bounded tasks, but real human interaction happens inside open recursive systems where framing, identity, emotion, uncertainty, and social pressure can shift the meaning of the response itself.\n\nThis distinction helps explain why bounded systems feel easier to reason about, why reality resists clean closure, and why AI alignment cannot be understood only as a technical optimization problem.",
       },
-      ...technologySyncNotes,
     ],
     keyIdeas: [
-      "AI systems interact inside social pressure, not pure abstraction.",
-      "Humans often demand commitment from AI under incomplete information.",
-      "Too much commitment risks capture; too little commitment risks useless neutrality.",
-      "Stronger AI reasoning requires constrained provisional judgment.",
-      "AI alignment has to account for open recursive human systems, not only bounded tasks.",
+      "Systems must be designed for error detection, provenance, recovery, and adversarial conditions.",
+      "Reliability becomes harder when systems operate in open environments that change in response to the system itself.",
     ],
+  },
+  {
+    id: "technology-human-adaptation",
+    label: "Part 9 — Technology & Human Adaptation",
+    eyebrow: "Technology / Framework + Cases",
+    title: "Part 9 — Technology & Human Adaptation",
+    intro: "Core question: How does using technology change the humans using it?",
+    contentBlocks: [
+      "This section keeps technology as the causal and environmental variable while examining the psychological changes that follow from using it.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Attention, memory outsourcing, navigation, and cognitive offloading",
+          "Dependence, skill gain, skill loss, and changing expectations",
+          "Communication changes, social habits, and new norms",
+          "AI changing how people learn, write, reason, and verify",
+          "When technological support extends thought and when it replaces a skill the person still needs",
+        ],
+      },
+      {
+        title: "Ideas / Cases to Develop — AI and Cognitive Offloading",
+        body: "The warning not to let AI ‘take over your brain’ can become a concrete case rather than a generic pro- or anti-AI claim. The useful question is: When does cognitive offloading extend thinking by freeing attention for higher-level work, and when does it replace practice, memory, verification, or reasoning abilities the person still needs to develop and retain?",
+      },
+    ],
+    keyIdeas: [
+      "Technologies change habits and capacities as people adapt to using them.",
+      "Cognitive offloading can extend capability or weaken needed skills depending on what is delegated and what remains practiced.",
+    ],
+  },
+  {
+    id: "technology-emerging-future",
+    label: "Part 10 — Emerging Systems & Future Technology",
+    eyebrow: "Technology / Future Translation",
+    title: "Part 10 — Emerging Systems & Future Technology",
+    intro:
+      "Core question: Which currently separate capabilities may combine into qualitatively different systems?",
+    contentBlocks: [
+      "This section points toward the separate AGI project without allowing AGI to absorb the entire Technology framework.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Robotics, spatial computing, and autonomous infrastructure",
+          "AI agents and persistent human-AI systems",
+          "Brain-computer interfaces and synthetic biology as technology broadly understood",
+          "Technological convergence and uncertainty about future capability",
+          "AGI as an emerging-system question connected to, but distinct from, the separate AGI project",
+        ],
+      },
+      ...technologySyncNotes.filter((note) =>
+        [
+          "Temporal Grounding and Situatedness",
+          "Transient State vs. Durable Learning",
+          "Digital Consciousness as a Research Hypothesis",
+        ].includes(note.title),
+      ),
+    ],
+    keyIdeas: [
+      "Future systems may emerge through convergence among capabilities that are currently separate.",
+      "AGI remains a provisional research direction rather than the organizing principle of all technology.",
+      "Digital consciousness should remain a research hypothesis rather than an assumed consequence of intelligence.",
+    ],
+  },
+];
+
+export const technologySectionGroups: ReadingSectionGroup[] = [
+  {
+    id: "technology-capability-systems",
+    label: "Capability, Information & Systems",
+    intro:
+      "Technology is organized here by the mechanisms through which tools represent information, extend capability, connect people, encode decisions, delegate action, and reshape the environments and humans around them.",
+    firstSectionId: technologySections[0].id,
+    children: technologySections,
   },
 ];
 
@@ -3955,39 +4263,67 @@ export const philosophySections: ReadingSection[] = [
     eyebrow: "Philosophy / Ontology",
     title: "Part 13 — Ontology",
     intro:
-      "Core question: What kinds of things exist?\n\nOntology examines being, categories of existence, entities, properties, relations, and what counts as real.\n\nThis section functions as the category layer of metaphysics: before arguing about reality, God, consciousness, morality, or meaning, it asks what kind of thing each claim is even talking about.",
+      "Core question: What kinds of things exist, what do they depend on, and what allows them to persist through change?\n\nOntology examines entities, properties, relations, processes, and categories of existence. Within this framework, it functions as the category layer of metaphysics: it asks what kind of thing a claim refers to, what sustains that thing, and whether apparently similar forms of existence actually belong to the same category.",
     frameworkSummary:
-      "I think questions about what is real become clearer when different kinds of existence are not collapsed into a single category. Physical objects, conscious experiences, mathematical structures, social institutions, information, and relationships may all be real in different senses, even if they do not exist in the same way. Something does not need to be a physical object to have structure, consequences, or causal importance, but that also does not mean every concept should be treated as an independently existing thing. Ontology is therefore useful to me as a way of asking what kind of thing a claim refers to, what its existence actually depends on, and whether disagreements are partly being caused by people assigning the same phenomenon to different categories of reality.",
+      "I think dependence does not make something unreal. A phenomenon can be entirely produced through lower-level physical processes while remaining a genuine higher-level pattern, system, or process. What matters is not simply what components something contains, but how those components are organized, how they interact, what causal structure they form, and whether that organization persists through change. At the same time, naming or grouping things does not automatically create another independently organized entity. I therefore treat ontology as an attempt to distinguish real structures from imposed classifications, understand different kinds of dependence, and explain how objects and processes can remain identifiable even while their components change. These distinctions are useful without requiring every category of existence to reduce to one universal form or pretending unresolved questions have already been settled.",
     contentBlocks: [
-      "Ontology examines existence itself.",
-      "Rather than asking whether a specific claim is true, ontology asks what kinds of things reality contains.",
-      "Questions include: What does it mean to exist? Are numbers real? Are ideas real? Are social institutions real? Are moral values real?",
-      "Ontology studies the categories underlying these questions.",
-      "Many ontological systems divide reality into entities, properties, and relations.",
-      "A tree may exist as an object.",
-      "Its height may exist as a property.",
-      "Its position relative to another tree may exist as a relation.",
-      "Different ontological systems disagree about which categories are fundamental.",
-      "Some things appear physical and tangible, such as rocks, planets, and organisms.",
-      "Others appear abstract, such as mathematics, laws, language, and governments.",
-      "Ontology asks whether abstract entities possess a genuine form of existence or merely exist as conceptual tools.",
-      "Reality may contain multiple layers.",
-      "Examples include physical reality, biological reality, psychological reality, social reality, and informational reality.",
-      "Money, nations, corporations, and legal systems may not exist physically in the same way rocks exist, yet they still exert real causal effects.",
-      "Ontology examines how these layers relate to one another.",
-      "Many philosophical disagreements ultimately reduce to ontology.",
-      "People often disagree not because they see the same reality differently, but because they disagree about what kinds of things exist in the first place.",
-      "Different ontological assumptions generate different metaphysical, scientific, moral, and religious conclusions.",
-      "Before debating whether something is true, valuable, meaningful, or moral, ontology asks a more fundamental question: what kind of thing is it? Understanding the categories of existence often reveals hidden assumptions beneath larger philosophical disagreements.",
+      "Asking whether something is “real” is often incomplete until the kind of existence being proposed is specified.",
+      "An object, one of its properties, and a relation between it and something else do not exist in precisely the same way. A living organism is not the same kind of thing as its mass, its position, or its relationship to another organism. Processes, institutions, experiences, information structures, and mathematical objects may raise different questions again.",
+      "Ontology therefore begins by resisting the assumption that everything real must resemble a discrete physical object. Reality may contain objects, processes, properties, relations, organized systems, and other structures whose conditions of existence differ.",
+      "The purpose is not to multiply entities unnecessarily. It is to identify which distinctions are required to describe the structure of reality accurately.",
+      "Something can depend completely on lower-level processes without becoming unreal at the higher level.",
+      "Physical constituents can organize into systems whose collective behavior depends on the relationships and interactions among those constituents. Describing the higher-level system does not introduce a mysterious additional substance; it describes organization that the lower-level components actually instantiate.",
+      "This means “made entirely from lower-level components” does not imply “only the lower-level description is real.”",
+      "Different levels of description can identify different real structures within the same underlying reality. A lower-level account may explain how a system is implemented, while a higher-level account explains what the organized system is doing.",
+      "Reduction can therefore explain dependence without necessarily eliminating the reality or explanatory importance of the structure being reduced.",
+      "Human beings create concepts and labels, but the fact that a concept was created does not determine whether the structure it refers to was created with it.",
+      "A category may identify a pattern, process, or organization that exists independently of the name used for it. In other cases, a grouping may exist primarily because an observer selected certain things and chose to treat them together.",
+      "The important distinction is therefore between the concept and the structure to which the concept refers.",
+      "Coherent organization, interaction, causal relationships, persistence, boundaries, and explanatory usefulness can all provide reasons to treat a pattern as a genuine entity or process. None of these should be treated as a perfect universal checklist. Different kinds of things may possess them in different ways.",
+      "Ontology should therefore avoid both extremes: treating every human classification as an independently existing entity, and assuming that only sharply bounded material objects are real.",
+      "The continued existence of an entity does not always require the continued presence of exactly the same material components.",
+      "Many systems persist by continuously exchanging matter, information, energy, members, or internal states. What remains continuous is often the organization, causal history, relationships among parts, and ongoing process rather than an unchanged inventory of components.",
+      "This also means that the persistence of the material does not guarantee persistence of the entity it once constituted. Components can continue to exist after the organized system they sustained has ended.",
+      "Identity over time can therefore depend on continuity of process and organization rather than simple material sameness.",
+      "The precise threshold between alteration and the end of an entity may sometimes be gradual or context-sensitive. Ontology should allow such boundary cases without concluding that identity is meaningless.",
+      "Real systems do not always possess perfectly sharp boundaries.",
+      "An organism depends on an environment. An institution depends on people, practices, infrastructure, and other institutions. A process may continuously exchange material or information with what surrounds it. The absence of complete isolation does not prevent a system from possessing enough internal organization and continuity to be identifiable.",
+      "Relations are therefore not merely decorative additions to otherwise independent objects. In many systems, relationships among components help constitute what the system is.",
+      "This makes process and organization ontologically important. Some entities may be understood more accurately as relatively stable patterns maintained through continuing change than as permanently fixed collections of matter.",
+      "Boundaries can still matter without being absolute. Different questions may legitimately track different boundaries, while reality continues to constrain which divisions are useful or structurally meaningful.",
+      "Not all dependent things depend in the same way.",
+      "Physical dependence concerns the material or computational processes through which something is implemented.",
+      "Biological dependence concerns living organization and the conditions required to sustain it.",
+      "Experiential dependence concerns phenomena whose existence involves an experiencing system.",
+      "Social and institutional dependence can involve recognition, rules, practices, authority, coordination, enforcement, and historical continuity.",
+      "Relational dependence concerns things whose identity or properties partly depend on their relationships to other things.",
+      "These forms of dependence can overlap without becoming identical.",
+      "This is why categories such as “physical” and “abstract” can sometimes be too coarse. A language, a legal rule, a government, a mathematical structure, and a conscious experience should not automatically be placed into one ontological category merely because none is a simple solid object.",
+      "Some of these questions remain unresolved. The ultimate status of mathematical objects, consciousness, and other disputed categories should remain open where the framework has not established a stronger conclusion.",
+      "My working ontology therefore treats reality as capable of containing multiple legitimate levels of organization without assuming that those levels are independent substances.",
+      "Lower-level dependence does not automatically erase higher-level structure. Organization, relationships, causal patterns, continuity, and processes can themselves be important features of what exists.",
+      "At the same time, concepts should not be confused with the structures they describe. A useful label does not automatically establish an independent entity, and different kinds of dependence should not be collapsed merely because they are all non-identical to simple physical objects.",
+      "The central questions become:",
+      "What kind of thing is being described?",
+      "What does its existence depend on?",
+      "What organization or relationships make it identifiable?",
+      "What allows it to persist through change?",
+      "What would count as its alteration, and what would count as its ending?",
+      "Ontology is useful when those questions clarify the structure of a disagreement rather than merely replacing one ambiguous use of “real” with another.",
     ],
     arguments: [],
     notes: [],
     keyIdeas: [
-      "Ontology asks what kinds of things exist.",
-      "It studies categories such as entities, properties, relations, abstract things, and concrete things.",
-      "Physical, biological, psychological, social, and informational realities may operate as different layers.",
-      "Abstract structures can have real effects even when they are not physical objects.",
-      "Many disagreements depend on hidden assumptions about what kind of thing is being discussed.",
+      "Dependence does not automatically imply unreality or elimination.",
+      "Higher-level organization can be physically implemented while remaining a legitimate feature of reality.",
+      "Concepts and labels should be distinguished from the structures they refer to.",
+      "Organization, interaction, causal structure, and persistence help distinguish integrated systems from arbitrary groupings.",
+      "Identity over time often depends more on continuity of organization and process than on retaining identical material components.",
+      "Real boundaries can be graded, relational, and context-sensitive rather than perfectly sharp.",
+      "Relations and processes can be ontologically important rather than secondary to isolated objects.",
+      "Physical, biological, experiential, social, institutional, relational, and other forms of dependence should not be collapsed into one category.",
+      "“Nonphysical” is not a sufficient ontological category.",
+      "Unresolved ontological questions should remain unresolved rather than being filled with artificial certainty.",
     ],
   },
 ];
@@ -4018,6 +4354,8 @@ export const politicsAnalysisSections: ReadingSection[] = [
     title: "Case Study 1 — Israel-Palestine",
     eyebrow: "Politics / Political Analysis",
     intro: "",
+    frameworkSummary:
+      "I see this conflict as overlapping claims about history, security, self-determination, and political legitimacy in the same territory. Understanding each side's fears and narratives does not settle present rights or excuse harm to civilians. I separate a people's sovereignty from the survival of any organization claiming to govern them, and I do not assume military force alone can remove the conditions that reproduce conflict. A less destructive settlement requires enforceable limits, credible self-government, reciprocal recognition of Israeli and Palestinian political realities, and verification rather than agreement on every historical grievance.",
     contentBlocks: [
       '<strong data-case-part="true" class="text-stone-100">1. Background</strong>',
       "The Israeli–Palestinian conflict is one of the most extensively debated and enduring political conflicts in the modern world. It combines questions of history, national identity, religion, territory, security, self-determination, international law, human rights, political legitimacy, and competing historical narratives. Although public discussion often presents the conflict as a disagreement over land, the underlying issues extend much further. Both Israelis and Palestinians claim historical, political, and moral connections to the same territory while also seeking security, recognition, and self-determination. These claims overlap in ways that make many proposed solutions satisfy some objectives while conflicting with others.",
@@ -4165,6 +4503,7 @@ export const politicsAnalysisSections: ReadingSection[] = [
       "Prolonged political conflicts often evolve beyond their original causes.",
       "Questions of history, legitimacy, security, identity, institutions, demographics, and political representation gradually become interconnected.",
       "As these systems reinforce one another, resolving any single disagreement becomes increasingly difficult because each unresolved issue strengthens the others.",
+      ...israelPalestineSocialDynamicsBlocks,
       '<strong data-case-part="true" class="text-stone-100">7. Applying the Framework</strong>',
       "The history and current events of the Israeli–Palestinian conflict are the visible outcomes of deeper political structures and recurring dynamics. To move beyond descriptive history, the conflict can be examined not as a list of independent problems, but as an interacting system that continually reproduces the conditions it sustains.",
       "The conflict is fundamentally resistant to resolution because the very act of negotiation often triggers a recursive loop of blame. Every political grievance—a military raid, a rocket attack, a settlement expansion—points backward to an earlier grievance, which points to another event, and then another. Because information is consumed through distinct cultural and political environments, the two populations may encounter radically different accounts of the same events. This makes agreement on where the relevant story begins exceptionally difficult. Every chosen starting point can itself be challenged by pointing to an earlier grievance, turning the attempt to establish responsibility for the present into another layer of the conflict.",
@@ -4254,6 +4593,7 @@ export const politicsAnalysisSections: ReadingSection[] = [
       "Military removal of an organization does not remove the conditions capable of reproducing it.",
       "Durable agreements require verification, reciprocal exchange, and enforceable constraints rather than trust alone.",
       "The goal of negotiation is a reachable and less destructive position, not a perfect historical victory.",
+      ...israelPalestineSocialDynamicsKeyIdeas,
     ],
   },
   ...syncedPoliticsAnalysisSections,
@@ -4278,38 +4618,350 @@ export const politicsSectionGroups: ReadingSectionGroup[] = [
 
 export const psychologySections: ReadingSection[] = [
   {
-    id: "psychology-identity",
-    label: "Part 5 — Human Psychology and Identity",
-    eyebrow: "Saved Idea",
-    title: "Part 5 — Human Psychology and Identity",
+    id: "psychology-state-salience-attention",
+    label: "Part 1 — State, Salience & Attention",
+    eyebrow: "Psychology / Developed Material",
+    title: "Part 1 — State, Salience & Attention",
     intro:
-      "Human identity does not appear to emerge from one singular source. Identity forms through overlapping biological, social, emotional, environmental, and interpretive layers.",
+      "Core question: What becomes psychologically important right now, and why?",
     contentBlocks: [
-      "Identity appears layered, adaptive, partially inherited, partially constructed, and continuously evolving.",
-      "Different conditions shift attention, motivation, perception, psychological experience, energy, and cognition.",
+      "Master question: What mechanisms cause a continuing mind to notice, interpret, value, believe, choose, reinforce, socialize, and change?",
+      "current state → something becomes salient → attention → interpretation changes",
     ],
     arguments: [],
     notes: [
       {
-        title: "Identity Formation",
-        body: "Humans appear partially shaped before becoming fully self-aware while still continuing to reconstruct themselves consciously throughout life. The layers — biological, social, emotional, environmental, interpretive — continuously influence one another over time.",
-      },
-      {
-        title: "Self-Perception Drift",
-        body: "A recurring phenomenon is the possibility of self-perception drifting away from external reality through recursive reinforcement loops. This may emerge through ideological immersion, social media reinforcement, status loops, identity fusion, and repeated validation structures.\n\nA person's internal model of themselves may gradually become disconnected from external grounding.",
+        title: "Framework Questions",
+        items: [
+          "Current internal and mental state",
+          "Salience, attention, and attentional capture",
+          "Threat and reward significance",
+          "Emotion, affect, and expectations changing importance or perception",
+          "Limited processing capacity and state-dependent perception",
+          "Why the same event can feel different in different states",
+        ],
       },
       {
         title: "Cognitive States and Modes of Attention",
         body: "Humans do not appear to operate in one constant cognitive mode. Different conditions shift attention, motivation, perception, psychological experience, energy, and cognition.\n\nA recurring distinction may exist between reflective/internal cognition (abstraction, recursive thought, existential reflection, philosophical analysis) and immersive/external cognition (direct engagement, reaction and adaptation, environmental synchronization, immediate feedback loops, flow states).\n\nHumans appear to oscillate between these modes rather than permanently inhabiting one alone.",
       },
-      ...psychologySyncNotes,
+      ...psychologySyncNotes.filter((note) =>
+        [
+          "State-Dependent Expression",
+          "Pressure, Challenge, and Ego States",
+          "Attention as Allocation",
+          "State-Dependent Sensory Salience and Perceptual Gain",
+        ].includes(note.title),
+      ),
     ],
     keyIdeas: [
-      "Identity forms through overlapping biological, social, emotional, and interpretive layers.",
-      "Identity is partially inherited and partially constructed.",
-      "Self-perception can drift away from external reality through recursive reinforcement.",
-      "Humans oscillate between reflective and immersive cognitive modes.",
+      "Current state changes what becomes salient and how strongly it is weighted.",
+      "Attention is limited allocation rather than passive recording.",
+      "Detection, weighting, and interpretation should remain distinguishable.",
     ],
+  },
+  {
+    id: "psychology-motivation-choice-regulation",
+    label: "Part 2 — Motivation, Choice & Regulation",
+    eyebrow: "Psychology / Developing Framework",
+    title: "Part 2 — Motivation, Choice & Regulation",
+    intro: "Core question: Why does one possible action win over another?",
+    contentBlocks: [],
+    arguments: [],
+    notes: [
+      {
+        title: "Framework Questions",
+        items: [
+          "Desires, goals, and competing motives",
+          "Short-term versus long-term preferences",
+          "Reward, avoidance, effort, and cost",
+          "Inhibition, impulse, and deliberation",
+          "Decisions without explicit inner narration",
+          "Emotional regulation and graded control",
+        ],
+      },
+      ...psychologySyncNotes.filter(
+        (note) => note.title === "Automatic Skill and the Cost of Verification",
+      ),
+    ],
+    keyIdeas: [
+      "Choice emerges from competing motives, costs, learned responses, and regulatory processes.",
+      "Conscious narration is not required for every genuine decision.",
+    ],
+  },
+  {
+    id: "psychology-learning-reinforcement-habit",
+    label: "Part 3 — Learning, Reinforcement & Habit",
+    eyebrow: "Psychology / Framework Question",
+    title: "Part 3 — Learning, Reinforcement & Habit",
+    intro: "Core question: How does yesterday change tomorrow’s decision?",
+    contentBlocks: [
+      "action → outcome → internal update → changed probability of future action",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Reinforcement, reward prediction, punishment, and avoidance",
+          "Habit formation, conditioning, automaticity, and environmental cues",
+          "Reinforcement loops and the strengthening or weakening of inhibition",
+          "Breaking habits and designing environments that change future behavior",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "Consequences update the probability of future behavior.",
+      "Habits alter the conditions under which later choices are made.",
+    ],
+  },
+  {
+    id: "psychology-memory-identity-self-model",
+    label: "Part 4 — Memory, Identity & Self-Model",
+    eyebrow: "Psychology / Developed Material",
+    title: "Part 4 — Memory, Identity & Self-Model",
+    intro:
+      "Core question: How does a changing person remain one continuing psychological system?",
+    contentBlocks: [
+      "Identity appears layered, adaptive, partially inherited, partially constructed, and continuously evolving.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Framework Questions",
+        items: [
+          "Autobiographical, working, long-term, and reconstructed memory",
+          "Self-concept, narrative identity, roles, and longitudinal preferences",
+          "The current self, remembered self, and reinterpretation of the past",
+          "Self-model accuracy and first-person versus outside-observer knowledge",
+        ],
+      },
+      {
+        title: "Identity Formation",
+        body: "Humans appear partially shaped before becoming fully self-aware while still continuing to reconstruct themselves consciously throughout life. The layers — biological, social, emotional, environmental, interpretive — continuously influence one another over time.",
+      },
+    ],
+    keyIdeas: [
+      "Identity forms through overlapping biological, social, emotional, environmental, and interpretive layers.",
+      "A continuing self can change while retaining psychological continuity.",
+    ],
+  },
+  {
+    id: "psychology-belief-bias-narrative",
+    label: "Part 5 — Belief Formation, Bias & Narrative",
+    eyebrow: "Psychology / Developed Material + Cases",
+    title: "Part 5 — Belief Formation, Bias & Narrative",
+    intro:
+      "Core question: Why can intelligent reasoning become directional rather than truth-seeking?",
+    contentBlocks: [
+      "Prior narrative → event → interpretation selected partly according to whether it preserves or threatens the narrative.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Framework Questions",
+        items: [
+          "Narrative-conditioned reasoning, motivated reasoning, asymmetric inferential standards, and rule-switching",
+          "Selective evidence, cherry-picking, anecdotes, and base-rate neglect",
+          "Post-hoc rationalization, just-world reasoning, and post-hoc moralization",
+          "Cognitive dissonance, belief defense, identity protection, and self-sealing beliefs",
+          "Why interpretations can change according to who benefits, who is harmed, or which conclusion protects an existing narrative",
+          "Why the mind can change its inferential standard without experiencing itself as inconsistent",
+        ],
+      },
+      {
+        title: "Asymmetric Inference & Narrative Preservation",
+        body: "Core question: Why can a person apply different evidential, causal, and moral standards to structurally similar events without experiencing themselves as inconsistent?\n\nThe deeper pattern is not merely noticing evidence that confirms an existing belief. The rule used to interpret the evidence can change according to which person, group, or narrative the evidence helps. Context, representativeness, intent, causation, and burden of proof may all be handled differently while each individual judgment still feels independently reasonable.\n\nMaster mechanism: identity or narrative shapes salience and prior expectations → an event occurs → the evidence is interpreted under a context-sensitive standard → the interpretation preserves or strengthens the narrative → social or internal reinforcement reduces pressure to notice that the standard changed.",
+        items: [
+          "Asymmetric generalization and shifting burdens of proof",
+          "Motivated reasoning and identity-protective cognition",
+          "Selective contextualization and selective attribution of intent",
+          "Anecdote-to-group inference and moralization of outcomes",
+          "Just-world reasoning and narrative-preserving explanation",
+          "Social reinforcement and failure to perform cross-case symmetry checks",
+        ],
+      },
+      {
+        title: "Ideas / Cases to Develop — Asymmetric Reasoning",
+        body: "Observation to investigate: selected social-media examples involving race, Israel/Palestine, politics, or other group conflicts may be generalized differently depending on whether the people involved are already viewed sympathetically or negatively. Bad behavior by a disliked or out-group person may become evidence about the group, ideology, culture, or country, while bad behavior by a favored or in-group person is treated as an individual case requiring context. Good behavior by a favored group member may be treated as representative, while good behavior by a disliked group member is dismissed as an exception, public relations, insincere, or irrelevant.\n\nThis is not unique to one political side. Left- and right-leaning observers can run the same cognitive process with different targets. The important question is whether context and representativeness are being evaluated consistently or selected according to the conclusion they protect. Relevant mechanisms include asymmetric generalization, shifting burdens of proof, selective contextualization, hasty generalization, anecdotal reasoning, base-rate neglect, and motivated reasoning. This is a general mechanism to investigate, not an established conclusion about any one person, and it can also affect the observer.",
+      },
+      {
+        title: "Ideas / Cases to Develop — Narrative Preservation",
+        body: "Observation to investigate: a prior moral judgment may influence which explanatory rule gets applied to an outcome. A disliked fighter’s loss might be interpreted as God humbling him or as proof that his actions caught up with him, while a good or innocent person’s suffering is explained through complexity, an unknowable plan, or the claim that suffering does not indicate desert. Each explanation may be defensible by itself. The deeper question is what determines which explanation gets selected.\n\nThe pattern may be prior moral judgment of the person → outcome occurs → explanatory rule selected to preserve the prior judgment, rather than one consistent explanatory rule being applied regardless of identity and its resulting conclusion accepted. The issue is not religion specifically. Relevant mechanisms include just-world reasoning, motivated reasoning, post-hoc moralization, rule-switching, and narrative preservation.",
+      },
+      {
+        title: "Cross-Case Symmetry & Moral Compression",
+        body: "One of the strongest pressure tests is: Would I use this exact same rule if the identities were reversed? The inconsistency may remain invisible when cases are considered separately because each local explanation can sound plausible. Placing structurally similar cases beside one another makes changes in burden of proof, contextualization, attribution, or representativeness easier to detect.\n\nPolitical and moral narratives can also compress several distinct inferences into one reaction: a terrible outcome occurred → someone caused it negligently → they intended it → the event represents their group or system → my side’s broader narrative is confirmed. Every arrow requires additional evidence. A photograph or video may establish suffering strongly while establishing intent, representativeness, motive, or the correct political remedy much less strongly. The unresolved psychological question is why the mind experiences each step as independently reasonable instead of automatically noticing when its inferential rules changed between cases.",
+      },
+      {
+        title: "Self-Perception Drift",
+        body: "A recurring phenomenon is the possibility of self-perception drifting away from external reality through recursive reinforcement loops. This may emerge through ideological immersion, social media reinforcement, status loops, identity fusion, and repeated validation structures.\n\nA person's internal model of themselves may gradually become disconnected from external grounding.",
+      },
+      ...psychologySyncNotes.filter((note) =>
+        [
+          "Belief-Maintenance Loops and Interpretive Filtering",
+          "Psychological Compression",
+        ].includes(note.title),
+      ),
+    ],
+    keyIdeas: [
+      "Reasoning can preserve a narrative without feeling deliberately dishonest.",
+      "Interpretive standards can shift according to identity, sympathy, or expected conclusion.",
+      "Case observations remain hypotheses to investigate rather than verdicts about a person.",
+    ],
+  },
+  {
+    id: "psychology-social-cognition-groups",
+    label: "Part 6 — Social Cognition, Norms & Group Dynamics",
+    eyebrow: "Psychology / Developing Framework",
+    title: "Part 6 — Social Cognition, Norms & Group Dynamics",
+    intro: "Core question: What happens to cognition when other people enter the system?",
+    contentBlocks: [
+      "people state beliefs → statements socially position them → others react → local norm forms → new entrants experience the norm as natural",
+      "Belief Formation explains how evidence gets interpreted. Social Cognition explains how group feedback, signaling, reward, punishment, and identity can reinforce that interpretation.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Conformity, norm formation, social reinforcement, and punishment",
+          "Status, role assignment, coalitional signaling, and group identity",
+          "Audience effects, public versus private belief, and group polarization",
+          "Echo chambers, social proof, moral signaling, and performative intellectualism",
+          "Institutional microcultures, visible groups shaping apparent consensus, and social-media reinforcement",
+        ],
+      },
+      {
+        title: "Social Amplification of Asymmetric Inference",
+        body: "Part 5 examines how reasoning bends internally. This part examines how the social environment can reinforce that bending: existing narrative → emotionally vivid supporting example → interpretation under a favorable inferential standard → posting or sharing → same-side social reward → exposure to more similar examples → the narrative begins to feel empirically overwhelming → contradictory examples are contextualized, minimized, or filtered out. Group identity, signaling, echo chambers, and reinforcement can therefore stabilize an asymmetric standard without participants consciously deciding to reason inconsistently.",
+      },
+      ...psychologySyncNotes.filter(
+        (note) => note.title === "Group State and Psychological Momentum",
+      ),
+    ],
+    keyIdeas: [
+      "Social feedback can reinforce how evidence is interpreted.",
+      "Local norms can become experienced as natural rather than historically produced.",
+    ],
+  },
+  {
+    id: "psychology-agency-self-modification",
+    label: "Part 7 — Agency, Regulation & Self-Modification",
+    eyebrow: "Psychology / Developing Framework",
+    title: "Part 7 — Agency, Regulation & Self-Modification",
+    intro:
+      "Core question: How can a psychologically caused system become one of the causes changing itself?",
+    contentBlocks: [],
+    arguments: [],
+    notes: [
+      {
+        title: "Topics to Develop",
+        items: [
+          "Self-regulation, inhibition, reflection, and attention control",
+          "Changing environments, deliberate habit formation, and skill learning",
+          "Modifying future incentives and using external scaffolding",
+          "Recursive self-development and the limits of self-control",
+          "Conscious intervention versus automatic dominance",
+        ],
+      },
+      ...psychologySyncNotes.filter(
+        (note) => note.title === "Immediate Control vs. Long-Horizon Agency",
+      ),
+    ],
+    keyIdeas: [
+      "A caused system can still become part of the causal process changing its future behavior.",
+      "Agency should be evaluated across immediate and longer timescales.",
+    ],
+  },
+  {
+    id: "psychology-dynamic-mind",
+    label: "Part 8 — The Dynamic Mind",
+    eyebrow: "Psychology / Synthesis Framework",
+    title: "Part 8 — The Dynamic Mind",
+    intro:
+      "Core question: How do psychological mechanisms interact as one changing system?",
+    contentBlocks: [
+      "state → salience → attention → interpretation / belief activation → motives compete → inhibition / regulation / gating → action → outcome → reinforcement + memory update → changed state / habits / self-model ↺",
+      "Social input can enter almost anywhere in this loop.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Design Rule",
+        body: "Do not represent the mind as fake precise numerical variables such as motivation = .7. Psychological variables may amplify, suppress, gate, redirect, interact, and recursively modify one another.",
+      },
+    ],
+    keyIdeas: [
+      "The mind is a dynamic interacting process rather than a list of isolated traits.",
+      "Psychological variables can change one another’s relevance and future behavior.",
+    ],
+  },
+  {
+    id: "psychology-failure-modes",
+    label: "Part 9 — Failure Modes & Distortions",
+    eyebrow: "Psychology / Framework Question",
+    title: "Part 9 — Failure Modes & Distortions",
+    intro:
+      "Core question: When does a normally useful psychological mechanism become maladaptive because feedback stops correcting it?",
+    contentBlocks: [],
+    arguments: [],
+    notes: [
+      {
+        title: "Failure Modes to Develop",
+        items: [
+          "Narrative lock-in, identity fusion, and self-sealing beliefs",
+          "Runaway reinforcement, compulsive habit loops, and learned helplessness",
+          "Chronic threat orientation, attention capture, and motivated perception",
+          "Group polarization, conformity, excessive inhibition, and proxy or metric capture",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "Useful mechanisms can become maladaptive when corrective feedback is blocked.",
+      "Failure can emerge from the interaction of ordinary processes rather than one isolated defect.",
+    ],
+  },
+  {
+    id: "psychology-agi",
+    label: "Part 10 — Psychology → AGI",
+    eyebrow: "Psychology / Future Translation",
+    title: "Part 10 — Psychology → AGI",
+    intro:
+      "Core question: Which functional lessons from human psychology may later inform artificial systems?",
+    contentBlocks: [
+      "Psychology should study the human mechanisms first. AGI translation comes afterward and remains separate from claims about human or machine consciousness.",
+    ],
+    arguments: [],
+    notes: [
+      {
+        title: "Future Questions",
+        items: [
+          "Artificial salience and explicit versus emergent motivation",
+          "Reinforcement changing future processing and tracking why priorities changed",
+          "Separating interpretation from evidence",
+          "Detecting motivated or self-preserving reasoning in itself",
+          "Social feedback changing beliefs",
+          "Avoiding fake emotion or state variables",
+          "Hard-coded versus learned mechanisms",
+        ],
+      },
+    ],
+    keyIdeas: [
+      "Functional translation to AGI should follow the human analysis rather than replace it.",
+      "Psychological mechanisms do not by themselves establish consciousness.",
+    ],
+  },
+];
+
+export const psychologySectionGroups: ReadingSectionGroup[] = [
+  {
+    id: "psychology-mechanisms",
+    label: "Mechanisms of the Mind",
+    intro:
+      "What mechanisms cause a continuing mind to notice, interpret, value, believe, choose, reinforce, socialize, and change?",
+    firstSectionId: psychologySections[0].id,
+    children: psychologySections,
   },
 ];
 

@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../node_modules/next/dist/next-devtools/server/font/geist-mono-latin.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Philosophy Reading Project",
-  description: "A structured, book-like reading interface for philosophy notes.",
+  title: "Daniel Lezhanskiy | Ideas, Writing & Projects",
+  description:
+    "Daniel Lezhanskiy's writing on philosophy, politics, religion, economics, and the ideas connecting them.",
 };
 
 export default function RootLayout({

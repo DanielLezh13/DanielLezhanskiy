@@ -5,10 +5,18 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ArrowUpRight, BarChart3, Volume2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
+  Volume2,
+} from "lucide-react";
 import { Collapsible } from "@/components/Collapsible";
 import { CurrentViews } from "@/components/CurrentViews";
 import { NotesFeed } from "@/components/NotesFeed";
+import { ProgressLock } from "@/components/ProgressLock";
+import { ProgressNotice } from "@/components/ProgressNotice";
 import type { ContentView } from "@/app/page";
 import {
   economicsSectionGroups,
@@ -18,11 +26,14 @@ import {
   politicsAnalysisSections,
   politicsSectionGroups,
   politicsSections,
+  psychologySectionGroups,
   psychologySections,
   startSection,
+  technologySectionGroups,
   technologySections,
 } from "@/lib/content";
 import { epistemologySyncAdditions } from "@/lib/website-sync-content";
+import { isSectionInProgress } from "@/lib/publication-status";
 import type {
   EvidentialCaseStudy,
   EvidentialStyle,
@@ -35,7 +46,9 @@ import type {
 type ContentProps = {
   activeSectionId: string;
   activeView: ContentView;
+  canOpenDrafts: boolean;
   frameworkSections: ReadingSection[];
+  onOpenHome: () => void;
   onOpenIdeaSubject: (view: IdeaSubjectView) => void;
   topics: NavTopic[];
 };
@@ -49,7 +62,9 @@ const startArticleClassName =
 export function Content({
   activeSectionId,
   activeView,
+  canOpenDrafts,
   frameworkSections,
+  onOpenHome,
   onOpenIdeaSubject,
   topics,
 }: ContentProps) {
@@ -72,7 +87,9 @@ export function Content({
   if (activeView === "ideas") {
     return (
       <IdeasExplorer
+        canOpenDrafts={canOpenDrafts}
         frameworkSections={frameworkSections}
+        onOpenHome={onOpenHome}
         onOpenSubject={onOpenIdeaSubject}
         topics={topics}
       />
@@ -113,25 +130,23 @@ export function Content({
   }
 
   if (activeView === "psychology") {
-    const activeSection =
-      psychologySections.find((section) => section.id === activeSectionId) ??
-      psychologySections[0];
-
     return (
       <article className={articleClassName}>
-        {activeSection ? <ReadingSubsection section={activeSection} /> : null}
+        <CategorySectionGroups
+          activeSectionId={activeSectionId}
+          groups={psychologySectionGroups}
+        />
       </article>
     );
   }
 
   if (activeView === "technology") {
-    const activeSection =
-      technologySections.find((section) => section.id === activeSectionId) ??
-      technologySections[0];
-
     return (
       <article className={articleClassName}>
-        {activeSection ? <ReadingSubsection section={activeSection} /> : null}
+        <CategorySectionGroups
+          activeSectionId={activeSectionId}
+          groups={technologySectionGroups}
+        />
       </article>
     );
   }
@@ -186,9 +201,8 @@ function ImmersiveStartContent() {
   return (
     <div className="daniel-immersive-flow">
       <ImmersiveHero />
-      <ImmersiveMarquee />
 
-      <section className="min-h-[90vh] border-y border-white/10 py-24 sm:py-32">
+      <section className="min-h-[90vh] border-y border-white/10 py-24 sm:py-32" id="daniel-about">
         <div className="mx-auto flex min-h-[68vh] max-w-3xl flex-col items-center justify-center text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-amber-200/70">
             About
@@ -229,14 +243,15 @@ function ImmersiveStartContent() {
       </section>
 
       <EnjoymentArchiveSection />
+      <ImmersiveMarquee />
       <ImmersiveProjectStack />
       <FortniteSection />
 
-      <section className="mt-28 border-y border-amber-200/15 py-20 sm:py-28">
+      <section className="mt-28 border-y border-amber-200/15 py-20 sm:py-28" id="daniel-ai">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-stretch">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
-              Part 6
+              Process
             </p>
             <h3 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-50 sm:whitespace-nowrap sm:text-5xl">
               Thinking Alongside AI
@@ -388,10 +403,10 @@ function GoalSection() {
   const selectedStage = goalStages[activeStage];
 
   return (
-    <section className="border-b border-amber-200/15 py-24 sm:py-32">
+    <section className="border-b border-amber-200/15 py-24 sm:py-32" id="daniel-goal">
       <header className="mx-auto max-w-3xl text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
-          Part 7
+          Looking forward
         </p>
         <h3 className="mt-4 text-4xl font-semibold leading-tight text-stone-50 sm:text-6xl">
           My Goal
@@ -535,14 +550,23 @@ type IdeaSubject = {
 };
 
 function IdeasExplorer({
+  canOpenDrafts,
   frameworkSections,
+  onOpenHome,
   onOpenSubject,
   topics,
 }: {
+  canOpenDrafts: boolean;
   frameworkSections: ReadingSection[];
+  onOpenHome: () => void;
   onOpenSubject: (view: IdeaSubjectView) => void;
   topics: NavTopic[];
 }) {
+  const [lockedSubject, setLockedSubject] = useState<{ label: string; sequence: number } | null>(null);
+
+  const showLockedSubject = (label: string) => {
+    setLockedSubject((current) => ({ label, sequence: (current?.sequence ?? 0) + 1 }));
+  };
   const religionChapters = [
     ...frameworkSections.slice(0, 2),
     ...topics.slice(0, 1),
@@ -599,12 +623,12 @@ function IdeasExplorer({
     },
   ];
   const subjectPositions = [
-    [27, 31],
-    [49, 21],
-    [74, 34],
-    [20, 65],
-    [43, 80],
-    [68, 72],
+    [25, 29],
+    [50, 16],
+    [76, 30],
+    [22, 70],
+    [49, 83],
+    [76, 70],
   ];
   return (
     <section className="ideas-explorer content-view-enter relative isolate min-h-screen overflow-hidden px-4 pb-4 pt-24 sm:px-8 sm:pb-5 sm:pt-16">
@@ -617,20 +641,51 @@ function IdeasExplorer({
           Explore My Ideas
         </h1>
         <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-stone-400 sm:text-base sm:leading-7">
-          Choose a subject to open its focused reading page.
+          Start with me, or choose a subject to read.
         </p>
       </header>
 
       <div className="ideas-stage relative z-10 mx-auto mt-2 w-full max-w-[1240px] sm:mt-3">
         <div className="ideas-subject-field absolute inset-0">
+          <button
+            aria-label="Open Daniel Lezhanskiy's home page"
+            className="idea-home-bubble"
+            onClick={onOpenHome}
+            type="button"
+          >
+            <span className="idea-home-photo" aria-hidden="true">
+              <img alt="" src="/images/start/daniel-portrait.jpg" />
+            </span>
+            <span className="idea-home-shade" aria-hidden="true" />
+            <span className="idea-home-pet" aria-hidden="true">
+              <img alt="" src="/pets/mini-daniel/frames/idle-00.png" />
+            </span>
+            <span className="idea-home-name">
+              <strong>Daniel</strong>
+              <small>Lezhanskiy</small>
+            </span>
+          </button>
           {subjects.map((subject, index) => {
             const [baseX, baseY] = subjectPositions[index];
+            const draftCount = subject.chapters.filter((chapter) =>
+              isSectionInProgress(chapter.id),
+            ).length;
+            const allInProgress = draftCount === subject.chapters.length;
+            const disabled = allInProgress && !canOpenDrafts;
 
             return (
               <button
-                className={`idea-subject-bubble idea-subject-${index + 1}`}
+                className={`idea-subject-bubble idea-subject-${index + 1}${allInProgress ? " idea-subject-in-progress" : ""}`}
+                aria-disabled={disabled}
                 key={subject.view}
-                onClick={() => onOpenSubject(subject.view)}
+                onClick={() => {
+                  if (disabled) {
+                    showLockedSubject(subject.label);
+                    return;
+                  }
+                  onOpenSubject(subject.view);
+                }}
+                aria-label={`${subject.label}${disabled ? ", work in progress; show explanation" : ""}`}
                 style={
                   {
                     left: `${baseX}%`,
@@ -646,65 +701,27 @@ function IdeasExplorer({
                   {subject.chapters.length}{" "}
                   {subject.chapters.length === 1 ? "entry" : "chapters"}
                 </span>
+                {allInProgress ? (
+                  <span aria-hidden="true" className="idea-subject-status mt-1">
+                    <ProgressLock />
+                  </span>
+                ) : null}
               </button>
             );
           })}
         </div>
       </div>
+      <ProgressNotice
+        key={lockedSubject?.sequence ?? "hidden"}
+        label={lockedSubject?.label ?? null}
+        onDismiss={() => setLockedSubject(null)}
+      />
     </section>
   );
 }
 
 function ImmersiveHero() {
-  const heroRef = useRef<HTMLElement | null>(null);
   const sceneRef = useRef<HTMLDivElement | null>(null);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const scrollRoot = document.querySelector("main");
-    const hero = heroRef.current;
-    const stage = stageRef.current;
-
-    if (!scrollRoot || !hero || !stage) {
-      return;
-    }
-
-    let frame = 0;
-    const stageStartOffset = stage.offsetTop;
-
-    const updateProgress = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        if (
-          window.matchMedia(
-            "(max-width: 639px), (prefers-reduced-motion: reduce)",
-          ).matches
-        ) {
-          setScrollProgress(0);
-          return;
-        }
-
-        const travel = Math.max(
-          1,
-          hero.offsetHeight - stage.offsetHeight - stageStartOffset,
-        );
-        setScrollProgress(
-          Math.min(1, Math.max(0, scrollRoot.scrollTop / travel)),
-        );
-      });
-    };
-
-    updateProgress();
-    scrollRoot.addEventListener("scroll", updateProgress, { passive: true });
-    window.addEventListener("resize", updateProgress);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      scrollRoot.removeEventListener("scroll", updateProgress);
-      window.removeEventListener("resize", updateProgress);
-    };
-  }, []);
 
   const handleScenePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") {
@@ -742,16 +759,12 @@ function ImmersiveHero() {
 
   return (
     <header
-      className="relative isolate w-full pt-8 sm:min-h-[112vh] sm:pt-6"
+      className="relative isolate w-full pt-8 sm:flex sm:min-h-screen sm:items-center sm:pt-0"
+      id="daniel-profile"
       onPointerLeave={resetScenePosition}
       onPointerMove={handleScenePointerMove}
-      ref={heroRef}
     >
-      <div
-        className="daniel-profile-stage w-full sm:sticky sm:top-[72px] lg:top-[88px]"
-        ref={stageRef}
-        style={{ scale: `${1 + scrollProgress * 0.018}` }}
-      >
+      <div className="daniel-profile-stage w-full">
         <div
           className="daniel-profile-shell relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-amber-100/15 bg-stone-950 shadow-[0_36px_120px_rgba(0,0,0,0.48)] sm:aspect-[16/10]"
           ref={sceneRef}
@@ -760,7 +773,6 @@ function ImmersiveHero() {
             alt="Daniel standing beside the water"
             className="daniel-profile-photo absolute inset-x-0 top-0 h-[56%] w-full object-cover object-[center_31%] sm:inset-y-0 sm:left-0 sm:right-auto sm:h-full sm:w-[48%] sm:object-[center_40%]"
             src="/images/start/daniel-portrait.jpg"
-            style={{ scale: `${1 + scrollProgress * 0.085}` }}
           />
 
           <div className="daniel-profile-tone absolute inset-0" />
@@ -771,10 +783,6 @@ function ImmersiveHero() {
 
           <p
             className="daniel-profile-location absolute left-5 top-[4.75rem] z-20 inline-flex items-center gap-2 font-mono text-[10px] uppercase text-stone-900/75 sm:left-7 sm:top-7 lg:left-8 lg:top-8"
-            style={{
-              opacity: 1 - scrollProgress * 0.42,
-              translate: `0 ${scrollProgress * -10}px`,
-            }}
           >
             <span
               aria-hidden="true"
@@ -785,10 +793,6 @@ function ImmersiveHero() {
 
           <div
             className="daniel-profile-topline absolute inset-x-0 top-0 z-20 flex items-center justify-end p-5 sm:p-7 lg:p-8"
-            style={{
-              opacity: 1 - scrollProgress * 0.42,
-              translate: `0 ${scrollProgress * -10}px`,
-            }}
           >
             <div className="daniel-profile-socials flex gap-2">
               {socialLinks.map((link) => (
@@ -798,21 +802,7 @@ function ImmersiveHero() {
           </div>
 
           <div
-            className="daniel-profile-pet pointer-events-auto absolute bottom-[16rem] left-[58%] z-20 hidden origin-bottom scale-[0.9] sm:block lg:bottom-[17rem] lg:scale-100"
-            style={{
-              opacity: 1 - scrollProgress * 0.62,
-              translate: `0 ${scrollProgress * -14}px`,
-            }}
-          >
-            <DigitalMindPet />
-          </div>
-
-          <div
             className="daniel-profile-copy absolute inset-x-0 bottom-0 z-20 p-5 sm:left-auto sm:w-[52%] sm:p-7 lg:p-9"
-            style={{
-              opacity: 1 - scrollProgress * 0.48,
-              translate: `0 ${scrollProgress * -16}px`,
-            }}
           >
             <h2
               aria-label="Daniel Lezhanskiy"
@@ -849,12 +839,6 @@ function ImmersiveHero() {
               </div>
             </div>
           </div>
-
-          <div
-            aria-hidden="true"
-            className="daniel-profile-scroll-line absolute inset-x-0 bottom-0 z-30 h-px origin-left bg-amber-100/70"
-            style={{ scale: `${scrollProgress} 1` }}
-          />
         </div>
       </div>
     </header>
@@ -862,47 +846,15 @@ function ImmersiveHero() {
 }
 
 function ImmersiveMarquee() {
-  const [offset, setOffset] = useState(0);
   const splitIndex = Math.ceil(photographyImageUrls.length / 2);
   const firstRow = photographyImageUrls.slice(0, splitIndex);
   const secondRow = photographyImageUrls.slice(splitIndex);
 
-  useEffect(() => {
-    const scrollRoot = document.querySelector("main");
-
-    if (!scrollRoot) {
-      return;
-    }
-
-    let frame = 0;
-    let lastScrollPosition = scrollRoot.scrollTop;
-    let accumulatedOffset = 0;
-
-    const updateOffset = () => {
-      const nextScrollPosition = scrollRoot.scrollTop;
-      const scrollDistance = Math.abs(nextScrollPosition - lastScrollPosition);
-      lastScrollPosition = nextScrollPosition;
-      accumulatedOffset = (accumulatedOffset + scrollDistance * 0.42) % 10000;
-
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        setOffset(accumulatedOffset);
-      });
-    };
-
-    scrollRoot.addEventListener("scroll", updateOffset, { passive: true });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      scrollRoot.removeEventListener("scroll", updateOffset);
-    };
-  }, []);
-
   return (
-    <section className="relative w-full overflow-hidden py-3 sm:py-4">
-      <MarqueeRow images={firstRow} offset={offset} />
+    <section className="daniel-photo-reel relative mt-16 w-full overflow-hidden py-3 sm:mt-24 sm:py-4" id="daniel-photos">
+      <MarqueeRow images={firstRow} />
       <div className="mt-3">
-        <MarqueeRow images={secondRow} offset={offset} reverse />
+        <MarqueeRow images={secondRow} reverse />
       </div>
     </section>
   );
@@ -910,65 +862,33 @@ function ImmersiveMarquee() {
 
 function MarqueeRow({
   images,
-  offset,
   reverse = false,
 }: {
   images: string[];
-  offset: number;
   reverse?: boolean;
 }) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const [cycleWidth, setCycleWidth] = useState(0);
-
-  useEffect(() => {
-    const track = trackRef.current;
-
-    if (!track) {
-      return;
-    }
-
-    const measureTrack = () => {
-      setCycleWidth(track.scrollWidth / 3);
-    };
-    const observer = new ResizeObserver(measureTrack);
-
-    measureTrack();
-    observer.observe(track);
-
-    return () => observer.disconnect();
-  }, [images]);
-
-  const normalizedOffset = cycleWidth > 0 ? offset % cycleWidth : 0;
-  const directionalOffset = reverse
-    ? -cycleWidth + normalizedOffset
-    : -normalizedOffset;
-
   return (
-    <div
-      aria-hidden="true"
-      className="w-max [will-change:transform]"
-      style={{
-        transform: `translate3d(${directionalOffset}px, 0, 0)`,
-      }}
-    >
+    <div aria-hidden="true" className="w-max">
       <div
         className={[
           "flex w-max [will-change:transform]",
           reverse ? "daniel-marquee-track-reverse" : "daniel-marquee-track",
         ].join(" ")}
-        ref={trackRef}
       >
-        {[0, 1, 2].map((setIndex) => (
+        {[0, 1].map((setIndex) => (
           <div className="flex shrink-0 gap-3 pr-3" key={setIndex}>
             {images.map((image, imageIndex) => (
               <figure
-                className="h-[150px] w-[230px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] sm:h-[210px] sm:w-[330px]"
+                className="daniel-marquee-frame h-[150px] w-[230px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025] sm:h-[210px] sm:w-[330px]"
                 key={`${setIndex}-${image}-${imageIndex}`}
               >
                 <img
                   alt=""
                   className="h-full w-full object-cover"
-                  loading="lazy"
+                  loading={setIndex === 0 && imageIndex < 4 ? "eager" : "lazy"}
+                  decoding="async"
+                  width={330}
+                  height={210}
                   src={image}
                 />
               </figure>
@@ -982,7 +902,6 @@ function MarqueeRow({
 
 function ImmersiveScrollText({ text }: { text: string }) {
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
-  const [progress, setProgress] = useState(0);
   const words = text.split(" ");
 
   useEffect(() => {
@@ -994,45 +913,55 @@ function ImmersiveScrollText({ text }: { text: string }) {
     }
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setProgress(1);
+      paragraph.style.setProperty("--scroll-text-progress", "10");
       return;
     }
 
     let frame = 0;
+    let isNearParagraph = false;
 
     const updateProgress = () => {
+      if (!isNearParagraph) return;
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const rect = paragraph.getBoundingClientRect();
         const start = scrollRoot.clientHeight * 0.95;
         const distance = scrollRoot.clientHeight * 0.42 + rect.height * 0.72;
-        setProgress(Math.max(0, Math.min(1, (start - rect.top) / distance)));
+        const progress = Math.max(0, Math.min(1, (start - rect.top) / distance));
+        paragraph.style.setProperty("--scroll-text-progress", `${progress * 10}`);
       });
     };
 
-    updateProgress();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isNearParagraph = entry.isIntersecting;
+        if (isNearParagraph) updateProgress();
+      },
+      { root: scrollRoot, rootMargin: "45% 0px" },
+    );
+
+    observer.observe(paragraph);
     scrollRoot.addEventListener("scroll", updateProgress, { passive: true });
 
     return () => {
       window.cancelAnimationFrame(frame);
+      observer.disconnect();
       scrollRoot.removeEventListener("scroll", updateProgress);
     };
   }, []);
 
   return (
     <p
-      className="mt-12 max-w-3xl text-xl font-medium leading-[1.65] text-white sm:text-2xl"
+      className="immersive-scroll-text mt-12 max-w-3xl text-xl font-medium leading-[1.65] text-white sm:text-2xl"
       ref={paragraphRef}
     >
       {words.map((word, index) => {
         const wordStart = (index / Math.max(1, words.length - 1)) * 0.9;
-        const opacity = Math.max(0.1, Math.min(1, (progress - wordStart) * 10));
-
         return (
           <span
-            className="transition-opacity duration-150"
+            className="immersive-scroll-word"
             key={`${word}-${index}`}
-            style={{ opacity }}
+            style={{ "--word-start": wordStart * 10 } as React.CSSProperties}
           >
             {word}{" "}
           </span>
@@ -1043,8 +972,9 @@ function ImmersiveScrollText({ text }: { text: string }) {
 }
 
 function ImmersiveProjectStack() {
+  const endHoldViewports = 0.7;
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const [stackProgress, setStackProgress] = useState(0);
+  const cardRefs = useRef<Array<HTMLElement | null>>([]);
 
   useEffect(() => {
     const scrollRoot = document.querySelector("main");
@@ -1055,32 +985,69 @@ function ImmersiveProjectStack() {
     }
 
     let frame = 0;
+    let isNearTrack = false;
+    let cardHeight = 0;
+    const segmentLength = 1 / Math.max(1, projectCards.length - 1);
 
-    const updateStack = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const rect = track.getBoundingClientRect();
-        const travel = Math.max(
-          1,
-          track.offsetHeight - scrollRoot.clientHeight,
-        );
-        setStackProgress(Math.max(0, Math.min(1, -rect.top / travel)));
+    const renderStack = () => {
+      const rect = track.getBoundingClientRect();
+      const travel = Math.max(
+        1,
+        track.offsetHeight - scrollRoot.clientHeight -
+          scrollRoot.clientHeight * endHoldViewports,
+      );
+      const progress = Math.max(0, Math.min(1, -rect.top / travel));
+
+      cardRefs.current.forEach((card, index) => {
+        if (!card) return;
+        const localProgress = index === 0
+          ? 1
+          : Math.max(0, Math.min(1,
+              (progress - (index - 1) * segmentLength) / segmentLength,
+            ));
+        const settledOffset = index * 14;
+        const incomingOffset = (1 - localProgress) * cardHeight * 1.12;
+        const scale = 1 - Math.max(0, progress - index * segmentLength) * 0.014;
+
+        card.style.pointerEvents =
+          index === 0 || localProgress > 0.02 ? "auto" : "none";
+        card.style.transform =
+          `translate3d(0, ${settledOffset + incomingOffset}px, 0) scale(${scale})`;
       });
     };
 
-    updateStack();
+    const updateStack = () => {
+      if (!isNearTrack) return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(renderStack);
+    };
+
+    const measureAndRender = () => {
+      cardHeight = cardRefs.current[0]?.offsetHeight || 0;
+      if (isNearTrack) renderStack();
+    };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isNearTrack = entry.isIntersecting;
+        if (isNearTrack) measureAndRender();
+      },
+      { root: scrollRoot, rootMargin: "100% 0px" },
+    );
+
+    observer.observe(track);
     scrollRoot.addEventListener("scroll", updateStack, { passive: true });
-    window.addEventListener("resize", updateStack);
+    window.addEventListener("resize", measureAndRender);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      observer.disconnect();
       scrollRoot.removeEventListener("scroll", updateStack);
-      window.removeEventListener("resize", updateStack);
+      window.removeEventListener("resize", measureAndRender);
     };
   }, []);
 
   return (
-    <section className="mt-28">
+    <section className="mt-28" id="daniel-projects">
       <div className="mb-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-200/70">
@@ -1100,17 +1067,18 @@ function ImmersiveProjectStack() {
       <div
         className="relative"
         ref={trackRef}
-        style={{ height: `${projectCards.length * 90}vh` }}
+        style={{ height: `${projectCards.length * 90 + endHoldViewports * 100}vh` }}
       >
         <div className="sticky top-0 flex h-screen items-center py-10 sm:py-14">
           <div className="relative h-[min(680px,calc(100vh-80px))] min-h-[560px] w-full">
             {projectCards.map((project, index) => (
               <PinnedProjectCard
+                cardRef={(element) => {
+                  cardRefs.current[index] = element;
+                }}
                 index={index}
                 key={project.title}
-                progress={stackProgress}
                 project={project}
-                total={projectCards.length}
               />
             ))}
           </div>
@@ -1121,33 +1089,21 @@ function ImmersiveProjectStack() {
 }
 
 function PinnedProjectCard({
+  cardRef,
   index,
-  progress,
   project,
-  total,
 }: {
+  cardRef: (element: HTMLElement | null) => void;
   index: number;
-  progress: number;
   project: (typeof projectCards)[number];
-  total: number;
 }) {
-  const segmentLength = 1 / Math.max(1, total - 1);
-  const localProgress =
-    index === 0
-      ? 1
-      : Math.max(
-          0,
-          Math.min(1, (progress - (index - 1) * segmentLength) / segmentLength),
-        );
-  const translateY = index === 0 ? 0 : (1 - localProgress) * 112 + index * 2.4;
-  const scale = 1 - Math.max(0, progress - index * segmentLength) * 0.025;
-
   return (
     <article
-      className="absolute inset-0 flex h-full flex-col overflow-hidden rounded-[1.4rem] border border-amber-200/35 bg-[radial-gradient(circle_at_14%_8%,rgba(253,230,138,0.17),transparent_24rem),linear-gradient(135deg,rgba(38,32,18,0.99),rgba(15,14,10,0.99)_52%,rgba(27,22,13,0.99))] shadow-[0_34px_110px_rgba(0,0,0,0.62)] [will-change:transform]"
+      className="absolute inset-0 flex h-full origin-top flex-col overflow-hidden rounded-[1.4rem] border border-amber-200/35 bg-[radial-gradient(circle_at_14%_8%,rgba(253,230,138,0.17),transparent_24rem),linear-gradient(135deg,rgba(38,32,18,0.99),rgba(15,14,10,0.99)_52%,rgba(27,22,13,0.99))] shadow-[0_22px_58px_rgba(0,0,0,0.56)] [will-change:transform]"
+      ref={cardRef}
       style={{
-        pointerEvents: index === 0 || localProgress > 0.02 ? "auto" : "none",
-        transform: `translate3d(0, ${translateY}%, 0) scale(${scale})`,
+        pointerEvents: index === 0 ? "auto" : "none",
+        transform: index === 0 ? "translate3d(0, 0, 0)" : "translate3d(0, 112%, 0)",
         zIndex: index + 1,
       }}
     >
@@ -1261,115 +1217,11 @@ function ProjectMediaGallery({
       />
       <img
         alt=""
-        className="relative z-10 h-full w-full object-contain object-center transition duration-700 group-hover:scale-[1.012] sm:object-cover sm:group-hover:scale-[1.018]"
+        className="relative z-10 h-full w-full object-contain object-center sm:object-cover"
         loading="lazy"
         src={project.gallery[0]}
       />
     </span>
-  );
-}
-
-function DigitalMindPet({ className = "" }: { className?: string }) {
-  const [idleStep, setIdleStep] = useState(0);
-  const [insightIndex, setInsightIndex] = useState(0);
-  const [showInsight, setShowInsight] = useState(false);
-  const [textVisible, setTextVisible] = useState(true);
-  const currentInsight = petInsights[insightIndex];
-  const bubbleLayout = getPetBubbleLayout(currentInsight);
-
-  useEffect(() => {
-    const frameTimer = window.setInterval(() => {
-      setIdleStep((current) => (current + 1) % petIdleSequence.length);
-    }, 750);
-
-    return () => window.clearInterval(frameTimer);
-  }, []);
-
-  useEffect(() => {
-    if (!showInsight) {
-      const revealTimer = window.setTimeout(() => {
-        setShowInsight(true);
-      }, 3200);
-
-      return () => window.clearTimeout(revealTimer);
-    }
-
-    const rotateTimer = window.setTimeout(() => {
-      advancePetInsight();
-    }, 6500);
-
-    return () => window.clearTimeout(rotateTimer);
-  }, [insightIndex, showInsight]);
-
-  function advancePetInsight() {
-    setShowInsight(true);
-    setTextVisible(false);
-    window.setTimeout(() => {
-      setInsightIndex((current) => (current + 1) % petInsights.length);
-      setTextVisible(true);
-    }, 180);
-  }
-
-  function handlePetClick() {
-    advancePetInsight();
-  }
-
-  return (
-    <button
-      aria-label="Mini Daniel pet. Click for a project insight."
-      className={[
-        "mind-pet group relative h-[190px] w-[300px] overflow-visible text-left",
-        className,
-      ].join(" ")}
-      onClick={handlePetClick}
-      type="button"
-    >
-      <span className="mind-pet-spark mind-pet-delay-1 absolute left-[72px] top-5 h-2.5 w-2.5 rounded-[2px] bg-amber-200/55 shadow-[0_0_18px_rgba(253,230,138,0.28)]" />
-      <span className="mind-pet-spark mind-pet-delay-2 absolute left-3 top-12 h-2 w-2 rounded-[2px] bg-amber-200/45 shadow-[0_0_18px_rgba(253,230,138,0.24)]" />
-      <span className="mind-pet-spark mind-pet-delay-3 absolute bottom-9 left-[92px] h-3 w-3 rounded-[2px] bg-amber-200/45 shadow-[0_0_18px_rgba(253,230,138,0.24)]" />
-
-      <span className="mind-pet-stage absolute bottom-0 left-0 flex h-[160px] w-[138px] items-center justify-center">
-        <img
-          alt=""
-          className="mind-pet-idle-frame h-[130px] w-[120px] object-contain"
-          draggable={false}
-          src={petIdleFrames[petIdleSequence[idleStep]]}
-        />
-      </span>
-
-      <span
-        className={[
-          "mind-pet-bubble-layer absolute bottom-[76px] left-[94px] transition duration-300",
-          showInsight && textVisible
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none translate-y-2 opacity-0",
-        ].join(" ")}
-        style={{
-          height: bubbleLayout.height,
-          width: bubbleLayout.width,
-        }}
-      >
-        <img
-          alt=""
-          className="absolute inset-0 h-full w-full object-contain"
-          draggable={false}
-          src="/pets/mini-daniel/bubbles/speech-only.png"
-        />
-        <span
-          className="absolute flex items-center justify-center px-3 text-center font-medium text-stone-100"
-          style={{
-            fontSize: bubbleLayout.fontSize,
-            height: bubbleLayout.textHeight,
-            left: bubbleLayout.textLeft,
-            lineHeight: bubbleLayout.lineHeight,
-            top: bubbleLayout.textTop,
-            width: bubbleLayout.textWidth,
-          }}
-        >
-          {currentInsight}
-        </span>
-      </span>
-    </button>
   );
 }
 
@@ -1415,89 +1267,6 @@ const profileFacts = [
     label: "Background",
     value: "Ukrainian-American",
   },
-];
-
-const petInsights = [
-  "Welcome to the project.",
-  "A system can be useful without being final.",
-  "This site is less about conclusions and more about patterns.",
-  "Most sections are attempts to structure recurring questions.",
-  "Some ideas here contradict each other on purpose.",
-  "Humans model reality from inside reality.",
-  "Certainty and clarity are not the same thing.",
-  "Interpretation is unavoidable. Distortion is not.",
-  "People often defend coherence before truth.",
-  "A stable society still needs disagreement.",
-  "Not all uncertainty is weakness.",
-  "Operational truth is not ultimate certainty.",
-  "Most people inherit frameworks before examining them.",
-  "Identity changes what evidence feels threatening.",
-  "A map is not reality, but maps still matter.",
-  "This project revises itself over time.",
-  "Some sections are stronger than others.",
-  "The framework is still incomplete.",
-  "The goal is orientation, not perfection.",
-  "Some ideas stayed because they survived pressure.",
-  "Certain questions kept repeating across different areas of life.",
-  "People want certainty and flexibility at the same time.",
-  "Groups often become less nuanced under threat.",
-  "Useful systems can still distort reality.",
-  "Technology increases information and confusion simultaneously.",
-  "Every framework simplifies something.",
-];
-
-function getPetBubbleLayout(message: string) {
-  const length = message.length;
-
-  if (length <= 32) {
-    return {
-      fontSize: 11,
-      height: 92,
-      lineHeight: "14px",
-      textHeight: 45,
-      textLeft: 24,
-      textTop: 23,
-      textWidth: 142,
-      width: 184,
-    };
-  }
-
-  if (length <= 62) {
-    return {
-      fontSize: 10.5,
-      height: 104,
-      lineHeight: "13px",
-      textHeight: 54,
-      textLeft: 25,
-      textTop: 24,
-      textWidth: 170,
-      width: 214,
-    };
-  }
-
-  return {
-    fontSize: 10,
-    height: 116,
-    lineHeight: "12.5px",
-    textHeight: 66,
-    textLeft: 27,
-    textTop: 25,
-    textWidth: 202,
-    width: 250,
-  };
-}
-
-const petIdleFrames = [
-  "/pets/mini-daniel/frames/idle-00.png",
-  "/pets/mini-daniel/frames/idle-01.png",
-  "/pets/mini-daniel/frames/idle-02.png",
-  "/pets/mini-daniel/frames/idle-03.png",
-  "/pets/mini-daniel/frames/idle-04.png",
-  "/pets/mini-daniel/frames/idle-05.png",
-];
-
-const petIdleSequence = [
-  0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 3, 4, 5, 4, 3, 0, 0, 0, 0, 0, 0, 0,
 ];
 
 const photographyImageUrls = Array.from({ length: 18 }, (_, index) => {
@@ -2399,7 +2168,7 @@ const projectCards = [
   {
     title: "DartBoard",
     image: "/images/Dartboard.png",
-    imageClassName: "object-center scale-[1.01] group-hover:scale-[1.035]",
+    imageClassName: "object-center scale-[1.01]",
     gallery: [
       "/images/projects/dartboard/chat-workspace.png",
       "/images/projects/dartboard/assistant-settings.png",
@@ -2678,9 +2447,9 @@ function EnjoymentArchiveSection() {
   }, [selectedCategory]);
 
   return (
-    <section className="scroll-reveal mt-24 rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-8 sm:px-7 lg:px-8">
+    <section className="scroll-reveal mt-24 rounded-[2rem] border border-white/10 bg-white/[0.025] px-5 py-8 sm:px-7 lg:px-8" id="daniel-favorites">
       <SectionHeading
-        eyebrow="Part 2"
+        eyebrow="Personal archive"
         title="Things I Enjoy"
         body="A collection of games, films, shows, characters, and people that mattered to me in some way."
       />
@@ -3083,7 +2852,7 @@ function ProjectCard({
           <img
             alt=""
             className={[
-              "h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]",
+              "h-full w-full object-cover object-top",
               project.imageClassName ?? "",
             ].join(" ")}
             decoding="async"
@@ -3120,12 +2889,18 @@ function ProjectCard({
 }
 
 function FortniteSection() {
+  const channels = [
+    { label: "CH 01", src: "/images/Char/fort-web.mp4" },
+    { label: "CH 02", src: "/images/Char/Fortnite-Montage-web.mp4" },
+  ] as const;
   const sectionRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playbackActiveRef = useRef(false);
   const [progress, setProgress] = useState(0);
   const [sequenceActive, setSequenceActive] = useState(false);
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const [activeChannelIndex, setActiveChannelIndex] = useState<0 | 1>(0);
+  const activeChannel = channels[activeChannelIndex];
   const poweredOn = progress > 0.22;
 
   useEffect(() => {
@@ -3204,7 +2979,17 @@ function FortniteSection() {
     playbackActiveRef.current = false;
     setAudioBlocked(false);
     video.pause();
-  }, [poweredOn, sequenceActive]);
+  }, [activeChannelIndex, poweredOn, sequenceActive]);
+
+  const selectVideoChannel = (channelIndex: 0 | 1) => {
+    setActiveChannelIndex(channelIndex);
+  };
+
+  const handleVideoEnded = () => {
+    if (activeChannelIndex === 0) {
+      setActiveChannelIndex(1);
+    }
+  };
 
   const enableVideoAudio = () => {
     const video = videoRef.current;
@@ -3234,6 +3019,7 @@ function FortniteSection() {
     <Fragment>
       <section
         className="fortnite-scroll-sequence relative mt-28 h-[300vh]"
+        id="daniel-fortnite"
         ref={sectionRef}
       >
         <div className="fortnite-pc-scene sticky top-0 flex h-screen items-center justify-center overflow-hidden">
@@ -3245,7 +3031,7 @@ function FortniteSection() {
             }}
           >
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-amber-200/65">
-              Part 4 / Competitive Play
+              Competitive Play
             </p>
             <h3 className="mt-3 text-5xl font-semibold text-stone-50 sm:text-7xl">
               Fortnite
@@ -3265,14 +3051,15 @@ function FortniteSection() {
             <div className="fortnite-monitor rounded-[1.25rem] border border-stone-500/35 bg-[#121313] p-2.5 shadow-[0_46px_130px_rgba(0,0,0,0.78)] sm:p-3.5">
               <div className="fortnite-monitor-screen relative aspect-video overflow-hidden rounded-[0.72rem] bg-black">
                 <video
-                  aria-label="Fortnite creative fights and gameplay highlights"
-                  className="absolute inset-0 h-full w-full object-cover"
+                  aria-label={`Fortnite gameplay, ${activeChannel.label}`}
+                  className="absolute inset-0 h-full w-full object-contain"
                   controls={playbackControlsAvailable}
-                  loop
+                  loop={activeChannelIndex === 1}
+                  onEnded={handleVideoEnded}
                   playsInline
                   preload="metadata"
                   ref={videoRef}
-                  src="/images/Char/Highlights.mp4"
+                  src={activeChannel.src}
                 >
                   Your browser does not support the video tag.
                 </video>
@@ -3311,13 +3098,39 @@ function FortniteSection() {
                   className="fortnite-screen-gloss absolute inset-0"
                 />
               </div>
-              <div className="flex h-5 items-center justify-between px-2 pt-2">
+              <div className="grid h-6 grid-cols-[1fr_auto_1fr] items-center px-2 pt-1">
                 <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-stone-600">
                   StunnersDL / Live archive
                 </span>
+                <div
+                  aria-label="Video channels"
+                  className="fortnite-channel-arrows"
+                  role="group"
+                >
+                  <button
+                    aria-label="Switch to channel 01, the new Fortnite clip"
+                    className={`fortnite-channel-arrow${activeChannelIndex === 1 ? " is-available" : ""}`}
+                    disabled={activeChannelIndex === 0}
+                    onClick={() => selectVideoChannel(0)}
+                    title="Switch to channel 01"
+                    type="button"
+                  >
+                    <ArrowLeft aria-hidden="true" size={11} strokeWidth={2} />
+                  </button>
+                  <button
+                    aria-label="Switch to channel 02, the original Fortnite montage"
+                    className={`fortnite-channel-arrow${activeChannelIndex === 0 ? " is-available" : ""}`}
+                    disabled={activeChannelIndex === 1}
+                    onClick={() => selectVideoChannel(1)}
+                    title="Switch to channel 02"
+                    type="button"
+                  >
+                    <ArrowRight aria-hidden="true" size={11} strokeWidth={2} />
+                  </button>
+                </div>
                 <span
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full transition-shadow duration-300"
+                  className="h-1.5 w-1.5 justify-self-end rounded-full transition-shadow duration-300"
                   style={{
                     backgroundColor: poweredOn ? "#fde68a" : "#3f3f46",
                     boxShadow: poweredOn
@@ -3418,8 +3231,8 @@ function FortniteSection() {
               bounded systems, and rapid feedback loops.
             </p>
             <p>
-              Below are my stats and a few random clips from creative fights and
-              gameplay over time.
+              Above are a few clips from creative fights and gameplay; below
+              are the stats and milestones from all those years of playing.
             </p>
           </div>
 
@@ -3495,7 +3308,7 @@ function PhotographySection() {
   return (
     <section className="scroll-reveal daniel-gradient-panel mt-24 min-h-[78vh] overflow-hidden rounded-[2rem] border border-amber-200/15 px-5 py-8 shadow-[0_32px_130px_rgba(0,0,0,0.35)] sm:px-7 lg:px-8">
       <SectionHeading
-        eyebrow="Part 3"
+        eyebrow="Photography"
         title="Photography"
         body="A small visual reel from photos I have taken. It fits here because composition and attention are part of how I think, not just how the site looks."
       />
@@ -6001,6 +5814,10 @@ function TopicSection({ topic }: { topic: NavTopic }) {
         )}
       </header>
 
+      {topic.frameworkSummary ? (
+        <FrameworkSummary>{topic.frameworkSummary}</FrameworkSummary>
+      ) : null}
+
       {coreLineBySection[topic.id] ? (
         <CoreLine unframed>{coreLineBySection[topic.id]}</CoreLine>
       ) : null}
@@ -6409,8 +6226,6 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
     isTechnologySection ||
     isReligionFrameworkSection;
   const isEconomicsSectionTwo = section.id.startsWith("economics-section-2-");
-  const hideRepeatedEconomicsIntro =
-    section.id === "economics-section-2-part-1-objective";
   const sectionPartHeader = usesReadingStyle
     ? getSectionPartHeader(section.title)
     : null;
@@ -6447,7 +6262,7 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
           <h3 className="text-center text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
             {sectionPartHeader.title}
           </h3>
-          {!hideRepeatedEconomicsIntro && section.intro.trim() ? (
+          {section.intro.trim() ? (
             <p className="mx-auto mt-5 max-w-3xl text-center text-base leading-8 text-stone-300">
               {section.intro}
             </p>
@@ -6470,7 +6285,7 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
           <h3 className="text-2xl font-semibold leading-tight text-stone-50 sm:text-3xl">
             {section.title}
           </h3>
-          {!hideRepeatedEconomicsIntro && section.intro.trim() ? (
+          {section.intro.trim() ? (
             <p
               className={[
                 "mt-5 text-stone-300",
@@ -6529,9 +6344,11 @@ function ReadingSubsection({ section }: { section: ReadingSection }) {
       {visibleNotes.length ? (
         <div
           className={
-            isPhilosophySection ||
-            isPoliticsSection ||
-            isReligionFrameworkSection
+            section.id === "religion-overviews"
+              ? "mt-12 space-y-8"
+              : isPhilosophySection ||
+                  isPoliticsSection ||
+                  isReligionFrameworkSection
               ? "mt-10 divide-y divide-white/10 border-y border-white/10"
               : "mt-5 space-y-4"
           }
@@ -6782,6 +6599,7 @@ function groupIsraelPalestineContentBlocks(blocks: string[]) {
   blocks.forEach((block) => {
     const structuralBlock =
       block.includes("<strong") ||
+      block.includes("<br") ||
       block.trim().startsWith("<ul") ||
       block.trim().startsWith("<ol") ||
       block.trim().startsWith("<pre") ||
@@ -7383,6 +7201,10 @@ function KnownLimitationsSection() {
     [
       "Innovation Trade-Offs",
       "Reducing concentration can sometimes weaken investment incentives, risk-taking, or entrepreneurial activity.",
+    ],
+    [
+      "Funding and Price Effects",
+      "The proposed revenue tax has not been shown to cover wage subsidies at a chosen wage floor. Taxes and higher purchasing power could also affect prices, hiring, and investment.",
     ],
   ];
 
@@ -8224,7 +8046,7 @@ function StructuralEquilibriumCodesDiagram() {
     >
       <div className="mx-auto max-w-4xl">
         <DiagramNode title="The Structural Equilibrium Codes">
-          Closed loop for redirecting capital without printing new money.
+          Proposed flow from large-firm tax revenue to small-business wage support.
         </DiagramNode>
         <DiagramArrow />
         <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
@@ -9175,23 +8997,37 @@ const essaySectionMarkersBySection: Record<string, EssaySectionMarker[]> = {
   "philosophy-ontology": [
     {
       title: "13.1 Categories of Existence",
-      startsWith: "Rather than asking",
+      startsWith:
+        "Asking whether something is “real” is often incomplete until the kind of existence being proposed is specified.",
     },
     {
-      title: "13.2 Entities, Properties, Relations",
-      startsWith: "Many ontological systems",
+      title: "13.2 Dependence Without Elimination",
+      startsWith:
+        "Something can depend completely on lower-level processes without becoming unreal at the higher level.",
     },
     {
-      title: "13.3 Abstract and Concrete Reality",
-      startsWith: "Some things appear physical",
+      title: "13.3 Real Patterns and Imposed Groupings",
+      startsWith:
+        "Human beings create concepts and labels, but the fact that a concept was created does not determine whether the structure it refers to was created with it.",
     },
     {
-      title: "13.4 Layered Reality",
-      startsWith: "Reality may contain multiple layers",
+      title: "13.4 Identity Through Change",
+      startsWith:
+        "The continued existence of an entity does not always require the continued presence of exactly the same material components.",
     },
     {
-      title: "13.5 Ontological Assumptions",
-      startsWith: "Many philosophical disagreements",
+      title: "13.5 Boundaries, Relations, and Processes",
+      startsWith:
+        "Real systems do not always possess perfectly sharp boundaries.",
+    },
+    {
+      title: "13.6 Different Kinds of Dependence",
+      startsWith: "Not all dependent things depend in the same way.",
+    },
+    {
+      title: "13.7 Working Ontology",
+      startsWith:
+        "My working ontology therefore treats reality as capable of containing multiple legitimate levels of organization without assuming that those levels are independent substances.",
     },
   ],
 };
@@ -9305,6 +9141,93 @@ const essayBubbleBlocks = new Set([
   "This framework attempts to preserve the insight without accepting the collapse.",
 ]);
 
+function ReligionOverviewCard({
+  note,
+}: {
+  note: NonNullable<ReadingSection["notes"]>[number];
+}) {
+  const religionName = note.title.replace(/\s+[—-]\s+Overview$/, "");
+  const religionOrder: Record<string, string> = {
+    Islam: "01",
+    Christianity: "02",
+    Judaism: "03",
+  };
+  const sections = (note.body ?? "")
+    .split("\n\n")
+    .map((block) => {
+      const [label, ...bodyLines] = block.split("\n");
+      return {
+        label: label.trim(),
+        body: bodyLines.join("\n").trim(),
+      };
+    })
+    .filter((section) => section.label && section.body);
+
+  return (
+    <article className="scroll-reveal relative overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(28,26,21,0.96),rgba(11,11,10,0.98))] shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
+      <div
+        className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-amber-200/[0.055] blur-3xl"
+        aria-hidden="true"
+      />
+      <header className="relative flex flex-col gap-5 border-b border-white/10 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-7">
+        <div className="flex items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-200/25 bg-amber-200/[0.08] font-mono text-sm text-amber-100">
+            {religionOrder[religionName] ?? "—"}
+          </span>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/65">
+              Religion Profile
+            </p>
+            <h4 className="mt-1 text-2xl font-semibold tracking-tight text-stone-50 sm:text-3xl">
+              {religionName}
+            </h4>
+          </div>
+        </div>
+        <div className="w-fit rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-400">
+          {sections.length} structural lenses
+        </div>
+      </header>
+
+      <div className="relative grid gap-px bg-white/10 md:grid-cols-2">
+        {sections.map((section, index) => {
+          const isStructuralObservation =
+            section.label === "Structural Observation";
+
+          return (
+            <section
+              className={[
+                "bg-[#11110f] px-5 py-6 sm:px-7",
+                isStructuralObservation
+                  ? "md:col-span-2 bg-[linear-gradient(115deg,rgba(250,204,21,0.07),rgba(17,17,15,0.98)_54%)]"
+                  : "",
+              ].join(" ")}
+              key={section.label}
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[10px] text-amber-200/55">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="h-px w-7 bg-amber-200/30" aria-hidden="true" />
+                <h5 className="font-mono text-[11px] uppercase tracking-[0.17em] text-stone-200">
+                  {section.label}
+                </h5>
+              </div>
+              <p
+                className={[
+                  "mt-4 whitespace-pre-line text-[15px] leading-7 text-stone-300",
+                  isStructuralObservation ? "max-w-4xl text-stone-200" : "",
+                ].join(" ")}
+              >
+                {section.body}
+              </p>
+            </section>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
 function NoteCard({
   note,
   sectionId,
@@ -9327,6 +9250,10 @@ function NoteCard({
   const displayTitle = isPhilosophyNote
     ? cleanPhilosophyLabel(note.title)
     : note.title;
+
+  if (sectionId === "religion-overviews") {
+    return <ReligionOverviewCard note={note} />;
+  }
 
   if (isUnframedReadingNote) {
     return (

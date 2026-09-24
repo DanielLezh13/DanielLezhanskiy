@@ -1,12 +1,14 @@
 import {
   economicsSections,
   frameworkSections,
+  philosophySections,
   politicsAnalysisSections,
   politicsSections,
   startSection,
   topics,
 } from "@/lib/content";
 import type { ArgumentBlock, NavTopic, ReadingSection } from "@/lib/content";
+import { isSectionInProgress } from "@/lib/publication-status";
 
 export type FrameworkChunk = {
   id: string;
@@ -20,8 +22,23 @@ export type RetrievedFrameworkChunk = FrameworkChunk & {
   score: number;
 };
 
+export function hasStrongTitleMatch(query: string, chunk: Pick<FrameworkChunk, "source" | "title">) {
+  const terms = new Set(tokenize(query));
+  const titleTerms = new Set(tokenize(`${chunk.source} ${chunk.title}`));
+  if (!terms.size) return false;
+  const matches = [...terms].filter((term) => titleTerms.has(term)).length;
+  return matches / terms.size >= 0.5;
+}
+
+export function getPublicSectionContext(id: string) {
+  if (!id || isSectionInProgress(id)) return null;
+  const chunk = getFrameworkChunks().find((item) => item.id.startsWith(`${id}:`));
+  return chunk ? `${chunk.source} / ${chunk.title}` : null;
+}
+
 const stopWords = new Set([
   "a",
+  "about",
   "an",
   "and",
   "are",
@@ -31,11 +48,16 @@ const stopWords = new Set([
   "but",
   "by",
   "can",
+  "daniel",
   "do",
   "does",
+  "explicitly",
   "for",
   "from",
   "how",
+  "had",
+  "has",
+  "have",
   "i",
   "if",
   "in",
@@ -43,10 +65,16 @@ const stopWords = new Set([
   "it",
   "like",
   "me",
+  "many",
   "my",
   "of",
   "on",
   "or",
+  "part",
+  "project",
+  "say",
+  "says",
+  "section",
   "so",
   "that",
   "the",
@@ -243,7 +271,6 @@ const expansions: Record<string, string[]> = {
     "belief",
     "nonbeliever",
   ],
-  daniel: ["profile", "creator", "author", "stance", "agnostic"],
   "religious stance": ["religion", "agnostic", "atheist", "belief", "label"],
   "religious beliefs": ["religion", "agnostic", "atheist", "belief", "label"],
   "one word": ["label", "classification", "stance"],
@@ -257,14 +284,22 @@ export function retrieveFrameworkChunks(
 ): RetrievedFrameworkChunk[] {
   const queryTokens = expandTokens(query);
 
-  return getFrameworkChunks()
+  const ranked = getFrameworkChunks()
     .map((chunk) => ({
       ...chunk,
       score: scoreChunk(chunk, queryTokens, query),
     }))
     .filter((chunk): chunk is RetrievedFrameworkChunk => (chunk.score ?? 0) > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .sort((a, b) => b.score - a.score);
+
+  const top = ranked[0];
+  if (top && hasStrongTitleMatch(query, top)) {
+    const sectionId = top.id.split(":")[0];
+    const summary = ranked.find((chunk) => chunk.id.startsWith(`${sectionId}:summary:`));
+    if (summary) return [summary, ...ranked.filter((chunk) => chunk.id !== summary.id)].slice(0, limit);
+  }
+
+  return ranked.slice(0, limit);
 }
 
 export function buildContext(chunks: FrameworkChunk[], perChunkBudget = 2_200) {
@@ -310,7 +345,10 @@ export function buildLocalFallback(query: string, chunks: FrameworkChunk[]) {
   ].join("\n");
 }
 
+let cachedChunks: FrameworkChunk[] | undefined;
+
 function getFrameworkChunks(): FrameworkChunk[] {
+  if (cachedChunks) return cachedChunks;
   const chunks: FrameworkChunk[] = [];
 
   pushDanielProfile(chunks);
@@ -320,8 +358,10 @@ function getFrameworkChunks(): FrameworkChunk[] {
   politicsSections.forEach((section) => pushSection(chunks, section, `Politics / ${section.label}`));
   politicsAnalysisSections.forEach((section) => pushSection(chunks, section, `Politics / Political Analysis / ${section.label}`));
   economicsSections.forEach((section) => pushSection(chunks, section, `Economics / ${section.label}`));
+  philosophySections.forEach((section) => pushSection(chunks, section, `Philosophy / ${section.label}`));
 
-  return chunks;
+  cachedChunks = chunks;
+  return cachedChunks;
 }
 
 function pushDanielProfile(chunks: FrameworkChunk[]) {
@@ -342,14 +382,10 @@ function pushDanielProfile(chunks: FrameworkChunk[]) {
 function pushTopic(chunks: FrameworkChunk[], topic: NavTopic) {
   const source = topic.label;
 
-  chunks.push({
-    id: `${topic.id}:overview`,
-    source,
-    title: topic.title,
-    text: [topic.intro, ...(topic.contentBlocks ?? []), ...(topic.afterLayers ?? [])]
-      .filter(Boolean)
-      .join("\n\n"),
-  });
+  pushText(chunks, `${topic.id}:overview`, source, topic.title, topic.intro);
+  [...(topic.contentBlocks ?? []), ...(topic.afterLayers ?? [])].forEach((block, index) =>
+    pushText(chunks, `${topic.id}:body:${index}`, source, topic.title, block),
+  );
 
   topic.layers?.forEach((layer) => {
     chunks.push({
@@ -387,22 +423,44 @@ function pushSection(
   section: ReadingSection,
   source: string,
 ) {
-  chunks.push({
-    id: `${section.id}:overview`,
+  if (isSectionInProgress(section.id)) return;
+  if (section.frameworkSummary) {
+    pushText(chunks, `${section.id}:summary`, source, section.title, section.frameworkSummary);
+  }
+  pushText(
+    chunks,
+    `${section.id}:overview`,
     source,
-    title: section.title,
-    text: [section.intro, ...section.contentBlocks, ...section.keyIdeas]
-      .filter(Boolean)
-      .join("\n\n"),
-  });
+    section.title,
+    [section.intro, ...section.keyIdeas].filter(Boolean).join("\n\n"),
+  );
+  section.contentBlocks.forEach((block, index) =>
+    pushText(chunks, `${section.id}:body:${index}`, source, section.title, block),
+  );
 
   section.arguments.forEach((argument) => {
-    chunks.push(argumentToChunk(section, source, argument));
+    pushChunk(chunks, argumentToChunk(section, source, argument));
   });
+
+  section.politicalArgumentCards?.forEach((card, index) =>
+    pushText(
+      chunks,
+      `${section.id}:political-card:${index}`,
+      source,
+      card.title,
+      [
+        ...card.claim,
+        ...card.counterargument,
+        ...card.analysis,
+        ...(card.analysisAfterQuestions ?? []),
+        card.underlyingDisagreement,
+      ].join("\n\n"),
+    ),
+  );
 
   if (!essayOnlySectionIds.has(section.id)) {
     section.notes?.forEach((note) => {
-      chunks.push({
+      pushChunk(chunks, {
         id: `${section.id}:note:${slug(note.title)}`,
         source,
         title: note.title,
@@ -410,6 +468,32 @@ function pushSection(
       });
     });
   }
+}
+
+function pushText(chunks: FrameworkChunk[], id: string, source: string, title: string, text: string) {
+  const paragraphs = text.split(/\n\s*\n/).filter(Boolean);
+  let part = "";
+  let index = 0;
+  const flush = () => {
+    if (part.trim()) chunks.push({ id: `${id}:${index++}`, source, title, text: part.trim() });
+    part = "";
+  };
+
+  for (const paragraph of paragraphs) {
+    if (part.length + paragraph.length > 3000) flush();
+    if (paragraph.length <= 3000) {
+      part += `${part ? "\n\n" : ""}${paragraph}`;
+    } else {
+      for (let offset = 0; offset < paragraph.length; offset += 2800) {
+        chunks.push({ id: `${id}:${index++}`, source, title, text: paragraph.slice(offset, offset + 3000) });
+      }
+    }
+  }
+  flush();
+}
+
+function pushChunk(chunks: FrameworkChunk[], chunk: FrameworkChunk) {
+  pushText(chunks, chunk.id, chunk.source, chunk.title, chunk.text);
 }
 
 const essayOnlySectionIds = new Set([
@@ -443,15 +527,24 @@ function scoreChunk(chunk: FrameworkChunk, queryTokens: string[], query: string)
   const haystack = tokenize(`${chunk.source} ${chunk.title} ${chunk.text}`);
   const counts = new Map<string, number>();
   haystack.forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
+  const primary = new Set(tokenize(query));
+  const titleTokens = new Set(tokenize(`${chunk.source} ${chunk.title}`));
+  const primaryHits = [...primary].filter((token) => counts.has(token)).length;
+  const boost = contextualBoost(chunk, query);
+  if (primaryHits === 0 && boost === 0) return 0;
 
   const baseScore = queryTokens.reduce((score, token) => {
-    const titleBonus = tokenize(`${chunk.source} ${chunk.title}`).includes(token)
-      ? 4
-      : 0;
-    return score + (counts.get(token) ?? 0) + titleBonus;
+    const direct = primary.has(token);
+    const weight = direct ? 3 : 0.4;
+    const titleBonus = titleTokens.has(token) ? (direct ? 8 : 0.8) : 0;
+    return score + Math.min(counts.get(token) ?? 0, 2) * weight + titleBonus;
   }, 0);
 
-  return baseScore + contextualBoost(chunk, query);
+  const overviewBonus = primaryHits > 0 && chunk.id.includes(":overview:") ? 4 : 0;
+  const coverage = primary.size ? primaryHits / primary.size : 0;
+  const summaryBonus = chunk.id.includes(":summary:") && hasStrongTitleMatch(query, chunk) ? 20 : 0;
+  return (baseScore + overviewBonus) * coverage * coverage
+    * Math.min(1, 900 / Math.max(450, chunk.text.length)) + boost + summaryBonus;
 }
 
 function contextualBoost(chunk: FrameworkChunk, query: string) {
@@ -488,10 +581,10 @@ function contextualBoost(chunk: FrameworkChunk, query: string) {
 }
 
 function expandTokens(query: string) {
-  const lowerQuery = query.toLowerCase();
+  const lowerQuery = ` ${query.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `;
   const tokens = tokenize(query);
   const extra = Object.entries(expansions).flatMap(([phrase, words]) =>
-    lowerQuery.includes(phrase) ? words : [],
+    lowerQuery.includes(` ${phrase} `) ? words : [],
   );
 
   return [...new Set([...tokens, ...extra])];

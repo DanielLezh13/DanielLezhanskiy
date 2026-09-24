@@ -6,9 +6,9 @@ import {
   economicsSectionGroups,
   philosophySectionGroups,
   politicsSectionGroups,
-  psychologySections,
+  psychologySectionGroups,
   startSection,
-  technologySections,
+  technologySectionGroups,
 } from "@/lib/content";
 import type {
   NavTopic,
@@ -81,15 +81,15 @@ export function Sidebar({
         id: "psychology-group",
         label: "Human Psychology",
         view: "psychology" as const,
-        firstSectionId: psychologySections[0]?.id,
-        children: psychologySections,
+        firstSectionId: psychologySectionGroups[0]?.firstSectionId,
+        children: psychologySectionGroups,
       },
       {
         id: "technology-group",
         label: "Technology",
         view: "technology" as const,
-        firstSectionId: technologySections[0]?.id,
-        children: technologySections,
+        firstSectionId: technologySectionGroups[0]?.firstSectionId,
+        children: technologySectionGroups,
       },
     ],
     [
@@ -98,8 +98,8 @@ export function Sidebar({
       economicsSectionGroups,
       philosophySectionGroups,
       politicsSectionGroups,
-      psychologySections,
-      technologySections,
+      psychologySectionGroups,
+      technologySectionGroups,
     ],
   );
 
@@ -108,7 +108,9 @@ export function Sidebar({
       activeView !== "economics" &&
       activeView !== "politics" &&
       activeView !== "religion" &&
-      activeView !== "philosophy"
+      activeView !== "philosophy" &&
+      activeView !== "psychology" &&
+      activeView !== "technology"
     ) {
       setOpenEconomicsSectionId(null);
     }
@@ -207,7 +209,8 @@ export function Sidebar({
                                   group.view === "economics" ||
                                   group.view === "politics" ||
                                   group.view === "religion" ||
-                                  group.view === "philosophy"
+                                  group.view === "philosophy" ||
+                                  group.view === "psychology"
                                 ) {
                                   setOpenEconomicsSectionId(null);
                                 }
@@ -220,7 +223,8 @@ export function Sidebar({
                                   group.view === "economics" ||
                                   group.view === "politics" ||
                                   group.view === "religion" ||
-                                  group.view === "philosophy"
+                                  group.view === "philosophy" ||
+                                  group.view === "psychology"
                                 ) {
                                   setOpenEconomicsSectionId(null);
                                 }
@@ -236,7 +240,8 @@ export function Sidebar({
                           group.view === "economics" ||
                           group.view === "politics" ||
                           group.view === "religion" ||
-                          group.view === "philosophy"
+                          group.view === "philosophy" ||
+                          group.view === "psychology"
                         ) {
                           setOpenEconomicsSectionId(null);
                         }
@@ -470,7 +475,7 @@ function SidebarButton({
         "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left transition duration-200",
         nested ? "text-[13px]" : "text-sm",
         disabled
-          ? "cursor-not-allowed text-stone-600"
+          ? "cursor-default text-stone-600"
           : active
             ? "bg-stone-100 text-stone-950 shadow-sm"
             : "text-stone-400 hover:bg-white/[0.06] hover:text-stone-100",

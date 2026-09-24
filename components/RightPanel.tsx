@@ -22,6 +22,7 @@ type RightPanelProps = {
   chatState: RightPanelChatState;
   ideas: string[];
   contextLabel: string;
+  contextSectionId?: string;
   showHeader?: boolean;
 };
 
@@ -48,6 +49,7 @@ export type RightPanelChatState = {
 export function RightPanel({
   chatState,
   contextLabel,
+  contextSectionId,
   ideas,
   showHeader = true,
 }: RightPanelProps) {
@@ -135,11 +137,12 @@ export function RightPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          history: messages.map((message) => ({
+          history: messages.slice(-16).map((message) => ({
             role: message.role,
             text: message.text,
           })),
           message: question,
+          sectionId: contextSectionId,
           summary,
         }),
       });
@@ -286,6 +289,7 @@ export function RightPanel({
           <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5 transition focus-within:border-amber-200/30 focus-within:bg-white/[0.04]">
             <textarea
               className="max-h-44 min-h-10 w-full resize-none overflow-y-auto bg-transparent text-sm leading-6 text-stone-100 outline-none placeholder:text-stone-600"
+              maxLength={4_000}
               onChange={(event) => handleInputChange(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
@@ -316,7 +320,7 @@ export function RightPanel({
                 </button>
                 <button
                   aria-label="Clear chat"
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.025] text-stone-500 transition hover:scale-105 hover:border-red-300/35 hover:bg-red-400/10 hover:text-red-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-white/10 disabled:hover:bg-white/[0.025] disabled:hover:text-stone-500"
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.025] text-stone-500 transition hover:scale-105 hover:border-red-300/35 hover:bg-red-400/10 hover:text-red-100 disabled:cursor-default disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-white/10 disabled:hover:bg-white/[0.025] disabled:hover:text-stone-500"
                   disabled={!hasConversation && !input.trim()}
                   onClick={() => {
                     setMessages([]);
@@ -332,7 +336,7 @@ export function RightPanel({
               </div>
               <button
                 aria-label="Send message"
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-amber-200/20 bg-amber-200/10 text-xs font-semibold leading-none text-amber-50 transition hover:scale-105 hover:border-amber-200/35 hover:bg-amber-200/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-amber-200/20 bg-amber-200/10 text-xs font-semibold leading-none text-amber-50 transition hover:scale-105 hover:border-amber-200/35 hover:bg-amber-200/15 disabled:cursor-default disabled:opacity-50 disabled:hover:scale-100"
                 disabled={isLoading || !input.trim()}
                 type="submit"
               >
@@ -349,6 +353,7 @@ export function RightPanel({
 export function FloatingRightPanel({
   chatState,
   contextLabel,
+  contextSectionId,
   ideas,
 }: RightPanelProps) {
   const [open, setOpen] = useState(false);
@@ -482,6 +487,7 @@ export function FloatingRightPanel({
             <RightPanel
               chatState={chatState}
               contextLabel={contextLabel}
+              contextSectionId={contextSectionId}
               ideas={ideas}
               showHeader={false}
             />

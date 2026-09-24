@@ -6,13 +6,19 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
 import { ArrowLeft } from "lucide-react";
+import { ProgressLock } from "@/components/ProgressLock";
+import { ProgressNotice } from "@/components/ProgressNotice";
+import styles from "./ReadingNavigator.module.css";
 
 export type ReadingNavItem = {
   id: string;
   label: string;
+  inProgress?: boolean;
 };
 
 export type ReadingNavGroup = {
@@ -23,6 +29,7 @@ export type ReadingNavGroup = {
 
 type ReadingNavigatorProps = {
   activeId: string;
+  canOpenDrafts: boolean;
   destinationNav?: ReactNode;
   groups?: ReadingNavGroup[];
   items: ReadingNavItem[];
@@ -41,6 +48,7 @@ const hiddenIndicator: Indicator = { left: 0, visible: false, width: 0 };
 
 export function ReadingNavigator({
   activeId,
+  canOpenDrafts,
   destinationNav,
   groups,
   items,
@@ -53,10 +61,6 @@ export function ReadingNavigator({
   const groupTrackRef = useRef<HTMLDivElement | null>(null);
   const submenuTrackRef = useRef<HTMLDivElement | null>(null);
   const groupButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const submenuButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
-    {},
-  );
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reflowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reflowFrameRef = useRef<number | null>(null);
   const dockStateReadyRef = useRef(false);
@@ -64,9 +68,12 @@ export function ReadingNavigator({
   const [reflowing, setReflowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
-  const [hoveredSubmenuId, setHoveredSubmenuId] = useState<string | null>(null);
   const [groupIndicator, setGroupIndicator] = useState(hiddenIndicator);
-  const [submenuIndicator, setSubmenuIndicator] = useState(hiddenIndicator);
+  const [lockedItem, setLockedItem] = useState<{ label: string; sequence: number } | null>(null);
+
+  const showLockedItem = (label: string) => {
+    setLockedItem((current) => ({ label, sequence: (current?.sequence ?? 0) + 1 }));
+  };
 
   const hasGroups = Boolean(groups?.length);
   const activeGroup = groups?.find((group) =>
@@ -76,17 +83,18 @@ export function ReadingNavigator({
     groups?.find((group) => group.id === previewGroupId) ??
     activeGroup ??
     groups?.[0];
-  const highlightedGroupId = previewGroup?.id ?? activeGroup?.id;
-  const highlightedSubmenuId = hoveredSubmenuId ?? activeId;
+  const highlightedGroupId = previewGroupId ?? activeGroup?.id;
+  const highlightedGroupIdRef = useRef(highlightedGroupId);
+  highlightedGroupIdRef.current = highlightedGroupId;
 
   const positionIndicator = useCallback(
     (
       container: HTMLDivElement | null,
       target: HTMLElement | null | undefined,
-      setter: (indicator: Indicator) => void,
+      setter: Dispatch<SetStateAction<Indicator>>,
     ) => {
       if (!container || !target) {
-        setter(hiddenIndicator);
+        setter((current) => current.visible ? { ...current, visible: false } : current);
         return;
       }
 
@@ -102,41 +110,18 @@ export function ReadingNavigator({
     [],
   );
 
-  const positionSubmenuIndicator = useCallback(
-    (target: HTMLElement | null | undefined) => {
-      const container = submenuTrackRef.current;
-
-      if (!container || !target) {
-        setSubmenuIndicator((current) => ({
-          ...current,
-          visible: false,
-        }));
-        return;
-      }
-
-      positionIndicator(container, target, setSubmenuIndicator);
-    },
-    [positionIndicator],
-  );
-
   const openGroup = useCallback((groupId: string) => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     setPreviewGroupId(groupId);
     setMenuOpen(true);
   }, []);
 
   const scheduleClose = useCallback(() => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = setTimeout(() => {
-      setMenuOpen(false);
-      setPreviewGroupId(activeGroup?.id ?? null);
-      setHoveredSubmenuId(null);
-    }, 180);
+    setMenuOpen(false);
+    setPreviewGroupId(activeGroup?.id ?? null);
   }, [activeGroup?.id]);
 
   useEffect(() => {
     return () => {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (reflowTimerRef.current) clearTimeout(reflowTimerRef.current);
       if (reflowFrameRef.current) cancelAnimationFrame(reflowFrameRef.current);
     };
@@ -154,18 +139,12 @@ export function ReadingNavigator({
 
     const startedAt = performance.now();
     const syncIndicators = () => {
-      if (highlightedGroupId) {
-        positionIndicator(
-          groupTrackRef.current,
-          groupButtonRefs.current[highlightedGroupId],
-          setGroupIndicator,
-        );
-      }
-      if (highlightedSubmenuId) {
-        positionSubmenuIndicator(
-          submenuButtonRefs.current[highlightedSubmenuId],
-        );
-      }
+      const targetId = highlightedGroupIdRef.current;
+      positionIndicator(
+        groupTrackRef.current,
+        targetId ? groupButtonRefs.current[targetId] : null,
+        setGroupIndicator,
+      );
     };
 
     const trackIndicators = () => {
@@ -230,46 +209,27 @@ export function ReadingNavigator({
   }, [activeId, hasGroups, previewGroup?.id]);
 
   useLayoutEffect(() => {
-    if (!hasGroups || !highlightedGroupId) return;
+    if (!hasGroups) return;
     positionIndicator(
       groupTrackRef.current,
-      groupButtonRefs.current[highlightedGroupId],
+      highlightedGroupId ? groupButtonRefs.current[highlightedGroupId] : null,
       setGroupIndicator,
     );
   }, [hasGroups, highlightedGroupId, positionIndicator]);
-
-  useLayoutEffect(() => {
-    if (!hasGroups || !highlightedSubmenuId) return;
-    positionSubmenuIndicator(submenuButtonRefs.current[highlightedSubmenuId]);
-  }, [
-    hasGroups,
-    highlightedSubmenuId,
-    positionSubmenuIndicator,
-    previewGroup?.id,
-  ]);
 
   useEffect(() => {
     if (!hasGroups) return;
 
     const updateIndicators = () => {
-      if (highlightedGroupId) {
-        positionIndicator(
-          groupTrackRef.current,
-          groupButtonRefs.current[highlightedGroupId],
-          setGroupIndicator,
-        );
-      }
-      if (highlightedSubmenuId) {
-        positionSubmenuIndicator(
-          submenuButtonRefs.current[highlightedSubmenuId],
-        );
-      }
+      positionIndicator(
+        groupTrackRef.current,
+        highlightedGroupId ? groupButtonRefs.current[highlightedGroupId] : null,
+        setGroupIndicator,
+      );
     };
 
     const resizeObserver = new ResizeObserver(updateIndicators);
     if (groupTrackRef.current) resizeObserver.observe(groupTrackRef.current);
-    if (submenuTrackRef.current)
-      resizeObserver.observe(submenuTrackRef.current);
     window.addEventListener("resize", updateIndicators);
 
     return () => {
@@ -279,19 +239,23 @@ export function ReadingNavigator({
   }, [
     hasGroups,
     highlightedGroupId,
-    highlightedSubmenuId,
     positionIndicator,
-    positionSubmenuIndicator,
-    previewGroup?.id,
   ]);
 
+  const selectItem = (item: ReadingNavItem) => {
+    if (item.inProgress && !canOpenDrafts) {
+      showLockedItem(cleanReadingLabel(item.label));
+      return;
+    }
+    setLockedItem(null);
+    onSelect(item.id);
+  };
+
   return (
+    <>
     <nav
       aria-label={`${title} contents`}
       className={`reading-navigator${hasGroups ? " grouped" : ""}${docked ? " docked" : ""}${menuOpen ? " menu-open" : ""}${reflowing ? " reflowing" : ""}`}
-      onMouseEnter={() => {
-        if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-      }}
       onMouseLeave={hasGroups ? scheduleClose : undefined}
       ref={navRef}
     >
@@ -319,12 +283,20 @@ export function ReadingNavigator({
             >
               {groups?.map((group) => {
                 const active = group.id === activeGroup?.id;
+                const firstAvailableItem = group.items.find(
+                  (item) => canOpenDrafts || !item.inProgress,
+                );
                 return (
                   <button
+                    aria-disabled={!firstAvailableItem}
                     aria-expanded={menuOpen && group.id === previewGroup?.id}
+                    aria-label={`${cleanGroupLabel(group.label)}${firstAvailableItem ? "" : ", work in progress; show explanation"}`}
                     className={active ? "active" : undefined}
                     key={group.id}
-                    onClick={() => onSelect(group.items[0].id)}
+                    onClick={() => {
+                      if (firstAvailableItem) selectItem(firstAvailableItem);
+                      else showLockedItem(cleanGroupLabel(group.label));
+                    }}
                     onFocus={() => openGroup(group.id)}
                     onMouseEnter={() => openGroup(group.id)}
                     ref={(node) => {
@@ -349,8 +321,9 @@ export function ReadingNavigator({
           ) : (
             <FlatReadingTrack
               activeId={activeId}
+              canOpenDrafts={canOpenDrafts}
               items={items}
-              onSelect={onSelect}
+              onSelect={selectItem}
               trackRef={trackRef}
             />
           )}
@@ -371,73 +344,90 @@ export function ReadingNavigator({
               >
                 {previewGroup.items.map((item, index) => {
                   const active = item.id === activeId;
+                  const number = readingItemNumber(item.label, index);
                   return (
                     <button
                       aria-current={active ? "page" : undefined}
-                      className={active ? "active" : undefined}
+                      aria-disabled={item.inProgress && !canOpenDrafts}
+                      aria-label={`${item.label}${item.inProgress && !canOpenDrafts ? ", work in progress; show explanation" : ""}`}
+                      className={[
+                        styles.submenuItem,
+                        active && "active",
+                        active && styles.selected,
+                        item.inProgress && "reading-item-in-progress",
+                      ].filter(Boolean).join(" ") || undefined}
                       data-section-id={item.id}
                       key={item.id}
-                      onClick={() => onSelect(item.id)}
-                      onFocus={() => setHoveredSubmenuId(item.id)}
-                      onMouseEnter={() => setHoveredSubmenuId(item.id)}
-                      onMouseLeave={() => setHoveredSubmenuId(null)}
-                      ref={(node) => {
-                        submenuButtonRefs.current[item.id] = node;
-                      }}
+                      onClick={() => selectItem(item)}
                       title={cleanReadingLabel(item.label)}
                       type="button"
                     >
-                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      {number ? <span>{number}</span> : null}
                       {cleanReadingLabel(item.label)}
+                      {item.inProgress ? (
+                        <span aria-hidden="true" className="reading-item-status">
+                          <ProgressLock />
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
-                <span
-                  aria-hidden="true"
-                  className="reading-navigator-submenu-indicator"
-                  key={`${previewGroup.id}:${previewGroup.items.some((item) => item.id === activeId) ? activeId : "preview"}`}
-                  style={{
-                    opacity: submenuIndicator.visible ? 1 : 0,
-                    transform: `translateX(${submenuIndicator.left}px)`,
-                    width: submenuIndicator.width,
-                  }}
-                />
               </div>
             </div>
           </div>
         ) : null}
       </div>
     </nav>
+    <ProgressNotice
+      key={lockedItem?.sequence ?? "hidden"}
+      label={lockedItem?.label ?? null}
+      onDismiss={() => setLockedItem(null)}
+      placement="left"
+    />
+    </>
   );
 }
 
 function FlatReadingTrack({
   activeId,
+  canOpenDrafts,
   items,
   onSelect,
   trackRef,
 }: {
   activeId: string;
+  canOpenDrafts: boolean;
   items: ReadingNavItem[];
-  onSelect: (id: string) => void;
+  onSelect: (item: ReadingNavItem) => void;
   trackRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <div className="reading-navigator-track" ref={trackRef}>
       {items.map((item, index) => {
         const active = item.id === activeId;
+        const number = readingItemNumber(item.label, index);
         return (
           <button
             aria-current={active ? "page" : undefined}
-            className={active ? "active" : undefined}
+            aria-disabled={item.inProgress && !canOpenDrafts}
+            aria-label={`${item.label}${item.inProgress && !canOpenDrafts ? ", work in progress; show explanation" : ""}`}
+            className={[
+              active && "active",
+              item.inProgress && "reading-item-in-progress",
+            ].filter(Boolean).join(" ") || undefined}
             data-section-id={item.id}
             key={item.id}
-            onClick={() => onSelect(item.id)}
+            onClick={() => onSelect(item)}
             title={cleanReadingLabel(item.label)}
             type="button"
           >
-            <span>{String(index + 1).padStart(2, "0")}</span>
+            {number ? <span>{number}</span> : null}
             {cleanReadingLabel(item.label)}
+            {item.inProgress ? (
+              <span aria-hidden="true" className="reading-item-status">
+                <ProgressLock />
+              </span>
+            ) : null}
           </button>
         );
       })}
@@ -447,6 +437,15 @@ function FlatReadingTrack({
 
 function cleanGroupLabel(label: string) {
   return label.replace(/^Section\s+\d+\s*[—-]\s*/, "");
+}
+
+function readingItemNumber(label: string, index: number) {
+  if (/^(Introduction|Conclusion)\b/.test(label)) return null;
+  const part = label.match(/\bPart\s+([\d.]+)/);
+  if (part) return part[1].padStart(2, "0");
+  const caseStudy = label.match(/^Case Study\s+(\d+)/);
+  if (caseStudy) return caseStudy[1].padStart(2, "0");
+  return String(index + 1).padStart(2, "0");
 }
 
 function cleanReadingLabel(label: string) {

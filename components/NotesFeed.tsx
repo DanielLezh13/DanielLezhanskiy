@@ -9,7 +9,9 @@ import {
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
+import { createPortal } from "react-dom";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
   ChevronLeft,
@@ -942,45 +944,57 @@ function CommentList({
       aria-label={`${comments.length} ${comments.length === 1 ? "reply" : "replies"}`}
       className="mt-5 border-l border-amber-200/20 pl-4 sm:pl-5"
     >
-      {comments.map((comment) => (
-        <article
-          className="border-t border-white/[0.08] py-4 first:border-t-0 first:pt-1"
-          key={comment.id}
-        >
-          <header className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-stone-200">
-                Daniel Lezhanskiy
-              </p>
-              <time
-                className="mt-1 block text-[11px] text-stone-600"
-                dateTime={comment.createdAt}
-              >
-                {formatNoteDate(comment.createdAt)}
-              </time>
-            </div>
-            {canManage ? (
-              <button
-                aria-label="Delete reply"
-                className="grid h-7 w-7 place-items-center rounded-md text-stone-600 transition hover:bg-white/[0.04] hover:text-red-300"
-                onClick={() => onDelete(comment)}
-                title="Delete reply"
-                type="button"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+      {comments.map((comment) => {
+        const embeddedUrl = findFirstHttpUrl(comment.body);
+        const displayedBody = embeddedUrl
+          ? removeDisplayedSourceUrl(comment.body, embeddedUrl)
+          : comment.body;
+
+        return (
+          <article
+            className="border-t border-white/[0.08] py-4 first:border-t-0 first:pt-1"
+            key={comment.id}
+          >
+            <header className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-stone-200">
+                  Daniel Lezhanskiy
+                </p>
+                <time
+                  className="mt-1 block text-[11px] text-stone-600"
+                  dateTime={comment.createdAt}
+                >
+                  {formatNoteDate(comment.createdAt)}
+                </time>
+              </div>
+              {canManage ? (
+                <button
+                  aria-label="Delete reply"
+                  className="grid h-7 w-7 place-items-center rounded-md text-stone-600 transition hover:bg-white/[0.04] hover:text-red-300"
+                  onClick={() => onDelete(comment)}
+                  title="Delete reply"
+                  type="button"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
+            </header>
+            {displayedBody ? <PostBody body={displayedBody} compact /> : null}
+            {comment.attachments.length ? (
+              <AttachmentGallery
+                attachments={comment.attachments}
+                compact
+                onOpenMedia={onOpenMedia}
+              />
             ) : null}
-          </header>
-          {comment.body ? <PostBody body={comment.body} compact /> : null}
-          {comment.attachments.length ? (
-            <AttachmentGallery
-              attachments={comment.attachments}
-              compact
-              onOpenMedia={onOpenMedia}
-            />
-          ) : null}
-        </article>
-      ))}
+            {embeddedUrl ? (
+              <div className="mt-4">
+                <ExternalContent key={embeddedUrl} url={embeddedUrl} />
+              </div>
+            ) : null}
+          </article>
+        );
+      })}
     </section>
   );
 }
@@ -1329,6 +1343,12 @@ function ExternalContent({
   const embed = getExternalEmbed(url);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  if (embed?.provider === "tiktok") {
+    return (
+      <TikTokContent embed={embed} key={embed.embedUrl} label={label} url={url} />
+    );
+  }
+
   if (embed?.provider === "youtube" || embed?.provider === "vimeo") {
     return (
       <>
@@ -1375,6 +1395,126 @@ function ExternalContent({
   }
 
   return <SourceCard label={label} url={url} />;
+}
+
+function TikTokContent({
+  embed,
+  label,
+  url,
+}: {
+  embed: ExternalEmbed;
+  label?: string | null;
+  url: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, [isExpanded]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    // Start loading near the viewport, not while a long post is still offscreen.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoad || hasFailed) return;
+    function handleMessage(event: MessageEvent) {
+      if (
+        event.origin !== "https://www.tiktok.com" ||
+        event.source !== iframeRef.current?.contentWindow ||
+        !event.data ||
+        event.data["x-tiktok-player"] !== true
+      ) {
+        return;
+      }
+      // Missing readiness messages do not prove failure in a cross-origin frame.
+      // Blocked autoplay is not a broken video; the visitor can still press Play.
+      if (
+        event.data.type === "onError" ||
+        (event.data.type === "onPlayerError" && event.data.value?.errorCode !== 3002)
+      ) {
+        setHasFailed(true);
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [shouldLoad, hasFailed]);
+
+  if (hasFailed) {
+    return <SourceCard label={label ?? "Open on TikTok"} url={url} />;
+  }
+
+  return (
+    <div
+      className="relative mx-auto w-full max-w-[260px] overflow-hidden rounded-lg border border-white/10 bg-black/25"
+      ref={containerRef}
+    >
+      <div className="aspect-[9/16] bg-black">
+        {shouldLoad && !isExpanded ? (
+          <iframe
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            className="h-full w-full"
+            onError={() => setHasFailed(true)}
+            ref={iframeRef}
+            referrerPolicy="strict-origin-when-cross-origin"
+            src={embed.embedUrl}
+            title="TikTok video player"
+          />
+        ) : null}
+      </div>
+      <ExpandEmbedButton onClick={() => setIsExpanded(true)} />
+      <SourceFooter label={label ?? "TikTok"} url={url} />
+      {isExpanded
+        ? createPortal(
+            <dialog
+              aria-label="Expanded TikTok video"
+              className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-white backdrop:bg-black/90 backdrop:backdrop-blur-sm"
+              onCancel={() => setIsExpanded(false)}
+              onClose={() => setIsExpanded(false)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setIsExpanded(false);
+                }
+              }}
+              ref={dialogRef}
+            >
+              <ExternalEmbedViewer
+                embed={embed}
+                onClose={() => setIsExpanded(false)}
+                playerRef={iframeRef}
+                sourceUrl={url}
+              />
+            </dialog>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
 }
 
 function InstagramContent({
@@ -1455,21 +1595,23 @@ function ExpandEmbedButton({ onClick }: { onClick: () => void }) {
 function ExternalEmbedViewer({
   embed,
   onClose,
+  playerRef,
   sourceUrl,
 }: {
   embed: ExternalEmbed;
   onClose: () => void;
+  playerRef?: RefObject<HTMLIFrameElement | null>;
   sourceUrl: string;
 }) {
   const isInstagram = embed.provider === "instagram";
 
   return (
     <div
-      aria-label="Embedded media viewer"
-      aria-modal="true"
+      aria-label={embed.provider === "tiktok" ? undefined : "Embedded media viewer"}
+      aria-modal={embed.provider === "tiktok" ? undefined : true}
       className="fixed inset-0 z-[100] grid place-items-center bg-black/90 p-3 backdrop-blur-sm sm:p-8"
       onClick={onClose}
-      role="dialog"
+      role={embed.provider === "tiktok" ? undefined : "dialog"}
     >
       <button
         aria-label="Close embedded media viewer"
@@ -1483,7 +1625,9 @@ function ExternalEmbedViewer({
         className={
           isInstagram
             ? "h-[92vh] w-full max-w-[680px] overflow-hidden rounded-lg bg-white"
-            : "aspect-video w-full max-w-6xl overflow-hidden rounded-lg bg-black"
+            : embed.provider === "tiktok"
+              ? "h-[calc(100dvh-112px)] aspect-[9/16] max-w-full overflow-hidden rounded-lg bg-black"
+              : "aspect-video w-full max-w-6xl overflow-hidden rounded-lg bg-black"
         }
         onClick={(event) => event.stopPropagation()}
       >
@@ -1491,6 +1635,7 @@ function ExternalEmbedViewer({
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           className="h-full w-full"
+          ref={playerRef}
           src={embed.embedUrl}
           title={`Expanded ${embed.provider} content`}
         />
@@ -1715,13 +1860,24 @@ function FeedSkeleton() {
 
 type ExternalEmbed = {
   embedUrl: string;
-  provider: "instagram" | "youtube" | "vimeo";
+  provider: "instagram" | "youtube" | "vimeo" | "tiktok";
 };
 
 function getExternalEmbed(rawUrl: string): ExternalEmbed | null {
   try {
     const url = new URL(rawUrl);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
     const host = url.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (host === "tiktok.com" || host === "m.tiktok.com") {
+      const id = url.pathname.match(/^\/@[^/]+\/video\/(\d+)\/?$/)?.[1];
+      return id
+        ? {
+            embedUrl: `https://www.tiktok.com/player/v1/${id}?controls=1&autoplay=0&rel=0`,
+            provider: "tiktok",
+          }
+        : null;
+    }
 
     if (host === "youtu.be") {
       const id = url.pathname.split("/").filter(Boolean)[0];
@@ -1826,7 +1982,9 @@ function providerLabel(provider: ExternalEmbed["provider"]) {
     ? "YouTube"
     : provider === "vimeo"
       ? "Vimeo"
-      : "Instagram";
+      : provider === "tiktok"
+        ? "TikTok"
+        : "Instagram";
 }
 
 const MIME_BY_EXTENSION: Record<string, string> = {

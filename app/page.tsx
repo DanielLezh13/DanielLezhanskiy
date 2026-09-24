@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, HomeIcon, Lightbulb, Rss } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Rss } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Content, type IdeaSubjectView } from "@/components/Content";
+import { DanielSectionNav } from "@/components/DanielSectionNav";
 import {
   ReadingNavigator,
   type ReadingNavGroup,
   type ReadingNavItem,
 } from "@/components/ReadingNavigator";
 import { FloatingRightPanel, type ChatMessage } from "@/components/RightPanel";
+import { isSectionInProgress } from "@/lib/publication-status";
 import {
   economicsSectionGroups,
   economicsSections,
@@ -19,8 +22,10 @@ import {
   politicsSectionGroups,
   politicsAnalysisSections,
   politicsSections,
+  psychologySectionGroups,
   psychologySections,
   startSection,
+  technologySectionGroups,
   technologySections,
   topics,
 } from "@/lib/content";
@@ -95,7 +100,9 @@ const sectionLabelById = new Map(
     ...economicsSections,
     ...philosophySectionGroups,
     ...philosophySections,
+    ...psychologySectionGroups,
     ...psychologySections,
+    ...technologySectionGroups,
     ...technologySections,
   ].map((section) => [section.id, section.label]),
 );
@@ -107,17 +114,25 @@ function getReadingNavItems(view: ContentView): ReadingNavItem[] {
       frameworkSections[1],
       topics[0],
       ...frameworkSections.slice(2),
-    ].map(({ id, label }) => ({ id, label }));
+    ].map(({ id, label }) => ({
+      id,
+      label,
+      inProgress: isSectionInProgress(id),
+    }));
   }
 
   if (view === "politics") {
     return [...politicsSections, ...politicsAnalysisSections].map(
-      ({ id, label }) => ({ id, label }),
+      ({ id, label }) => ({ id, label, inProgress: isSectionInProgress(id) }),
     );
   }
 
   if (view === "economics") {
-    return economicsSections.map(({ id, label }) => ({ id, label }));
+    return economicsSections.map(({ id, label }) => ({
+      id,
+      label,
+      inProgress: isSectionInProgress(id),
+    }));
   }
 
   if (view === "philosophy") {
@@ -125,11 +140,19 @@ function getReadingNavItems(view: ContentView): ReadingNavItem[] {
   }
 
   if (view === "psychology") {
-    return psychologySections.map(({ id, label }) => ({ id, label }));
+    return psychologySections.map(({ id, label }) => ({
+      id,
+      label,
+      inProgress: isSectionInProgress(id),
+    }));
   }
 
   if (view === "technology") {
-    return technologySections.map(({ id, label }) => ({ id, label }));
+    return technologySections.map(({ id, label }) => ({
+      id,
+      label,
+      inProgress: isSectionInProgress(id),
+    }));
   }
 
   return [];
@@ -143,21 +166,31 @@ function getReadingNavGroups(view: ContentView): ReadingNavGroup[] | undefined {
         ? economicsSectionGroups
         : view === "philosophy"
           ? philosophySectionGroups
-          : undefined;
+          : view === "psychology"
+            ? psychologySectionGroups
+            : view === "technology"
+              ? technologySectionGroups
+              : undefined;
 
   if (!groups) return undefined;
 
   return groups.map((group) => ({
     id: group.id,
-    items: group.children.map(({ id, label }) => ({ id, label })),
+    items: group.children.map(({ id, label }) => ({
+      id,
+      label,
+      inProgress: isSectionInProgress(id),
+    })),
     label: group.label,
   }));
 }
 
 export default function Home() {
+  const client = getSupabaseBrowserClient();
   const scrollContainerRef = useRef<HTMLElement | null>(null);
-  const [activeView, setActiveView] = useState<ContentView>("start");
-  const [activeSectionId, setActiveSectionId] = useState(startSection.id);
+  const [canOpenDrafts, setCanOpenDrafts] = useState(false);
+  const [activeView, setActiveView] = useState<ContentView>("ideas");
+  const [activeSectionId, setActiveSectionId] = useState("ideas");
   const [rightPanelInput, setRightPanelInput] = useState("");
   const [rightPanelMessages, setRightPanelMessages] = useState<ChatMessage[]>(
     [],
@@ -165,6 +198,61 @@ export default function Home() {
   const [rightPanelSummary, setRightPanelSummary] = useState("");
   const [rightPanelIsLoading, setRightPanelIsLoading] = useState(false);
   const [rightPanelShowIdeas, setRightPanelShowIdeas] = useState(false);
+
+  useEffect(() => {
+    if (!client) return;
+
+    let active = true;
+    let requestId = 0;
+    let verifiedEditorId: string | null = null;
+    const checkEditorAccess = async () => {
+      const currentRequest = ++requestId;
+      try {
+        const { data: { user }, error: authError } = await client.auth.getUser();
+        if (!active || currentRequest !== requestId) return;
+        if (authError || !user) {
+          verifiedEditorId = null;
+          setCanOpenDrafts(false);
+          return;
+        }
+
+        const { data, error } = await client
+          .from("site_editors")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (active && currentRequest === requestId) {
+          verifiedEditorId = !error && data ? user.id : null;
+          setCanOpenDrafts(Boolean(verifiedEditorId));
+        }
+      } catch {
+        if (active && currentRequest === requestId) {
+          verifiedEditorId = null;
+          setCanOpenDrafts(false);
+        }
+      }
+    };
+
+    void checkEditorAccess();
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
+      if (session?.user.id !== verifiedEditorId) {
+        verifiedEditorId = null;
+        setCanOpenDrafts(false);
+      }
+      window.setTimeout(() => void checkEditorAccess(), 0);
+    });
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
+  }, [client]);
+
+  useEffect(() => {
+    if (!canOpenDrafts && isSectionInProgress(activeSectionId)) {
+      setActiveView("ideas");
+      setActiveSectionId("ideas");
+    }
+  }, [activeSectionId, canOpenDrafts]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -182,6 +270,9 @@ export default function Home() {
 
   const handleSelectView = useCallback(
     (view: ContentView, sectionId?: string) => {
+      if (sectionId && isSectionInProgress(sectionId) && !canOpenDrafts) {
+        return;
+      }
       scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
       setActiveView(view);
 
@@ -201,36 +292,59 @@ export default function Home() {
       const nextSectionId = view === "start" ? startSection.id : view;
       setActiveSectionId(nextSectionId);
     },
-    [],
+    [canOpenDrafts],
   );
 
   const handleSelectSection = useCallback(
-    (view: ContentView, sectionId: string) => {
-      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    (
+      view: ContentView,
+      sectionId: string,
+      scrollBehavior: ScrollBehavior = "auto",
+    ) => {
+      if (isSectionInProgress(sectionId) && !canOpenDrafts) return;
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: scrollBehavior });
       setActiveView(view);
       setActiveSectionId(sectionId);
     },
-    [],
+    [canOpenDrafts],
   );
 
   const handleOpenIdeaSubject = useCallback((view: IdeaSubjectView) => {
     const firstSectionId = getReadingNavItems(view)[0]?.id ?? view;
+    if (isSectionInProgress(firstSectionId) && !canOpenDrafts) return;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
     setActiveSectionId(firstSectionId);
     setActiveView(view);
-  }, []);
+  }, [canOpenDrafts]);
 
+  const visibleView =
+    !canOpenDrafts && isSectionInProgress(activeSectionId)
+      ? "ideas"
+      : activeView;
+  const readingNavItems = useMemo(
+    () => getReadingNavItems(visibleView),
+    [visibleView],
+  );
+  const navigableReadingItems = useMemo(
+    () => readingNavItems.filter((item) => canOpenDrafts || !item.inProgress),
+    [canOpenDrafts, readingNavItems],
+  );
+  const activeReadingIndex = navigableReadingItems.findIndex(
+    (item) => item.id === activeSectionId,
+  );
   const usesSectionIdeas =
-    activeView === "religion" ||
-    activeView === "politics" ||
-    activeView === "economics" ||
-    activeView === "philosophy";
+    visibleView === "religion" ||
+    visibleView === "politics" ||
+    visibleView === "economics" ||
+    visibleView === "philosophy" ||
+    visibleView === "psychology" ||
+    visibleView === "technology";
   const rightPanelContextLabel = usesSectionIdeas
-    ? (sectionLabelById.get(activeSectionId) ?? viewLabels[activeView])
-    : viewLabels[activeView];
+    ? (sectionLabelById.get(activeSectionId) ?? viewLabels[visibleView])
+    : viewLabels[visibleView];
   const rightPanelIdeas = usesSectionIdeas
     ? getKeyIdeas(activeSectionId)
-    : viewKeyIdeas[activeView];
+    : viewKeyIdeas[visibleView];
   const rightPanelChatState = {
     input: rightPanelInput,
     isLoading: rightPanelIsLoading,
@@ -244,8 +358,56 @@ export default function Home() {
     summary: rightPanelSummary,
   };
 
+  const handleMoveReadingPage = useCallback(
+    (direction: -1 | 1) => {
+      if (activeReadingIndex < 0) return;
+      const nextItem = navigableReadingItems[activeReadingIndex + direction];
+      if (nextItem) handleSelectSection(visibleView, nextItem.id, "smooth");
+    },
+    [activeReadingIndex, handleSelectSection, navigableReadingItems, visibleView],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.matches(
+          "input, textarea, select, [contenteditable='true'], [role='textbox']",
+        )
+      ) {
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && activeReadingIndex > 0) {
+        event.preventDefault();
+        handleMoveReadingPage(-1);
+      } else if (
+        event.key === "ArrowRight" &&
+        activeReadingIndex >= 0 &&
+        activeReadingIndex < navigableReadingItems.length - 1
+      ) {
+        event.preventDefault();
+        handleMoveReadingPage(1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeReadingIndex, handleMoveReadingPage, navigableReadingItems.length]);
+
   const isDestinationView =
-    activeView === "start" || activeView === "notes" || activeView === "ideas";
+    visibleView === "start" || visibleView === "notes" || visibleView === "ideas";
 
   if (isDestinationView) {
     return (
@@ -253,23 +415,26 @@ export default function Home() {
         className="relative h-screen overflow-y-auto overscroll-none"
         ref={scrollContainerRef}
       >
-        <PrimaryDestinationNav
-          activeView={activeView}
-          onSelectView={handleSelectView}
-        />
+        {visibleView !== "ideas" ? (
+          <MapReturnControl onClick={() => handleSelectView("ideas")} />
+        ) : null}
+        {visibleView !== "notes" ? (
+          <FeedControl onClick={() => handleSelectView("notes")} />
+        ) : null}
+        {visibleView === "start" ? <DanielSectionNav /> : null}
         <Content
           activeSectionId={activeSectionId}
-          activeView={activeView}
+          activeView={visibleView}
+          canOpenDrafts={canOpenDrafts}
           frameworkSections={frameworkSections}
-          key={activeView}
+          key={visibleView}
+          onOpenHome={() => handleSelectView("start")}
           onOpenIdeaSubject={handleOpenIdeaSubject}
           topics={topics}
         />
       </main>
     );
   }
-
-  const readingNavItems = getReadingNavItems(activeView);
 
   return (
     <main
@@ -278,128 +443,108 @@ export default function Home() {
     >
       <ReadingNavigator
         activeId={activeSectionId}
+        canOpenDrafts={canOpenDrafts}
         destinationNav={
-          <PrimaryDestinationNav
-            activeView={activeView}
-            embedded
-            onSelectView={handleSelectView}
-          />
+          <FeedControl embedded onClick={() => handleSelectView("notes")} />
         }
-        groups={getReadingNavGroups(activeView)}
+        groups={getReadingNavGroups(visibleView)}
         items={readingNavItems}
         onBack={() => handleSelectView("ideas")}
         onSelect={(sectionId) => handleSelectSection(activeView, sectionId)}
-        title={viewLabels[activeView]}
+        title={viewLabels[visibleView]}
       />
       <Content
         activeSectionId={activeSectionId}
-        activeView={activeView}
+        activeView={visibleView}
+        canOpenDrafts={canOpenDrafts}
         frameworkSections={frameworkSections}
-        key={`${activeView}:${activeSectionId}`}
+        key={`${visibleView}:${activeSectionId}`}
+        onOpenHome={() => handleSelectView("start")}
         onOpenIdeaSubject={handleOpenIdeaSubject}
         topics={topics}
+      />
+      <ReadingPageControls
+        currentIndex={activeReadingIndex}
+        items={navigableReadingItems}
+        onMove={handleMoveReadingPage}
       />
       <FloatingRightPanel
         chatState={rightPanelChatState}
         contextLabel={rightPanelContextLabel}
+        contextSectionId={usesSectionIdeas ? activeSectionId : undefined}
         ideas={rightPanelIdeas}
       />
     </main>
   );
 }
 
-const primaryDestinations = [
-  { icon: HomeIcon, label: "Home", view: "start" as const },
-  { icon: Rss, label: "Feed", view: "notes" as const },
-  { icon: Lightbulb, label: "Ideas", view: "ideas" as const },
-];
-
-function PrimaryDestinationNav({
-  activeView,
-  embedded = false,
-  onSelectView,
+function ReadingPageControls({
+  currentIndex,
+  items,
+  onMove,
 }: {
-  activeView: ContentView;
-  embedded?: boolean;
-  onSelectView: (view: ContentView) => void;
+  currentIndex: number;
+  items: ReadingNavItem[];
+  onMove: (direction: -1 | 1) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const activeDestination =
-    primaryDestinations.find(({ view }) => view === activeView) ??
-    primaryDestinations[2];
-  const ActiveIcon = activeDestination.icon;
+  if (currentIndex < 0 || items.length < 2) return null;
 
-  useEffect(() => {
-    if (!open) return;
-
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!navRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    return () =>
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-  }, [open]);
+  const previous = items[currentIndex - 1];
+  const next = items[currentIndex + 1];
 
   return (
-    <div
-      aria-label="Primary pages"
-      className={
-        embedded ? "relative" : "fixed right-4 top-4 z-[70] sm:right-6 sm:top-6"
-      }
-      ref={navRef}
-    >
+    <nav aria-label="Chapter navigation" className="reading-page-controls">
       <button
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="primary-destination-trigger"
-        onClick={() => setOpen((current) => !current)}
+        aria-label={previous ? `Previous chapter: ${previous.label}` : "No previous chapter"}
+        className="reading-page-control reading-page-control-previous"
+        disabled={!previous}
+        onClick={() => onMove(-1)}
         type="button"
       >
-        <ActiveIcon
-          aria-hidden="true"
-          className="h-3.5 w-3.5"
-          strokeWidth={1.8}
-        />
-        <span className={embedded ? "hidden sm:inline" : undefined}>
-          {activeDestination.label}
+        <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.8} />
+        <span className="reading-page-control-copy">
+          <span className="reading-page-control-direction">Previous</span>
+          <span className="reading-page-control-title">{previous?.label ?? "Beginning"}</span>
         </span>
-        <ChevronDown
-          aria-hidden="true"
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          strokeWidth={1.8}
-        />
       </button>
-
-      <div
-        aria-label="Choose a primary page"
-        className={`primary-destination-menu ${open ? "open" : ""}`}
-        role="menu"
+      <span aria-hidden="true" className="reading-page-count">
+        {String(currentIndex + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
+      </span>
+      <button
+        aria-label={next ? `Next chapter: ${next.label}` : "No next chapter"}
+        className="reading-page-control reading-page-control-next"
+        disabled={!next}
+        onClick={() => onMove(1)}
+        type="button"
       >
-        {primaryDestinations.map(({ icon: Icon, label, view }) => {
-          const active = activeDestination.view === view;
+        <span className="reading-page-control-copy">
+          <span className="reading-page-control-direction">Next</span>
+          <span className="reading-page-control-title">{next?.label ?? "End"}</span>
+        </span>
+        <ArrowRight aria-hidden="true" size={16} strokeWidth={1.8} />
+      </button>
+    </nav>
+  );
+}
 
-          return (
-            <button
-              aria-current={active ? "page" : undefined}
-              className={active ? "active" : undefined}
-              key={view}
-              onClick={() => {
-                setOpen(false);
-                onSelectView(view);
-              }}
-              role="menuitem"
-              type="button"
-            >
-              <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+function FeedControl({ embedded = false, onClick }: { embedded?: boolean; onClick: () => void }) {
+  return (
+    <button
+      className={`site-feed-control${embedded ? " embedded" : ""}`}
+      onClick={onClick}
+      type="button"
+    >
+      <Rss aria-hidden="true" size={15} strokeWidth={1.8} />
+      <span>Feed</span>
+    </button>
+  );
+}
+
+function MapReturnControl({ onClick }: { onClick: () => void }) {
+  return (
+    <button className="site-map-return" onClick={onClick} type="button">
+      <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.8} />
+      <span>Ideas</span>
+    </button>
   );
 }
