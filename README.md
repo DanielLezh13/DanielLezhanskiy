@@ -2,7 +2,7 @@
 
 **Live site:** [daniellezhanskiy.com](https://daniellezhanskiy.com)
 
-This is my personal site for collecting and connecting my writing, ideas, and projects. It is built as an interactive reading space rather than a conventional blog: start from the idea bubbles, open a subject, and move through its chapters and subsections.
+This site brings together my writing and projects in one place. The Ideas page opens as a field of topic bubbles; each topic leads into a broader framework, then into chapters and subsections. The writing ranges across philosophy, religion, politics, and economics, including the social questions around them. The structure is meant to make my developing views easier to follow while leaving unfinished work clearly marked. The profile introduces me and my projects, the feed holds shorter thoughts and updates, and the site chat searches relevant published writing to help explore a question.
 
 ## What you can explore
 
