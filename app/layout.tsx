@@ -14,10 +14,27 @@ const geistMono = localFont({
   display: "swap",
 });
 
+const title = "Daniel Lezhanskiy | Ideas, Writing & Projects";
+const description =
+  "Daniel Lezhanskiy's writing on philosophy, politics, religion, economics, and the ideas connecting them.";
+
 export const metadata: Metadata = {
-  title: "Daniel Lezhanskiy | Ideas, Writing & Projects",
-  description:
-    "Daniel Lezhanskiy's writing on philosophy, politics, religion, economics, and the ideas connecting them.",
+  metadataBase: new URL("https://daniellezhanskiy.com"),
+  title,
+  description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Daniel Lezhanskiy",
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({
